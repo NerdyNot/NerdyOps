@@ -5,6 +5,7 @@ import json
 import uuid
 import logging
 
+# 로깅 설정
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
@@ -13,7 +14,7 @@ redis = get_redis_connection()
 @app.route('/submit-task', methods=['POST'])
 def submit_task():
     data = request.get_json()
-    input_text = data.get('command') 
+    input_text = data.get('command')
     target_agent_id = data.get('agent_id')
     
     if not input_text or not target_agent_id:
@@ -36,10 +37,10 @@ def submit_task():
         return jsonify({"error": str(e)}), 500
     
     task_id = str(uuid.uuid4())
-    # task 데이터 구조: task_id, input, command, script_code
-    task = json.dumps({"task_id": task_id, "input": input_text, "command": script_code, "script_code": script_code})
+    task_data = json.dumps({"task_id": task_id, "input": input_text, "command": script_code, "script_code": script_code})
     
-    redis.lpush(f'task_queue:{target_agent_id}', task)
+    redis.lpush(f'task_queue:{target_agent_id}', task_data)
+    redis.lpush(f'agent_tasks:{target_agent_id}', task_data)
     
     return jsonify({"task_id": task_id, "status": "Task submitted"})
 
@@ -84,7 +85,6 @@ def get_task():
     if not agent_id:
         return jsonify({"error": "Agent ID is required"}), 400
 
-    # 작업 큐에서 해당 에이전트의 작업을 가져옴
     task_queue_key = f'task_queue:{agent_id}'
     task = redis.rpop(task_queue_key)
 
@@ -98,7 +98,6 @@ def get_task():
     else:
         return jsonify({"error": "No task found for this agent"}), 404
 
-
 @app.route('/report-result', methods=['POST'])
 def report_result():
     data = request.get_json()
@@ -111,16 +110,12 @@ def report_result():
     if not task_id:
         return jsonify({"error": "Task ID is required"}), 400
 
-    if not input_text:
-        return jsonify({"error": "Input text is required"}), 400
-
     result_key = f"result:{task_id}"
 
     output_str = output if output is not None else ""
     error_str = error if error is not None else ""
 
     try:
-        # LLM을 사용하여 결과 해석
         interpretation = interpret_result(input_text, output_str, error_str)
 
         if interpretation is None:
@@ -144,8 +139,6 @@ def report_result():
         logging.error(f"Error reporting result: {e}")
         return jsonify({"error": str(e)}), 500
 
-    
-
 @app.route('/task-status/<task_id>', methods=['GET'])
 def task_status(task_id):
     result_key = f"result:{task_id}"
@@ -165,6 +158,19 @@ def task_status(task_id):
         
         return jsonify({"task_id": task_id, "input": input_text, "command": command, "output": output, "error": error, "interpretation": interpretation})
     return jsonify({"error": "Task not found"}), 404
+
+@app.route('/get-agent-tasks', methods=['GET'])
+def get_agent_tasks():
+    agent_id = request.args.get('agent_id')
+    
+    if not agent_id:
+        return jsonify({"error": "Agent ID is required"}), 400
+
+    task_queue_key = f'agent_tasks:{agent_id}'
+    tasks = redis.lrange(task_queue_key, 0, -1)
+    
+    task_list = [json.loads(task.decode()) for task in tasks]
+    return jsonify(task_list)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
