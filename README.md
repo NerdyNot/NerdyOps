@@ -142,24 +142,15 @@ The Python Agent is a versatile client written in Python, mirroring the function
 3. **Monitor Status**:
     - Use the Streamlit app or API endpoints to monitor the status of agents and tasks.
 
-## Libraries and Licenses
+### Important Notices
 
-### Central Server
+1. **Script Execution**
+    - The agent executes scripts provided by the central server. Ensure that scripts are carefully reviewed to prevent unintended actions.
+2. **User Responsibility**
+    - The use of this software is at the user's own risk.
+    - The developers are not responsible for any damages or losses that may occur from the use of this software.
+    - It is the user's responsibility to ensure that the commands and scripts executed by this tool are appropriate and safe for their environment.
 
-- **Flask**: A lightweight WSGI web application framework in Python.
-- **Redis**: An in-memory data structure store used for task queues.
-- **SQLite**: A C library that provides a lightweight, disk-based database.
-- **LangChain**: Framework for developing applications powered by large language models (LLMs).
-
-### Go Agent
-
-- **Go**: A statically typed, compiled programming language designed for simplicity and efficiency.
-
-### Python Agent
-
-- **Python**: A high-level, interpreted, and general-purpose programming language.
-- **Requests**: A simple HTTP library for Python.
-- **Subprocess**: A module to spawn new processes, connect to their input/output/error pipes, and obtain their return codes.
 
 ## Contributing
 
@@ -317,6 +308,14 @@ Python 에이전트는 Python으로 작성된 유연한 클라이언트로, Go �
     - 에이전트가 중앙 서버에서 작업을 가져와 이를 실행하고 결과를 보고합니다.
 3. **상태 모니터링**:
     - Streamlit 앱이나 API 엔드포인트를 사용하여 에이전트와 작업의 상태를 모니터링합니다.
+
+### 주의
+1. **스크립트 실행**
+    - 에이전트는 중앙 서버에서 제공하는 스크립트를 실행합니다. 스크립트를 주의 깊게 검토하여 의도하지 않은 작업이 실행되지 않도록 하세요.
+2. **사용자 책임**
+    - 이 소프트웨어의 사용은 사용자의 책임입니다.
+    - 이 소프트웨어 사용으로 인한 어떠한 손해나 손실에 대해 개발자는 책임지지 않습니다.
+    - 이 도구로 실행되는 명령과 스크립트가 적절하고 안전한지 확인하는 것은 사용자의 책임입니다.
 
 ## 기여
 

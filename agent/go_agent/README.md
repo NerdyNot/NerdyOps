@@ -83,19 +83,6 @@ The initial setup will guide you through creating this file.
 3. **Reconnecting to the Central Server**
     
     If the connection to the central server is lost, the agent will prompt you to enter a new central server URL or retry the connection.
-    
-
-### Important Notices
-
-1. **Health Check and Reconnection**
-    - The agent checks the connection to the central server at startup and continuously during operation.
-    - If the connection fails, you will be prompted to either retry the connection or provide a new central server URL.
-2. **Script Execution**
-    - The agent executes scripts provided by the central server. Ensure that scripts are carefully reviewed to prevent unintended actions.
-3. **User Responsibility**
-    - The use of this software is at the user's own risk.
-    - The developers are not responsible for any damages or losses that may occur from the use of this software.
-    - It is the user's responsibility to ensure that the commands and scripts executed by this tool are appropriate and safe for their environment.
 
 ## License
 
@@ -210,19 +197,6 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 3. **중앙 서버에 재연결**
     
     중앙 서버와의 연결이 끊어지면, 에이전트는 새로운 중앙 서버 URL을 입력하거나 연결을 재시도하라는 프롬프트를 표시합니다.
-    
-
-### 중요한 공지 사항
-
-1. **상태 확인 및 재연결**
-    - 에이전트는 시작 시와 작동 중에 중앙 서버와의 연결을 확인합니다.
-    - 연결이 실패하면 새로운 중앙 서버 URL을 입력하거나 연결을 재시도하도록 프롬프트가 표시됩니다.
-2. **스크립트 실행**
-    - 에이전트는 중앙 서버에서 제공하는 스크립트를 실행합니다. 스크립트를 주의 깊게 검토하여 의도하지 않은 작업이 실행되지 않도록 하세요.
-3. **사용자 책임**
-    - 이 소프트웨어의 사용은 사용자의 책임입니다.
-    - 이 소프트웨어 사용으로 인한 어떠한 손해나 손실에 대해 개발자는 책임지지 않습니다.
-    - 이 도구로 실행되는 명령과 스크립트가 적절하고 안전한지 확인하는 것은 사용자의 책임입니다.
 
 ## 라이센스
 
