@@ -1,41 +1,72 @@
 from flask import Flask, request, jsonify
 from redis_connection import get_redis_connection
 from langchain_integration import convert_natural_language_to_script, interpret_result
+from db import init_db, get_db_connection
+from logo import print_logo
 import json
 import uuid
 import logging
 
-# 로깅 설정
+# Setting up logging
 logging.basicConfig(level=logging.INFO)
 
+# Initialize the Flask application
 app = Flask(__name__)
+
+# Get a connection to the Redis server
 redis = get_redis_connection()
 
+# Flag to ensure the database is initialized only once
+db_initialized = False
+
+# Initialize the database before the first request
+@app.before_request
+def initialize_database():
+    global db_initialized
+    if not db_initialized:
+        init_db()
+        db_initialized = True
+
+# Health check endpoint
+@app.route('/health', methods=['GET'])
+def ping():
+    return jsonify({"status": "ok"}), 200
+
+# Endpoint to submit a task to an agent
 @app.route('/submit-task', methods=['POST'])
 def submit_task():
     data = request.get_json()
     input_text = data.get('command')
     target_agent_id = data.get('agent_id')
     
+    # Validate input
     if not input_text or not target_agent_id:
         return jsonify({"error": "Command and Agent ID are required"}), 400
     
-    # 에이전트의 환경 정보를 Redis에서 가져옵니다.
-    agent_info_key = f"agent_info:{target_agent_id}"
-    agent_info = redis.hgetall(agent_info_key)
-    os_type = agent_info.get(b'os_type', b'').decode()
+    # Fetch the agent's OS type from SQLite database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT os_type FROM agents WHERE agent_id = ?', (target_agent_id,))
+    agent_info = cursor.fetchone()
+    conn.close()
+    
+    if not agent_info:
+        return jsonify({"error": "Agent not found"}), 404
+    
+    os_type = agent_info['os_type']
 
-    if os_type not in ['linux', 'windows']:
+    if os_type not in ['linux', 'windows', 'darwin']:
         return jsonify({"error": "Unsupported OS type for the target agent"}), 400
     
     try:
-        # Langchain Custom Tool을 사용하여 명령을 OS에 맞는 스크립트로 변환
+        # Convert natural language command to script using LangChain
         script_code = convert_natural_language_to_script(input_text, os_type)
         logging.info(f"Converted Script: {script_code}")
     except Exception as e:
         logging.error(f"Error in converting command: {e}")
         return jsonify({"error": str(e)}), 500
     
+    # Create a unique task ID and push the task to the agent's queue
     task_id = str(uuid.uuid4())
     task_data = json.dumps({"task_id": task_id, "input": input_text, "command": script_code, "script_code": script_code})
     
@@ -44,47 +75,78 @@ def submit_task():
     
     return jsonify({"task_id": task_id, "status": "Task submitted"})
 
-
+# Endpoint to register an agent
 @app.route('/register-agent', methods=['POST'])
 def register_agent():
     data = request.get_json()
     agent_id = data.get('agent_id')
     os_type = data.get('os_type')
+    computer_name = data.get('computer_name')
+    private_ip = data.get('private_ip')
+    shell_version = data.get('shell_version')
     
-    if not agent_id or os_type not in ['linux', 'windows']:
+    # Validate input
+    if not agent_id or os_type not in ['linux', 'windows', 'darwin']:
         return jsonify({"error": "Invalid agent ID or OS type"}), 400
     
-    agent_info_key = f"agent_info:{agent_id}"
-    redis.hset(agent_info_key, mapping={"os_type": os_type})
+    # Save agent information in SQLite database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR REPLACE INTO agents (agent_id, os_type, status, computer_name, private_ip, shell_version, last_update_date)
+        VALUES (?, ?, 'active', ?, ?, ?, CURRENT_TIMESTAMP)
+    ''', (agent_id, os_type, computer_name, private_ip, shell_version))
+    conn.commit()
+    conn.close()
     
-    redis.hset('agents', agent_id, 'active')
     return jsonify({"status": "Agent registered", "agent_id": agent_id, "os_type": os_type})
 
+# Endpoint to update the status of an agent
 @app.route('/agent-status', methods=['POST'])
 def agent_status():
     data = request.get_json()
     agent_id = data.get('agent_id')
     status = data.get('status')
     
+    # Validate input
     if not agent_id or not status:
         return jsonify({"error": "No agent_id or status provided"}), 400
     
-    redis.hset('agents', agent_id, status)
+    # Update the agent's status in SQLite database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE agents
+        SET status = ?, last_update_date = CURRENT_TIMESTAMP
+        WHERE agent_id = ?
+    ''', (status, agent_id))
+    conn.commit()
+    conn.close()
+    
     return jsonify({"status": "Status updated", "agent_id": agent_id})
 
+# Endpoint to get the list of registered agents
 @app.route('/get-agents', methods=['GET'])
 def get_agents():
-    agents = redis.hgetall('agents')
-    agent_info = {k.decode(): v.decode() for k, v in agents.items()}
-    return jsonify(agent_info)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM agents')
+    agents = cursor.fetchall()
+    conn.close()
+    
+    agent_list = [dict(agent) for agent in agents]
+    return jsonify(agent_list)
 
+# Endpoint for agents to fetch tasks
 @app.route('/get-task', methods=['GET'])
 def get_task():
     agent_id = request.args.get('agent_id')
     
+    # Validate input
     if not agent_id:
         return jsonify({"error": "Agent ID is required"}), 400
 
+    # Fetch the next task for the agent from Redis queue
     task_queue_key = f'task_queue:{agent_id}'
     task = redis.rpop(task_queue_key)
 
@@ -98,6 +160,7 @@ def get_task():
     else:
         return jsonify({"error": "No task found for this agent"}), 404
 
+# Endpoint for agents to report task results
 @app.route('/report-result', methods=['POST'])
 def report_result():
     data = request.get_json()
@@ -107,6 +170,7 @@ def report_result():
     output = data.get('output')
     error = data.get('error')
     
+    # Validate input
     if not task_id:
         return jsonify({"error": "Task ID is required"}), 400
 
@@ -116,11 +180,13 @@ def report_result():
     error_str = error if error is not None else ""
 
     try:
+        # Interpret the result using LangChain
         interpretation = interpret_result(input_text, output_str, error_str)
 
         if interpretation is None:
             interpretation = ""
 
+        # Store the result in Redis
         safe_input_text = input_text if input_text is not None else ""
         safe_command = command if command is not None else ""
         safe_output_str = output_str if output_str is not None else ""
@@ -139,6 +205,7 @@ def report_result():
         logging.error(f"Error reporting result: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Endpoint to check the status of a task
 @app.route('/task-status/<task_id>', methods=['GET'])
 def task_status(task_id):
     result_key = f"result:{task_id}"
@@ -159,10 +226,12 @@ def task_status(task_id):
         return jsonify({"task_id": task_id, "input": input_text, "command": command, "output": output, "error": error, "interpretation": interpretation})
     return jsonify({"error": "Task not found"}), 404
 
+# Endpoint to get the list of tasks for a specific agent
 @app.route('/get-agent-tasks', methods=['GET'])
 def get_agent_tasks():
     agent_id = request.args.get('agent_id')
     
+    # Validate input
     if not agent_id:
         return jsonify({"error": "Agent ID is required"}), 400
 
@@ -172,5 +241,8 @@ def get_agent_tasks():
     task_list = [json.loads(task.decode()) for task in tasks]
     return jsonify(task_list)
 
+# Main entry point for the application
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    print_logo()  # Print the logo at the start
+    init_db()  # Initialize the database
+    app.run(host='0.0.0.0', port=5001)  # Start the Flask app
