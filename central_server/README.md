@@ -188,7 +188,6 @@ Users can check the status and details of each task using its unique task ID.
 - [**db.py**](http://db.py/): SQLite database initialization and connection functions.
 - **langchain_integration.py**: Functions to convert commands into scripts and interpret task results using LangChain tools.
 - **redis_connection.py**: Helper to get a Redis connection.
-- [**logo.py**](http://logo.py/): Prints ASCII art for the project (optional).
 
 ## Logging
 
@@ -436,7 +435,6 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 - [**db.py**](http://db.py/): SQLite 데이터베이스 초기화 및 연결 함수.
 - **langchain_integration.py**: LangChain 도구를 사용하여 명령을 스크립트로 변환하고 작업 결과를 해석하는 함수.
 - **redis_connection.py**: Redis 연결을 얻기 위한 도우미.
-- [**logo.py**](http://logo.py/): 프로젝트를 위한 ASCII 아트를 출력합니다 (선택 사항).
 
 ## 로깅
 
