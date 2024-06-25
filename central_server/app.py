@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from redis_connection import get_redis_connection
 from langchain_integration import convert_natural_language_to_script, interpret_result
 from db import init_db, get_db_connection
@@ -6,12 +7,14 @@ from logo import print_logo
 import json
 import uuid
 import logging
+from datetime import datetime
 
 # Setting up logging
 logging.basicConfig(level=logging.INFO)
 
 # Initialize the Flask application
 app = Flask(__name__)
+CORS(app)
 
 # Get a connection to the Redis server
 redis = get_redis_connection()
@@ -68,7 +71,13 @@ def submit_task():
     
     # Create a unique task ID and push the task to the agent's queue
     task_id = str(uuid.uuid4())
-    task_data = json.dumps({"task_id": task_id, "input": input_text, "command": script_code, "script_code": script_code})
+    task_data = json.dumps({
+        "task_id": task_id,
+        "input": input_text,
+        "command": script_code,
+        "script_code": script_code,
+        "timestamp": datetime.now().isoformat()  # Save the current timestamp
+    })
     
     redis.lpush(f'task_queue:{target_agent_id}', task_data)
     redis.lpush(f'agent_tasks:{target_agent_id}', task_data)
@@ -156,7 +165,18 @@ def get_task():
         input_text = task_data["input"]
         command = task_data["command"]
         script_code = task_data["script_code"]
-        return jsonify({"task_id": task_id, "input": input_text, "command": command, "script_code": script_code})
+        timestamp = task_data.get("timestamp", "N/A")  # 기본값 설정
+        result_key = f"result:{task_id}"
+        result = redis.hgetall(result_key)
+        if result:
+            output = result.get(b'output', b'').decode()
+            error = result.get(b'error', b'').decode()
+            interpretation = result.get(b'interpretation', b'').decode()
+        else:
+            output = ""
+            error = ""
+            interpretation = ""
+        return jsonify({"task_id": task_id, "input": input_text, "command": command, "script_code": script_code, "timestamp": timestamp, "output": output, "error": error, "interpretation": interpretation})
     else:
         return jsonify({"error": "No task found for this agent"}), 404
 
@@ -238,8 +258,52 @@ def get_agent_tasks():
     task_queue_key = f'agent_tasks:{agent_id}'
     tasks = redis.lrange(task_queue_key, 0, -1)
     
-    task_list = [json.loads(task.decode()) for task in tasks]
+    task_list = []
+    for task in tasks:
+        task_data = json.loads(task.decode())
+        task_id = task_data["task_id"]
+        input_text = task_data["input"]
+        command = task_data["command"]
+        script_code = task_data["script_code"]
+        timestamp = task_data.get("timestamp", "N/A")  # 기본값 설정
+        result_key = f"result:{task_id}"
+        result = redis.hgetall(result_key)
+        if result:
+            output = result.get(b'output', b'').decode()
+            error = result.get(b'error', b'').decode()
+            interpretation = result.get(b'interpretation', b'').decode()
+        else:
+            output = ""
+            error = ""
+            interpretation = ""
+        task_list.append({
+            "task_id": task_id,
+            "input": input_text,
+            "command": command,
+            "script_code": script_code,
+            "timestamp": timestamp,
+            "output": output,
+            "error": error,
+            "interpretation": interpretation
+        })
+    
     return jsonify(task_list)
+
+# Endpoint to summary the tasks
+@app.route('/get-tasks-summary', methods=['GET'])
+def get_tasks_summary():
+    success_count = 0
+    failure_count = 0
+    
+    task_keys = redis.keys('result:*')
+    for key in task_keys:
+        result = redis.hgetall(key)
+        if b'error' in result and result[b'error']:
+            failure_count += 1
+        else:
+            success_count += 1
+    
+    return jsonify({"successCount": success_count, "failureCount": failure_count})
 
 # Main entry point for the application
 if __name__ == '__main__':

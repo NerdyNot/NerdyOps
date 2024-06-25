@@ -3,3 +3,4 @@ langchain-openai
 langchain-experimental
 flask
 redis
+flask-cors
