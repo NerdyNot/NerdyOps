@@ -1,17 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Agent } from '../../interfaces'; // 에이전트 타입 정의 파일
 import { useRouter } from 'next/router';
+import CardBoxModal from '../CardBox/Modal';
+import Button from '../Button';
+import { mdiCog } from '@mdi/js';
+import Icon from '../Icon';
 
 interface Props {
   agents: Agent[];
   onActionClick: (agent: Agent) => void;
+  onDeleteClick: (agent: Agent) => void;
 }
 
-const AgentList: React.FC<Props> = ({ agents, onActionClick }) => {
+const AgentList: React.FC<Props> = ({ agents, onActionClick, onDeleteClick }) => {
   const router = useRouter();
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [isModalActive, setIsModalActive] = useState(false);
 
   const handleTaskListClick = (agentId: string) => {
     router.push(`/agent-tasks?agent_id=${agentId}`);
+  };
+
+  const handleSettingsClick = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setIsModalActive(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalActive(false);
+    setSelectedAgent(null);
+  };
+
+  const handleDeleteClickWrapper = () => {
+    if (selectedAgent) {
+      onDeleteClick(selectedAgent);
+      handleModalClose();
+    }
   };
 
   return (
@@ -49,12 +73,30 @@ const AgentList: React.FC<Props> = ({ agents, onActionClick }) => {
                   >
                     Task List
                   </button>
+                  <button
+                    className="text-gray-500 p-2 rounded-full"
+                    onClick={() => handleSettingsClick(agent)}
+                  >
+                    <Icon path={mdiCog} size={15} />
+                  </button>
                 </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {selectedAgent && (
+        <CardBoxModal
+          title="Agent Settings"
+          buttonColor="danger"
+          buttonLabel="Delete"
+          isActive={isModalActive}
+          onConfirm={handleDeleteClickWrapper}
+          onCancel={handleModalClose}
+        >
+          <p>Are you sure you want to delete agent {selectedAgent.agent_id}?</p>
+        </CardBoxModal>
+      )}
     </div>
   );
 };

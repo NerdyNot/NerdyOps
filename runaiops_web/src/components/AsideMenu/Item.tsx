@@ -30,6 +30,15 @@ const AsideMenuItem = ({ item, isDropdownList = false }: Props) => {
     }
   }, [item.href, isReady, asPath])
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (item.onClick) {
+      e.preventDefault()
+      item.onClick()
+    } else {
+      setIsDropdownActive(!isDropdownActive)
+    }
+  }
+
   const asideMenuItemInnerContents = (
     <>
       {item.icon && (
@@ -63,12 +72,12 @@ const AsideMenuItem = ({ item, isDropdownList = false }: Props) => {
   return (
     <li>
       {item.href && (
-        <Link href={item.href} target={item.target} className={componentClass}>
+        <Link href={item.href} target={item.target} className={componentClass} onClick={handleClick}>
           {asideMenuItemInnerContents}
         </Link>
       )}
       {!item.href && (
-        <div className={componentClass} onClick={() => setIsDropdownActive(!isDropdownActive)}>
+        <div className={componentClass} onClick={handleClick}>
           {asideMenuItemInnerContents}
         </div>
       )}

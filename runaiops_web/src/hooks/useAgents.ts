@@ -7,20 +7,23 @@ const useAgents = (url: string) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchAgents = async () => {
     setLoading(true);
-    axios.get(`${url}/get-agents`)
-      .then(response => {
-        setAgents(response.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
+    try {
+      const response = await axios.get(`${url}/get-agents`);
+      setAgents(response.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgents();
   }, [url]);
 
-  return { agents, loading, error };
+  return { agents, loading, error, mutate: fetchAgents };
 };
 
 export default useAgents;

@@ -3,6 +3,7 @@ from flask_cors import CORS
 from redis_connection import get_redis_connection
 from langchain_integration import convert_natural_language_to_script, interpret_result
 from db import init_db, get_db_connection
+from auth import auth_bp
 from logo import print_logo
 import json
 import uuid
@@ -21,6 +22,9 @@ redis = get_redis_connection()
 
 # Flag to ensure the database is initialized only once
 db_initialized = False
+
+# Register the auth blueprint
+app.register_blueprint(auth_bp)
 
 # Initialize the database before the first request
 @app.before_request
@@ -304,6 +308,31 @@ def get_tasks_summary():
             success_count += 1
     
     return jsonify({"successCount": success_count, "failureCount": failure_count})
+
+# Endpoint to delete an agent
+@app.route('/delete-agent', methods=['POST'])
+def delete_agent():
+    data = request.get_json()
+    agent_id = data.get('agent_id')
+    
+    # Validate input
+    if not agent_id:
+        return jsonify({"error": "Agent ID is required"}), 400
+    
+    # Delete agent information from SQLite database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM agents WHERE agent_id = ?', (agent_id,))
+    conn.commit()
+    conn.close()
+    
+    # Delete agent tasks from Redis
+    task_queue_key = f'task_queue:{agent_id}'
+    agent_tasks_key = f'agent_tasks:{agent_id}'
+    redis.delete(task_queue_key)
+    redis.delete(agent_tasks_key)
+    
+    return jsonify({"status": "Agent deleted", "agent_id": agent_id})
 
 # Main entry point for the application
 if __name__ == '__main__':

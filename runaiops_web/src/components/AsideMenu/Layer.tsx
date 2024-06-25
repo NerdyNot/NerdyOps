@@ -5,6 +5,7 @@ import AsideMenuItem from './Item'
 import AsideMenuList from './List'
 import { MenuAsideItem } from '../../interfaces'
 import { useAppSelector } from '../../stores/hooks'
+import { useAuth } from '../../contexts/AuthContext'
 
 type Props = {
   menu: MenuAsideItem[]
@@ -14,12 +15,14 @@ type Props = {
 
 export default function AsideMenuLayer({ menu, className = '', ...props }: Props) {
   const darkMode = useAppSelector((state) => state.darkMode.isEnabled)
+  const { logout } = useAuth()
 
   const logoutItem: MenuAsideItem = {
     label: 'Logout',
     icon: mdiLogout,
     color: 'info',
     isLogout: true,
+    onClick: logout,
   }
 
   const handleAsideLgCloseClick = (e: React.MouseEvent) => {

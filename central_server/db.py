@@ -1,6 +1,8 @@
 import sqlite3
+from werkzeug.security import generate_password_hash
+import uuid
 
-# Initialize the SQLite database and create the 'agents' table if it doesn't exist
+# Initialize the SQLite database and create the 'agents' and 'users' tables if they don't exist
 def init_db():
     conn = sqlite3.connect('central_server.db')  # Connect to the SQLite database
     cursor = conn.cursor()  # Create a cursor to execute SQL commands
@@ -15,7 +17,30 @@ def init_db():
             last_update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')  # Create 'agents' table if it doesn't exist
-    conn.commit()  # Save changes
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            password TEXT,
+            role TEXT
+        )
+    ''')  # Create 'users' table if it doesn't exist
+
+    # Check if the admin user already exists
+    cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
+    admin_user = cursor.fetchone()
+
+    if not admin_user:
+        # Hash the default admin password
+        hashed_password = generate_password_hash('admin', method='pbkdf2:sha256')
+        cursor.execute('''
+            INSERT INTO users (user_id, username, email, password, role)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (str(uuid.uuid4()), 'admin', 'admin@admin.com', hashed_password, 'admin'))
+        conn.commit()  # Save changes
+
     conn.close()  # Close the connection
 
 # Establish and return a connection to the SQLite database

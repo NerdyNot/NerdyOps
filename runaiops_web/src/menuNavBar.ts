@@ -74,12 +74,6 @@ const menuNavBar: MenuNavBarItem[] = [
     href: 'https://github.com/NerdyNot/RunAIOps',
     target: '_blank',
   },
-  {
-    icon: mdiLogout,
-    label: 'Log out',
-    isDesktopNoLabel: true,
-    isLogout: true,
-  },
 ]
 
 export default menuNavBar

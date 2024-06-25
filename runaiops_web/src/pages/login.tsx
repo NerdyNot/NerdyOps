@@ -1,3 +1,4 @@
+// pages/login.tsx
 import React from 'react'
 import type { ReactElement } from 'react'
 import Head from 'next/head'
@@ -10,8 +11,11 @@ import FormField from '../components/Form/Field'
 import FormCheckRadio from '../components/Form/CheckRadio'
 import Divider from '../components/Divider'
 import Buttons from '../components/Buttons'
-import { useRouter } from 'next/router'
 import { getPageTitle } from '../config'
+import { useAuth } from '../contexts/AuthContext'
+import axios from 'axios'
+import { useRouter } from 'next/router'
+import Cookies from 'js-cookie'
 
 type LoginForm = {
   login: string
@@ -21,16 +25,31 @@ type LoginForm = {
 
 const LoginPage = () => {
   const router = useRouter()
+  const { login, error } = useAuth()
 
-  const handleSubmit = (formValues: LoginForm) => {
-    router.push('/dashboard')
-    console.log('Form values', formValues)
+  const handleSubmit = async (formValues: LoginForm) => {
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/login`, {
+        username: formValues.login,
+        password: formValues.password,
+      })
+
+      const { token } = response.data
+
+      // Save the token in cookies
+      Cookies.set('token', token, { expires: formValues.remember ? 7 : 1 })
+
+      // Redirect to the index page
+      router.push('/')
+    } catch (err) {
+      console.error('Login failed:', err)
+    }
   }
 
   const initialValues: LoginForm = {
-    login: 'john.doe',
-    password: 'bG1sL9eQ1uD2sK3b',
-    remember: true,
+    login: '',
+    password: '',
+    remember: false,
   }
 
   return (
@@ -59,7 +78,7 @@ const LoginPage = () => {
 
               <Buttons>
                 <Button type="submit" label="Login" color="info" />
-                <Button href="/dashboard" label="Home" color="info" outline />
+                <Button href="/" label="Home" color="info" outline />
               </Buttons>
             </Form>
           </Formik>

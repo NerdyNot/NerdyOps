@@ -13,14 +13,14 @@ llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 # Define the prompt template for Bash scripts
 bash_template = ChatPromptTemplate.from_messages([
-    ("system", "Convert the following command to a Bash script:"),
-    ("user", "{command}")
+    ("system", "You are a helpful assistant that converts natural language commands into Bash scripts. Make sure to provide a complete and executable Bash script."),
+    ("user", "OS: {os_type}\nCommand: {command}")
 ])
 
 # Define the prompt template for PowerShell scripts
 powershell_template = ChatPromptTemplate.from_messages([
-    ("system", "Convert the following command to a PowerShell script:"),
-    ("user", "{command}")
+    ("system", "You are a helpful assistant that converts natural language commands into PowerShell scripts. Make sure to provide a complete and executable PowerShell script."),
+    ("user", "OS: {os_type}\nCommand: {command}")
 ])
 
 # Define the prompt template for interpreting results
@@ -82,10 +82,10 @@ def convert_natural_language_to_script(command_text: str, os_type: str) -> str:
     """
     if os_type.lower() == 'windows':
         # Use PowerShell prompt template
-        prompt = powershell_template.invoke({"command": command_text})
+        prompt = powershell_template.invoke({"command": command_text, "os_type": os_type})
     elif os_type.lower() in ['linux', 'darwin']:
         # Use Bash prompt template
-        prompt = bash_template.invoke({"command": command_text})
+        prompt = bash_template.invoke({"command": command_text, "os_type": os_type})
     else:
         raise ValueError("Invalid OS type. Please specify 'windows' or 'linux' or 'darwin'.")
 
