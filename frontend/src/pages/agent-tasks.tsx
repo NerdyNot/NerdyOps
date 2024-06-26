@@ -6,17 +6,22 @@ import { useRouter } from 'next/router';
 import LayoutAuthenticated from '../layouts/Authenticated';
 import SectionMain from '../components/Section/Main';
 import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
-import TableTasks from '../components/Table/TableTasks';
 import useAgents from '../hooks/useAgents';
 import { getPageTitle } from '../config';
+import Modal from '../components/Modal';
+import ReactMarkdown from 'react-markdown';
+import TaskSubmitModal from '../components/TaskSubmitModal';
 
 interface Task {
   task_id: string;
   input: string;
-  command: string;
   script_code: string;
   output: string;
   interpretation: string;
+  status: string;
+  submitted_at: string;
+  approved_at?: string;
+  rejected_at?: string;
 }
 
 const AgentTasksPage = () => {
@@ -25,9 +30,13 @@ const AgentTasksPage = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
   const { agents, loading: agentsLoading, error: agentsError } = useAgents(centralServerUrl);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(agent_id as string || '');
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isModalActive, setIsModalActive] = useState<boolean>(false);
+  const [isTaskSubmitModalActive, setIsTaskSubmitModalActive] = useState<boolean>(false);
 
   useEffect(() => {
     if (agent_id) {
@@ -40,10 +49,16 @@ const AgentTasksPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${centralServerUrl}/get-agent-tasks`, {
-        params: { agent_id: agentId },
-      });
-      setTasks(response.data);
+      const [pendingResponse, completedResponse] = await Promise.all([
+        axios.get(`${centralServerUrl}/get-pending-tasks`),
+        axios.get(`${centralServerUrl}/get-agent-tasks`, {
+          params: { agent_id: agentId },
+        }),
+      ]);
+      console.log('Fetched pending tasks:', pendingResponse.data);
+      console.log('Fetched completed tasks:', completedResponse.data);
+      setPendingTasks(pendingResponse.data);
+      setCompletedTasks(completedResponse.data);
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred');
     } finally {
@@ -61,13 +76,45 @@ const AgentTasksPage = () => {
     }
   };
 
+  const handleApprove = async (task_id: string) => {
+    try {
+      await axios.post(`${centralServerUrl}/approve-task`, { task_id });
+      fetchTasks(selectedAgentId); // Refresh tasks after approval
+    } catch (err) {
+      setError(err.response?.data?.error || 'An error occurred');
+    }
+  };
+
+  const handleReject = async (task_id: string) => {
+    try {
+      await axios.post(`${centralServerUrl}/reject-task`, { task_id });
+      fetchTasks(selectedAgentId); // Refresh tasks after rejection
+    } catch (err) {
+      setError(err.response?.data?.error || 'An error occurred');
+    }
+  };
+
+  const handleViewDetails = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalActive(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalActive(false);
+    setSelectedTask(null);
+  };
+
+  const handleTaskSubmitModalClose = () => {
+    setIsTaskSubmitModalActive(false);
+  };
+
   return (
     <>
       <Head>
         <title>{getPageTitle('Agent Tasks')}</title>
       </Head>
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiCheckboxMarkedCircleAutoOutline} title="Agent Tasks" main/>
+        <SectionTitleLineWithButton icon={mdiCheckboxMarkedCircleAutoOutline} title="Agent Tasks" main />
 
         <div className="mb-4">
           {agentsLoading && <p>Loading agents...</p>}
@@ -86,20 +133,163 @@ const AgentTasksPage = () => {
                   </option>
                 ))}
               </select>
-              <button
-                onClick={handleFetchTasks}
-                className="bg-blue-500 text-white px-4 py-2 mt-2 rounded"
-                disabled={loading || !selectedAgentId}
-              >
-                Fetch Tasks
-              </button>
+              <div className="flex space-x-2 mt-2">
+                <button
+                  onClick={handleFetchTasks}
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  disabled={loading || !selectedAgentId}
+                >
+                  Fetch Tasks
+                </button>
+                <button
+                  onClick={() => setIsTaskSubmitModalActive(true)}
+                  className="bg-green-500 text-white px-4 py-2 rounded"
+                  disabled={loading || !selectedAgentId}
+                >
+                  Add Task
+                </button>
+              </div>
             </>
           )}
         </div>
         {loading && <p>Loading tasks...</p>}
         {error && <p className="text-red-500">{error}</p>}
-        {tasks.length > 0 && <TableTasks tasks={tasks} />}
+        {pendingTasks.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Pending Tasks</h2>
+            <div className="mb-8">
+              {pendingTasks.map((task) => (
+                <div key={task.task_id} className="mb-4 p-4 bg-gray-100 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-2">Task ID: {task.task_id}</h3>
+                  <div className="mb-2">
+                    <strong>Submitted At:</strong>
+                    <p className="p-2 bg-white rounded">{new Date(task.submitted_at).toLocaleString()}</p>
+                  </div>
+                  <div className="mb-2">
+                    <strong>Input:</strong>
+                    <p className="p-2 bg-white rounded">{task.input}</p>
+                  </div>
+                  <div className="mb-2">
+                    <strong>Script Code:</strong>
+                    <p className="p-2 bg-white rounded">{task.script_code}</p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleApprove(task.task_id)}
+                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-300"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(task.task_id)}
+                      className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-300"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {completedTasks.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Completed Tasks</h2>
+            <div>
+              {completedTasks.map((task) => (
+                <div key={task.task_id} className="mb-4 p-4 bg-gray-100 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-2">Task ID: {task.task_id}</h3>
+                  <div className="mb-2">
+                    <strong>Submitted At:</strong>
+                    <p className="p-2 bg-white rounded">{new Date(task.submitted_at).toLocaleString()}</p>
+                  </div>
+                  <div className="mb-2">
+                    <strong>Approved At:</strong>
+                    <p className="p-2 bg-white rounded">{new Date(task.approved_at).toLocaleString()}</p>
+                  </div>
+                  <div className="mb-2">
+                    <strong>Input:</strong>
+                    <p className="p-2 bg-white rounded">{task.input}</p>
+                  </div>
+                  <div className="mb-2">
+                    <strong>Script Code:</strong>
+                    <p className="p-2 bg-white rounded">{task.script_code}</p>
+                  </div>
+                  <button
+                    onClick={() => handleViewDetails(task)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
+                  >
+                    View Details
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </SectionMain>
+
+      {isModalActive && (
+        <Modal onClose={handleModalClose}>
+          <div className="p-6 bg-white rounded-lg shadow-md w-full max-w-3xl mx-auto my-20">
+            {selectedTask && (
+              <>
+                <h2 className="text-2xl font-semibold mb-4">Task Details</h2>
+                <div className="mb-2">
+                  <strong>Task ID:</strong>
+                  <p className="p-2 bg-gray-100 rounded">{selectedTask.task_id}</p>
+                </div>
+                <div className="mb-2">
+                  <strong>Submitted At:</strong>
+                  <p className="p-2 bg-gray-100 rounded">{new Date(selectedTask.submitted_at).toLocaleString()}</p>
+                </div>
+                {selectedTask.approved_at && (
+                  <div className="mb-2">
+                    <strong>Approved At:</strong>
+                    <p className="p-2 bg-gray-100 rounded">{new Date(selectedTask.approved_at).toLocaleString()}</p>
+                  </div>
+                )}
+                {selectedTask.rejected_at && (
+                  <div className="mb-2">
+                    <strong>Rejected At:</strong>
+                    <p className="p-2 bg-gray-100 rounded">{new Date(selectedTask.rejected_at).toLocaleString()}</p>
+                  </div>
+                )}
+                <div className="mb-2">
+                  <strong>Input:</strong>
+                  <p className="p-2 bg-gray-100 rounded">{selectedTask.input}</p>
+                </div>
+                <div className="mb-2">
+                  <strong>Script Code:</strong>
+                  <p className="p-2 bg-gray-100 rounded">{selectedTask.script_code}</p>
+                </div>
+                <div className="mb-2">
+                  <strong>Output:</strong>
+                  <p className="p-2 bg-gray-100 rounded">{selectedTask.output}</p>
+                </div>
+                <div className="mb-2">
+                  <strong>Interpretation:</strong>
+                  <div className="p-2 bg-gray-100 rounded">
+                    <ReactMarkdown>{selectedTask.interpretation}</ReactMarkdown>
+                  </div>
+                </div>
+                <button
+                  onClick={handleModalClose}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
+                >
+                  Close
+                </button>
+              </>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {isTaskSubmitModalActive && (
+        <TaskSubmitModal
+          agent={agents.find((agent) => agent.agent_id === selectedAgentId) || null}
+          onClose={handleTaskSubmitModalClose}
+        />
+      )}
     </>
   );
 };

@@ -73,20 +73,98 @@ def submit_task():
         logging.error(f"Error in converting command: {e}")
         return jsonify({"error": str(e)}), 500
     
-    # Create a unique task ID and push the task to the agent's queue
+    # Create a unique task ID and store the task for user review
     task_id = str(uuid.uuid4())
-    task_data = json.dumps({
+    task_data = {
         "task_id": task_id,
         "input": input_text,
-        "command": script_code,
         "script_code": script_code,
-        "timestamp": datetime.now().isoformat()  # Save the current timestamp
-    })
+        "agent_id": target_agent_id,
+        "timestamp": datetime.now().isoformat(),  # Save the current timestamp
+        "status": "pending",  # Task status set to pending for review
+        "submitted_at": datetime.now().isoformat()  # Task submission time
+    }
     
-    redis.lpush(f'task_queue:{target_agent_id}', task_data)
-    redis.lpush(f'agent_tasks:{target_agent_id}', task_data)
+    # Save the task data in Redis
+    redis.set(f'task:{task_id}', json.dumps(task_data))
+    redis.lpush('pending_tasks', task_id)
     
-    return jsonify({"task_id": task_id, "status": "Task submitted"})
+    return jsonify({"task_id": task_id, "status": "Task created and pending review"})
+
+
+# Endpoint to get pending tasks for review
+@app.route('/get-pending-tasks', methods=['GET'])
+def get_pending_tasks():
+    pending_task_ids = redis.lrange('pending_tasks', 0, -1)
+    pending_tasks = []
+    
+    for task_id in pending_task_ids:
+        task_data = redis.get(f'task:{task_id.decode()}')
+        if task_data:
+            task = json.loads(task_data)
+            pending_tasks.append(task)
+    
+    return jsonify(pending_tasks)
+
+# Endpoint to approve a pending task
+@app.route('/approve-task', methods=['POST'])
+def approve_task():
+    data = request.get_json()
+    task_id = data.get('task_id')
+    
+    # Validate input
+    if not task_id:
+        return jsonify({"error": "Task ID is required"}), 400
+    
+    task_data = redis.get(f'task:{task_id}')
+    if not task_data:
+        return jsonify({"error": "Task not found"}), 404
+    
+    task_data = json.loads(task_data)
+    if task_data.get('status') != 'pending':
+        return jsonify({"error": "Task is not in pending status"}), 400
+    
+    # Update the task status to approved and push it to the agent's queue
+    task_data['status'] = 'approved'
+    task_data['approved_at'] = datetime.now().isoformat()  # Task approval time
+    redis.set(f'task:{task_id}', json.dumps(task_data))
+    target_agent_id = task_data['agent_id']
+    redis.lpush(f'task_queue:{target_agent_id}', json.dumps(task_data))
+    
+    # Remove the task from the pending list
+    redis.lrem('pending_tasks', 0, task_id)
+    
+    return jsonify({"status": "Task approved", "task_id": task_id})
+
+
+# Endpoint to reject a pending task
+@app.route('/reject-task', methods=['POST'])
+def reject_task():
+    data = request.get_json()
+    task_id = data.get('task_id')
+    
+    # Validate input
+    if not task_id:
+        return jsonify({"error": "Task ID is required"}), 400
+    
+    task_data = redis.get(f'task:{task_id}')
+    if not task_data:
+        return jsonify({"error": "Task not found"}), 404
+    
+    task_data = json.loads(task_data)
+    if task_data.get('status') != 'pending':
+        return jsonify({"error": "Task is not in pending status"}), 400
+    
+    # Update the task status to rejected
+    task_data['status'] = 'rejected'
+    task_data['rejected_at'] = datetime.now().isoformat()  # Task rejection time
+    redis.set(f'task:{task_id}', json.dumps(task_data))
+    
+    # Remove the task from the pending list
+    redis.lrem('pending_tasks', 0, task_id)
+    
+    return jsonify({"status": "Task rejected", "task_id": task_id})
+
 
 # Endpoint to register an agent
 @app.route('/register-agent', methods=['POST'])
@@ -167,7 +245,6 @@ def get_task():
         task_data = json.loads(task.decode())
         task_id = task_data["task_id"]
         input_text = task_data["input"]
-        command = task_data["command"]
         script_code = task_data["script_code"]
         timestamp = task_data.get("timestamp", "N/A")  # 기본값 설정
         result_key = f"result:{task_id}"
@@ -180,9 +257,10 @@ def get_task():
             output = ""
             error = ""
             interpretation = ""
-        return jsonify({"task_id": task_id, "input": input_text, "command": command, "script_code": script_code, "timestamp": timestamp, "output": output, "error": error, "interpretation": interpretation})
+        return jsonify({"task_id": task_id, "input": input_text, "script_code": script_code, "timestamp": timestamp, "output": output, "error": error, "interpretation": interpretation})
     else:
         return jsonify({"error": "No task found for this agent"}), 404
+
 
 # Endpoint for agents to report task results
 @app.route('/report-result', methods=['POST'])
