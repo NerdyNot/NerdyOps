@@ -29,7 +29,7 @@ const menuAside: MenuAsideItem[] = [
   },*/
   {
     href: '/agents',
-    label: 'Agent Lists',
+    label: 'Agent List',
     icon: mdiServer,
   },
   {
