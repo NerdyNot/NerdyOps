@@ -3,9 +3,9 @@
 The `RunAIOps` project is an advanced remote operations platform that leverages LangChain to automate the execution of scripts on remote Linux and Windows servers. LangChain's integration with large language models (LLMs) allows the system to transform natural language commands into executable scripts, distribute tasks to agents, execute them remotely, and interpret the results back into human-readable summaries.
 
 This repository includes the following key components:
-
-1. **Central Server**: A Flask-based server that manages task distribution to agents, handles agent registrations, and utilizes LangChain to convert and interpret commands.
-2. **Agents**:
+1. **Frontend**: A web-based user interface that allows users to submit commands, monitor task execution, and view results.
+2. **Backend**: A Flask-based server that manages task distribution to agents, handles agent registrations, and utilizes LangChain to convert and interpret commands.
+3. **Agents**:
     - **Go Agent**: A Go-based agent that communicates with the central server, retrieves tasks, executes them, and reports the results.
     - **Python Agent**: A Python-based agent that performs similar functions to the Go Agent, using Python's robust capabilities.
 
@@ -13,22 +13,39 @@ This repository includes the following key components:
 
 ```
 RunAIOps/
-├── central_server/
-│   ├── app.py               # Flask app for the central server
-│   ├── db.py                # SQLite database initialization and connection
-│   ├── langchain_integration.py # LangChain integration for command conversion and result interpretation
-│   ├── redis_connection.py  # Redis connection setup
-│   └── config.py            # Configuration for Redis
+├── frontend/                # Frontend web application
+│   ├── public/              # Static assets
+│   ├── src/                 # Source code
+│   │   ├── components/      # Reusable React components
+│   │   ├── pages/           # Page components
+│
+├── backend/
+│   ├── app.py               # Main Flask application for the central server
+│   ├── auth.py              # Manages user authentication functionalities
+│   ├── db.py                # Manages SQLite database connections and initializations
+│   ├── langchain_integration.py # Integrates LangChain for command conversion and result interpretation
+│   ├── redis_connection.py  # Handles connections to the Redis server
+│   └── config.py            # Contains configuration settings for Redis
 ├── agent/
 │   ├── go_agent/
-│   │   ├── main.go          # Main Go agent application
+│   │   ├── main.go          # Main Go application for the Go agent
 │   ├── python_agent/
-│   │   ├── agent.py         # Main Python agent application
+│   │   ├── agent.py         # Main Python application for the Python agent
 └── README.md                # This README file
 
 ```
 
-## Central Server
+## Frontend
+
+The frontend of `RunAIOps` is a web-based application built using React.js. It provides users with an intuitive interface to interact with the system, submit commands, monitor task execution progress, and view task results.
+
+- **User Interface**: The frontend includes various components and pages designed to facilitate user interactions.
+- **Task Submission**: Users can submit natural language commands via input fields or forms.
+- **Task Monitoring**: Users can track the progress of tasks submitted, including their status (pending, in progress, completed).
+- **Results Display**: Once tasks are executed by agents, users can view human-readable summaries and detailed results.
+- **Integration**: The frontend interacts with the backend server via RESTful APIs to submit commands and retrieve task information.
+
+## Backend
 
 The central server acts as the command center, coordinating tasks between the user and the agents. It performs the following critical functions:
 
@@ -39,9 +56,10 @@ The central server acts as the command center, coordinating tasks between the us
 
 **Key Technologies**: Python, Flask, SQLite, Redis, LangChain
 
-### Central Server Files
+### Backend Files
 
 - **app.py**: The main Flask application for the central server.
+- **auth.py**: Manages user authentication functionalities including signup, login, and token validation within the RunAIOps project.
 - **db.py**: Manages SQLite database connections and initializations.
 - **langchain_integration.py**: Integrates LangChain to convert natural language commands into scripts and interpret execution results.
 - **redis_connection.py**: Handles connections to the Redis server.
@@ -168,31 +186,48 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 이 리포지토리에는 다음과 같은 주요 구성 요소가 포함되어 있습니다:
 
-1. **중앙 서버**: 작업을 에이전트에 분배하고, 에이전트 등록을 처리하며, LangChain을 사용하여 명령을 변환하고 해석하는 Flask 기반의 서버.
-2. **에이전트**:
-    - **Go 에이전트**: 중앙 서버와 통신하고, 작업을 가져와 실행하며, 결과를 보고하는 Go 기반의 에이전트.
-    - **Python 에이전트**: Go 에이전트와 유사한 기능을 제공하는 Python 기반의 에이전트로, Python의 유연성과 라이브러리를 활용합니다.
+1. **프론트엔드**: React.js를 사용하여 구축된 웹 기반 응용 프로그램으로, 사용자에게 시스템과 상호 작용할 직관적 인터페이스를 제공합니다. 명령을 제출하고 작업 실행 상황을 모니터링하며 작업 결과를 확인할 수 있습니다.
+2. **백엔드**: Flask 기반의 서버로, 작업 분배를 관리하고 에이전트 등록을 처리하며, LangChain을 사용하여 명령을 변환하고 해석합니다.
+3. **에이전트**:
+    - **Go 에이전트**: 중앙 서버와 통신하고, 작업을 가져와 실행하며, 결과를 보고하는 경량 Go 클라이언트.
+    - **Python 에이전트**: Python으로 작성된 다목적 클라이언트로, Go 에이전트와 유사한 기능을 제공합니다. Python의 유연성과 라이브러리를 활용합니다.
 
 ### 리포지토리 구조
 
 ```
 RunAIOps/
-├── central_server/
-│   ├── app.py               # 중앙 서버의 Flask 애플리케이션
-│   ├── db.py                # SQLite 데이터베이스 초기화 및 연결
-│   ├── langchain_integration.py # LangChain을 통한 명령 변환 및 결과 해석
-│   ├── redis_connection.py  # Redis 연결 설정
-│   └── config.py            # Redis 구성 설정
+├── frontend/                # 프론트엔드 웹 애플리케이션
+│   ├── public/              # 정적 자산
+│   ├── src/                 # 소스 코드
+│   │   ├── components/      # 재사용 가능한 React 컴포넌트
+│   │   ├── pages/           # 페이지 컴포넌트
+│
+├── backend/
+│   ├── app.py               # 중앙 서버의 메인 Flask 애플리케이션
+│   ├── auth.py              # 사용자 인증 기능 관리
+│   ├── db.py                # SQLite 데이터베이스 연결 및 초기화 관리
+│   ├── langchain_integration.py # LangChain을 통한 명령 변환 및 실행 결과 해석 통합
+│   ├── redis_connection.py  # Redis 서버 연결 관리
+│   └── config.py            # Redis 설정 관리
 ├── agent/
 │   ├── go_agent/
-│   │   ├── main.go          # Go 에이전트의 메인 애플리케이션
+│   │   ├── main.go          # Go 에이전트의 주요 애플리케이션
 │   ├── python_agent/
-│   │   ├── agent.py         # Python 에이전트의 메인 애플리케이션
+│   │   ├── agent.py         # Python 에이전트의 주요 애플리케이션
 └── README.md                # 이 README 파일
-
 ```
 
-## 중앙 서버
+## 프론트엔드
+
+`RunAIOps`의 프론트엔드는 React.js를 사용하여 구축된 웹 기반 응용 프로그램입니다. 사용자에게 시스템과 상호 작용할 직관적 인터페이스를 제공하여 명령을 제출하고, 작업 실행 상황을 모니터링하며, 작업 결과를 확인할 수 있습니다.
+
+- **사용자 인터페이스**: 프론트엔드에는 사용자 상호 작용을 용이하게 하는 다양한 컴포넌트와 페이지가 포함되어 있습니다.
+- **작업 제출**: 사용자는 입력 필드나 폼을 통해 자연어 명령을 제출할 수 있습니다.
+- **작업 모니터링**: 사용자는 제출된 작업의 진행 상황을 추적할 수 있으며, 상태(대기 중, 진행 중, 완료)를 확인할 수 있습니다.
+- **결과 표시**: 에이전트가 작업을 실행한 후 사용자는 사람이 읽을 수 있는 요약 및 상세 결과를 확인할 수 있습니다.
+- **통합**: 프론트엔드는 RESTful API를 통해 백엔드 서버와 상호 작용하여 명령을 제출하고 작업 정보를 검색합니다.
+
+## 백엔드
 
 중앙 서버는 사용자와 에이전트 간의 명령 및 작업을 조정하는 중심 역할을 수행합니다. 주요 기능은 다음과 같습니다:
 
@@ -206,6 +241,7 @@ RunAIOps/
 ### 중앙 서버 파일
 
 - **app.py**: 중앙 서버의 메인 Flask 애플리케이션.
+- **auth.py** : RunAIOps 프로젝트 내에서 회원 가입, 로그인, 토큰 유효성 검사 등 사용자 인증 기능을 관리합니다.
 - **db.py**: SQLite 데이터베이스 연결 및 초기화를 관리합니다.
 - **langchain_integration.py**: LangChain을 통합하여 자연어 명령을 스크립트로 변환하고, 실행 결과를 해석합니다.
 - **redis_connection.py**: Redis 서버와의 연결을 처리합니다.

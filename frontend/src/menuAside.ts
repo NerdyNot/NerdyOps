@@ -84,12 +84,6 @@ const menuAside: MenuAsideItem[] = [
       },
     ],
   },*/
-  {
-    href: 'https://github.com/NerdyNot/RunAIOps.git',
-    label: 'GitHub',
-    icon: mdiGithub,
-    target: '_blank',
-  }
 ]
 
 export default menuAside
