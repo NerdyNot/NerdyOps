@@ -1,4 +1,4 @@
-// pages/index.tsx
+// pages/indexpage.tsx
 import axios from 'axios'
 import {
   mdiChartTimelineVariant,
@@ -22,7 +22,7 @@ import { GetServerSideProps } from 'next'
 import { useAuth } from '../contexts/AuthContext'
 import Cookies from 'js-cookie'
 
-const DashboardPage = () => {
+const IndexPage = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL
   const { user } = useAuth()
 
@@ -121,7 +121,7 @@ const DashboardPage = () => {
   )
 }
 
-DashboardPage.getLayout = function getLayout(page: ReactElement) {
+IndexPage.getLayout = function getLayout(page: ReactElement) {
   return <LayoutAuthenticated>{page}</LayoutAuthenticated>
 }
 
@@ -154,4 +154,4 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 }
 
-export default DashboardPage
+export default IndexPage
