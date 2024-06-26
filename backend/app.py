@@ -1,341 +1,128 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from redis_connection import get_redis_connection
-from langchain_integration import convert_natural_language_to_script, interpret_result
-from db import init_db, get_db_connection
-from auth import auth_bp
-from logo import print_logo
-import json
+from flask import request, jsonify, Blueprint
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+from datetime import datetime, timedelta
+from db import get_db_connection
 import uuid
-import logging
-from datetime import datetime
+import os
 
-# Setting up logging
-logging.basicConfig(level=logging.INFO)
+auth_bp = Blueprint('auth_bp', __name__)
+secret_key = os.environ.get('SECRET_KEY', 'secret_key')
 
-# Initialize the Flask application
-app = Flask(__name__)
-CORS(app)
+def generate_token(user_id):
+    payload = {
+        'id': user_id,
+        'exp': datetime.utcnow() + timedelta(hours=1)
+    }
+    return jwt.encode(payload, secret_key, algorithm='HS256')
 
-# Get a connection to the Redis server
-redis = get_redis_connection()
-
-# Flag to ensure the database is initialized only once
-db_initialized = False
-
-# Register the auth blueprint
-app.register_blueprint(auth_bp)
-
-# Initialize the database before the first request
-@app.before_request
-def initialize_database():
-    global db_initialized
-    if not db_initialized:
-        init_db()
-        db_initialized = True
-
-# Health check endpoint
-@app.route('/health', methods=['GET'])
-def ping():
-    return jsonify({"status": "ok"}), 200
-
-# Endpoint to submit a task to an agent
-@app.route('/submit-task', methods=['POST'])
-def submit_task():
-    data = request.get_json()
-    input_text = data.get('command')
-    target_agent_id = data.get('agent_id')
-    
-    # Validate input
-    if not input_text or not target_agent_id:
-        return jsonify({"error": "Command and Agent ID are required"}), 400
-    
-    # Fetch the agent's OS type from SQLite database
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT os_type FROM agents WHERE agent_id = ?', (target_agent_id,))
-    agent_info = cursor.fetchone()
-    conn.close()
-    
-    if not agent_info:
-        return jsonify({"error": "Agent not found"}), 404
-    
-    os_type = agent_info['os_type']
-
-    if os_type not in ['linux', 'windows', 'darwin']:
-        return jsonify({"error": "Unsupported OS type for the target agent"}), 400
-    
+def verify_token(token):
     try:
-        # Convert natural language command to script using LangChain
-        script_code = convert_natural_language_to_script(input_text, os_type)
-        logging.info(f"Converted Script: {script_code}")
-    except Exception as e:
-        logging.error(f"Error in converting command: {e}")
-        return jsonify({"error": str(e)}), 500
-    
-    # Create a unique task ID and push the task to the agent's queue
-    task_id = str(uuid.uuid4())
-    task_data = json.dumps({
-        "task_id": task_id,
-        "input": input_text,
-        "command": script_code,
-        "script_code": script_code,
-        "timestamp": datetime.now().isoformat()  # Save the current timestamp
-    })
-    
-    redis.lpush(f'task_queue:{target_agent_id}', task_data)
-    redis.lpush(f'agent_tasks:{target_agent_id}', task_data)
-    
-    return jsonify({"task_id": task_id, "status": "Task submitted"})
+        payload = jwt.decode(token, secret_key, algorithms=['HS256'])
+        return payload['id']
+    except jwt.ExpiredSignatureError:
+        return None  # valid token, but expired
+    except jwt.InvalidTokenError:
+        return None  # invalid token
 
-# Endpoint to register an agent
-@app.route('/register-agent', methods=['POST'])
-def register_agent():
+# Endpoint to register a new user
+@auth_bp.route('/register', methods=['POST'])
+def register_user():
     data = request.get_json()
-    agent_id = data.get('agent_id')
-    os_type = data.get('os_type')
-    computer_name = data.get('computer_name')
-    private_ip = data.get('private_ip')
-    shell_version = data.get('shell_version')
-    
-    # Validate input
-    if not agent_id or os_type not in ['linux', 'windows', 'darwin']:
-        return jsonify({"error": "Invalid agent ID or OS type"}), 400
-    
-    # Save agent information in SQLite database
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role')
+
+    if not username or not email or not password or not role:
+        return jsonify({"error": "Username, email, password, and role are required"}), 400
+
+    # Hash the password
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+
+    # Create a unique user ID
+    user_id = str(uuid.uuid4())
+
+    # Save user information in SQLite database
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT OR REPLACE INTO agents (agent_id, os_type, status, computer_name, private_ip, shell_version, last_update_date)
-        VALUES (?, ?, 'active', ?, ?, ?, CURRENT_TIMESTAMP)
-    ''', (agent_id, os_type, computer_name, private_ip, shell_version))
+        INSERT INTO users (user_id, username, email, password, role)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (user_id, username, email, hashed_password, role))
     conn.commit()
     conn.close()
     
-    return jsonify({"status": "Agent registered", "agent_id": agent_id, "os_type": os_type})
+    return jsonify({"status": "User registered", "user_id": user_id})
 
-# Endpoint to update the status of an agent
-@app.route('/agent-status', methods=['POST'])
-def agent_status():
+# Endpoint to authenticate a user
+@auth_bp.route('/login', methods=['POST'])
+def authenticate_user():
     data = request.get_json()
-    agent_id = data.get('agent_id')
-    status = data.get('status')
-    
-    # Validate input
-    if not agent_id or not status:
-        return jsonify({"error": "No agent_id or status provided"}), 400
-    
-    # Update the agent's status in SQLite database
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+
+    # Retrieve user information from SQLite database
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''
-        UPDATE agents
-        SET status = ?, last_update_date = CURRENT_TIMESTAMP
-        WHERE agent_id = ?
-    ''', (status, agent_id))
+    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user or not check_password_hash(user['password'], password):
+        return jsonify({"error": "Invalid username or password"}), 401
+
+    # Generate token
+    token = generate_token(user['user_id'])
+
+    return jsonify({"status": "Login successful", "user_id": user['user_id'], "role": user['role'], "token": token})
+
+# Endpoint to verify token
+@auth_bp.route('/verify-token', methods=['POST'])
+def verify_user_token():
+    token = request.get_json().get('token')
+
+    if not token:
+        return jsonify({"error": "Token is required"}), 400
+
+    user_id = verify_token(token)
+
+    if not user_id:
+        return jsonify({"error": "Invalid or expired token"}), 401
+
+    return jsonify({"status": "Token is valid", "user_id": user_id})
+
+# Endpoint to change password
+@auth_bp.route('/change-password', methods=['POST'])
+def change_password():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    if not user_id or not current_password or not new_password:
+        return jsonify({"error": "User ID, current password, and new password are required"}), 400
+
+    # Retrieve user information from SQLite database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+    user = cursor.fetchone()
+
+    if not user or not check_password_hash(user['password'], current_password):
+        conn.close()
+        return jsonify({"error": "Invalid user ID or current password"}), 401
+
+    # Hash the new password
+    hashed_new_password = generate_password_hash(new_password, method='pbkdf2:sha256')
+
+    # Update user's password in the database
+    cursor.execute('UPDATE users SET password = ? WHERE user_id = ?', (hashed_new_password, user_id))
     conn.commit()
     conn.close()
-    
-    return jsonify({"status": "Status updated", "agent_id": agent_id})
 
-# Endpoint to get the list of registered agents
-@app.route('/get-agents', methods=['GET'])
-def get_agents():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM agents')
-    agents = cursor.fetchall()
-    conn.close()
-    
-    agent_list = [dict(agent) for agent in agents]
-    return jsonify(agent_list)
+    return jsonify({"status": "Password updated successfully"})
 
-# Endpoint for agents to fetch tasks
-@app.route('/get-task', methods=['GET'])
-def get_task():
-    agent_id = request.args.get('agent_id')
-    
-    # Validate input
-    if not agent_id:
-        return jsonify({"error": "Agent ID is required"}), 400
-
-    # Fetch the next task for the agent from Redis queue
-    task_queue_key = f'task_queue:{agent_id}'
-    task = redis.rpop(task_queue_key)
-
-    if task:
-        task_data = json.loads(task.decode())
-        task_id = task_data["task_id"]
-        input_text = task_data["input"]
-        command = task_data["command"]
-        script_code = task_data["script_code"]
-        timestamp = task_data.get("timestamp", "N/A")  # 기본값 설정
-        result_key = f"result:{task_id}"
-        result = redis.hgetall(result_key)
-        if result:
-            output = result.get(b'output', b'').decode()
-            error = result.get(b'error', b'').decode()
-            interpretation = result.get(b'interpretation', b'').decode()
-        else:
-            output = ""
-            error = ""
-            interpretation = ""
-        return jsonify({"task_id": task_id, "input": input_text, "command": command, "script_code": script_code, "timestamp": timestamp, "output": output, "error": error, "interpretation": interpretation})
-    else:
-        return jsonify({"error": "No task found for this agent"}), 404
-
-# Endpoint for agents to report task results
-@app.route('/report-result', methods=['POST'])
-def report_result():
-    data = request.get_json()
-    task_id = data.get('task_id')
-    input_text = data.get('input')
-    command = data.get('command')
-    output = data.get('output')
-    error = data.get('error')
-    
-    # Validate input
-    if not task_id:
-        return jsonify({"error": "Task ID is required"}), 400
-
-    result_key = f"result:{task_id}"
-
-    output_str = output if output is not None else ""
-    error_str = error if error is not None else ""
-
-    try:
-        # Interpret the result using LangChain
-        interpretation = interpret_result(input_text, output_str, error_str)
-
-        if interpretation is None:
-            interpretation = ""
-
-        # Store the result in Redis
-        safe_input_text = input_text if input_text is not None else ""
-        safe_command = command if command is not None else ""
-        safe_output_str = output_str if output_str is not None else ""
-        safe_error_str = error_str if error_str is not None else ""
-        safe_interpretation = interpretation if interpretation is not None else ""
-
-        redis.hset(result_key, "input", safe_input_text)
-        redis.hset(result_key, "command", safe_command)
-        redis.hset(result_key, "output", safe_output_str)
-        redis.hset(result_key, "error", safe_error_str)
-        redis.hset(result_key, "interpretation", safe_interpretation)
-        
-        logging.info(f"Result reported for task ID {task_id}:\nInput: {safe_input_text}\nCommand: {safe_command}\nOutput: {safe_output_str}\nError: {safe_error_str}\nInterpretation: {safe_interpretation}")
-        return jsonify({"status": "Result reported", "task_id": task_id, "interpretation": safe_interpretation})
-    except Exception as e:
-        logging.error(f"Error reporting result: {e}")
-        return jsonify({"error": str(e)}), 500
-
-# Endpoint to check the status of a task
-@app.route('/task-status/<task_id>', methods=['GET'])
-def task_status(task_id):
-    result_key = f"result:{task_id}"
-    result = redis.hgetall(result_key)
-    if result:
-        input_text = result.get(b'input', b'').decode()
-        command = result.get(b'command', b'').decode()
-        output = result.get(b'output', b'').decode()
-        error = result.get(b'error', b'').decode()
-        interpretation = result.get(b'interpretation', b'').decode()
-        
-        logging.info(f"Task ID: {task_id} Input: {input_text}")
-        logging.info(f"Task ID: {task_id} Command: {command}")
-        logging.info(f"Task ID: {task_id} Output: {output}")
-        logging.info(f"Task ID: {task_id} Error: {error}")
-        logging.info(f"Task ID: {task_id} Interpretation: {interpretation}")
-        
-        return jsonify({"task_id": task_id, "input": input_text, "command": command, "output": output, "error": error, "interpretation": interpretation})
-    return jsonify({"error": "Task not found"}), 404
-
-# Endpoint to get the list of tasks for a specific agent
-@app.route('/get-agent-tasks', methods=['GET'])
-def get_agent_tasks():
-    agent_id = request.args.get('agent_id')
-    
-    # Validate input
-    if not agent_id:
-        return jsonify({"error": "Agent ID is required"}), 400
-
-    task_queue_key = f'agent_tasks:{agent_id}'
-    tasks = redis.lrange(task_queue_key, 0, -1)
-    
-    task_list = []
-    for task in tasks:
-        task_data = json.loads(task.decode())
-        task_id = task_data["task_id"]
-        input_text = task_data["input"]
-        command = task_data["command"]
-        script_code = task_data["script_code"]
-        timestamp = task_data.get("timestamp", "N/A")  # 기본값 설정
-        result_key = f"result:{task_id}"
-        result = redis.hgetall(result_key)
-        if result:
-            output = result.get(b'output', b'').decode()
-            error = result.get(b'error', b'').decode()
-            interpretation = result.get(b'interpretation', b'').decode()
-        else:
-            output = ""
-            error = ""
-            interpretation = ""
-        task_list.append({
-            "task_id": task_id,
-            "input": input_text,
-            "command": command,
-            "script_code": script_code,
-            "timestamp": timestamp,
-            "output": output,
-            "error": error,
-            "interpretation": interpretation
-        })
-    
-    return jsonify(task_list)
-
-# Endpoint to summary the tasks
-@app.route('/get-tasks-summary', methods=['GET'])
-def get_tasks_summary():
-    success_count = 0
-    failure_count = 0
-    
-    task_keys = redis.keys('result:*')
-    for key in task_keys:
-        result = redis.hgetall(key)
-        if b'error' in result and result[b'error']:
-            failure_count += 1
-        else:
-            success_count += 1
-    
-    return jsonify({"successCount": success_count, "failureCount": failure_count})
-
-# Endpoint to delete an agent
-@app.route('/delete-agent', methods=['POST'])
-def delete_agent():
-    data = request.get_json()
-    agent_id = data.get('agent_id')
-    
-    # Validate input
-    if not agent_id:
-        return jsonify({"error": "Agent ID is required"}), 400
-    
-    # Delete agent information from SQLite database
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM agents WHERE agent_id = ?', (agent_id,))
-    conn.commit()
-    conn.close()
-    
-    # Delete agent tasks from Redis
-    task_queue_key = f'task_queue:{agent_id}'
-    agent_tasks_key = f'agent_tasks:{agent_id}'
-    redis.delete(task_queue_key)
-    redis.delete(agent_tasks_key)
-    
-    return jsonify({"status": "Agent deleted", "agent_id": agent_id})
-
-# Main entry point for the application
-if __name__ == '__main__':
-    print_logo()  # Print the logo at the start
-    init_db()  # Initialize the database
-    app.run(host='0.0.0.0', port=5001)  # Start the Flask app

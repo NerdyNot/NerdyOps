@@ -94,3 +94,35 @@ def verify_user_token():
         return jsonify({"error": "Invalid or expired token"}), 401
 
     return jsonify({"status": "Token is valid", "user_id": user_id})
+
+# Endpoint to change password
+@auth_bp.route('/change-password', methods=['POST'])
+def change_password():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    if not user_id or not current_password or not new_password:
+        return jsonify({"error": "User ID, current password, and new password are required"}), 400
+
+    # Retrieve user information from SQLite database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+    user = cursor.fetchone()
+
+    if not user or not check_password_hash(user['password'], current_password):
+        conn.close()
+        return jsonify({"error": "Invalid user ID or current password"}), 401
+
+    # Hash the new password
+    hashed_new_password = generate_password_hash(new_password, method='pbkdf2:sha256')
+
+    # Update user's password in the database
+    cursor.execute('UPDATE users SET password = ? WHERE user_id = ?', (hashed_new_password, user_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status": "Password updated successfully"})
+
