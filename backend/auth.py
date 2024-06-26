@@ -95,16 +95,38 @@ def verify_user_token():
 
     return jsonify({"status": "Token is valid", "user_id": user_id})
 
+# Endpoint to get user information
+@auth_bp.route('/user-info', methods=['GET'])
+def get_user_info():
+    token = request.headers.get('Authorization').split(" ")[1]
+    user_id = verify_token(token)
+
+    if not user_id:
+        return jsonify({"error": "Invalid or expired token"}), 401
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT username, email, role FROM users WHERE user_id = ?', (user_id,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify({"name": user['username'], "email": user['email'], "role": user['role']})
+
 # Endpoint to change password
 @auth_bp.route('/change-password', methods=['POST'])
 def change_password():
     data = request.get_json()
-    user_id = data.get('user_id')
+    token = request.headers.get('Authorization').split(" ")[1]
+    user_id = verify_token(token)
+
     current_password = data.get('current_password')
     new_password = data.get('new_password')
 
     if not user_id or not current_password or not new_password:
-        return jsonify({"error": "User ID, current password, and new password are required"}), 400
+        return jsonify({"error": "Current password and new password are required"}), 400
 
     # Retrieve user information from SQLite database
     conn = get_db_connection()
@@ -125,4 +147,3 @@ def change_password():
     conn.close()
 
     return jsonify({"status": "Password updated successfully"})
-

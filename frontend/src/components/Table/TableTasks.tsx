@@ -8,7 +8,6 @@ import ReactMarkdown from 'react-markdown'
 interface Task {
   task_id: string;
   input: string;
-  command: string;
   script_code: string;
   output: string;
   interpretation: string;
@@ -46,19 +45,15 @@ const TableTasks: React.FC<Props> = ({ tasks }) => {
         buttonLabel="Close"
         isActive={isModalActive}
         onConfirm={handleModalClose}
-        onCancel={handleModalClose}
+        //onCancel={handleModalClose}
         className="max-w-5xl" // 모달의 최대 너비를 늘립니다.
       >
         {selectedTask && (
-          <div className="overflow-auto max-h-96">
+          <div className="overflow-auto max-h-200">
             <h3 className="font-semibold text-lg mb-2">Task ID: {selectedTask.task_id}</h3>
             <div className="mb-4">
               <strong>Input:</strong>
               <p className="p-2 bg-gray-100 rounded">{selectedTask.input}</p>
-            </div>
-            <div className="mb-4">
-              <strong>Command:</strong>
-              <p className="p-2 bg-gray-100 rounded">{selectedTask.command}</p>
             </div>
             <div className="mb-4">
               <strong>Script Code:</strong>

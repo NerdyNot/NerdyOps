@@ -1,18 +1,19 @@
+// stores/mainSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { UserPayloadObject } from '../interfaces'
+import { loadUser } from '../utils/storage'
 
 interface MainState {
-  userName: string
-  userEmail: null | string
+  userName: string | null
+  userEmail: string | null
+  userRole: string | null
   isFieldFocusRegistered: boolean
 }
 
 const initialState: MainState = {
-  /* User */
-  userName: 'John Doe',
-  userEmail: 'doe.doe.doe@example.com',
-
-  /* Field focus with ctrl+k (to register only once) */
+  userName: null,
+  userEmail: null,
+  userRole: null,
   isFieldFocusRegistered: false,
 }
 
@@ -23,11 +24,18 @@ export const mainSlice = createSlice({
     setUser: (state, action: PayloadAction<UserPayloadObject>) => {
       state.userName = action.payload.name
       state.userEmail = action.payload.email
+      state.userRole = action.payload.role
+    },
+    initializeUser: (state) => {
+      const user = loadUser()
+      if (user) {
+        state.userName = user.name
+        state.userEmail = user.email
+        state.userRole = user.role
+      }
     },
   },
 })
 
-// Action creators are generated for each case reducer function
-export const { setUser } = mainSlice.actions
-
+export const { setUser, initializeUser } = mainSlice.actions
 export default mainSlice.reducer

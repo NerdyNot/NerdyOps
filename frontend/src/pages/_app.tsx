@@ -1,13 +1,15 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Script from 'next/script'
 import type { AppProps } from 'next/app'
 import type { ReactElement, ReactNode } from 'react'
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import { store } from '../stores/store'
-import { Provider } from 'react-redux'
+import { Provider, useDispatch } from 'react-redux'
 import '../css/main.css'
-import { AuthProvider } from '../contexts/AuthContext'  // AuthProvider 추가
+import { AuthProvider } from '../contexts/AuthContext'
+import requireAuth from '../utils/requireAuth'
+import { initializeUser } from '../stores/mainSlice'
 
 export type NextPageWithLayout<P = Record<string, unknown>, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode
@@ -17,9 +19,15 @@ type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout
 }
 
-function MyApp({ Component, pageProps }: AppPropsWithLayout) {
-  // Use the layout defined at the page level, if available
+const skipAuthPages = ['/login']
+
+const MyApp = ({ Component, pageProps }: AppPropsWithLayout) => {
   const getLayout = Component.getLayout || ((page) => page)
+  const AuthenticatedComponent = requireAuth(Component, skipAuthPages)
+
+  useEffect(() => {
+    store.dispatch(initializeUser())
+  }, [])
 
   const title = `RunAIOps`
   const description = 'NerdyNot - RunAIOps'
@@ -63,7 +71,7 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
                 gtag('config', 'UA-130795909-1');
               `}
             </Script>
-            <Component {...pageProps} />
+            <AuthenticatedComponent {...pageProps} />
           </>
         )}
       </AuthProvider>

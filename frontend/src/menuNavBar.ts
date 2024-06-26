@@ -34,7 +34,7 @@ const menuNavBar: MenuNavBarItem[] = [
         label: 'Item Last',
       },
     ],
-  },
+  },*/
   {
     isCurrentUser: true,
     menu: [
@@ -43,24 +43,8 @@ const menuNavBar: MenuNavBarItem[] = [
         label: 'My Profile',
         href: '/profile',
       },
-      {
-        icon: mdiCogOutline,
-        label: 'Settings',
-      },
-      {
-        icon: mdiEmail,
-        label: 'Messages',
-      },
-      {
-        isDivider: true,
-      },
-      {
-        icon: mdiLogout,
-        label: 'Log Out',
-        isLogout: true,
-      },
     ],
-  },*/
+  },
   {
     icon: mdiThemeLightDark,
     label: 'Light/Dark',

@@ -24,14 +24,56 @@ import CardBoxUser from '../components/CardBox/User'
 import type { UserForm } from '../interfaces'
 import { getPageTitle } from '../config'
 import { useAppSelector } from '../stores/hooks'
+import axios from 'axios'
+import { useRouter } from 'next/router'
+import Cookies from 'js-cookie'
 
 const ProfilePage = () => {
   const userName = useAppSelector((state) => state.main.userName)
   const userEmail = useAppSelector((state) => state.main.userEmail)
+  const userRole = useAppSelector((state) => state.main.userRole)
+  const router = useRouter()
 
   const userForm: UserForm = {
     name: userName,
     email: userEmail,
+  }
+
+  const handlePasswordChange = async (values: {
+    currentPassword: string
+    newPassword: string
+    newPasswordConfirmation: string
+  }) => {
+    if (values.newPassword !== values.newPasswordConfirmation) {
+      alert('New passwords do not match')
+      return
+    }
+
+    try {
+      const token = Cookies.get('token')
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/change-password`,
+        {
+          current_password: values.currentPassword,
+          new_password: values.newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      if (response.status === 200) {
+        alert('Password changed successfully')
+        router.push('/')
+      } else {
+        alert('Failed to change password')
+      }
+    } catch (error) {
+      console.error('Error changing password:', error)
+      alert('An error occurred while changing the password')
+    }
   }
 
   return (
@@ -57,16 +99,11 @@ const ProfilePage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="flex flex-col">
-            <CardBox className="mb-6">
-              <FormField label="Avatar" help="Max 500kb">
-                <FormFilePicker label="Upload" color="info" icon={mdiUpload} />
-              </FormField>
-            </CardBox>
 
             <CardBox className="flex-1" hasComponentLayout>
               <Formik
                 initialValues={userForm}
-                onSubmit={(values: UserForm) => alert(JSON.stringify(values, null, 2))}
+                onSubmit={(values: UserForm) => alert('Profile information is read-only')}
               >
                 <Form className="flex flex-col flex-1">
                   <CardBoxComponentBody>
@@ -76,7 +113,7 @@ const ProfilePage = () => {
                       labelFor="name"
                       icons={[mdiAccount]}
                     >
-                      <Field name="name" id="name" placeholder="Name" />
+                      <Field name="name" id="name" placeholder="Name" readOnly />
                     </FormField>
                     <FormField
                       label="E-mail"
@@ -84,15 +121,17 @@ const ProfilePage = () => {
                       labelFor="email"
                       icons={[mdiMail]}
                     >
-                      <Field name="email" id="email" placeholder="E-mail" />
+                      <Field name="email" id="email" placeholder="E-mail" readOnly />
+                    </FormField>
+                    <FormField
+                      label="Role"
+                      help="Your role"
+                      labelFor="role"
+                      icons={[mdiAccount]}
+                    >
+                      <Field name="role" id="role" placeholder="Role" value={userRole} readOnly />
                     </FormField>
                   </CardBoxComponentBody>
-                  <CardBoxComponentFooter>
-                    <Buttons>
-                      <Button color="info" type="submit" label="Submit" />
-                      <Button color="info" label="Options" outline />
-                    </Buttons>
-                  </CardBoxComponentFooter>
                 </Form>
               </Formik>
             </CardBox>
@@ -105,7 +144,7 @@ const ProfilePage = () => {
                 newPassword: '',
                 newPasswordConfirmation: '',
               }}
-              onSubmit={(values) => alert(JSON.stringify(values, null, 2))}
+              onSubmit={handlePasswordChange}
             >
               <Form className="flex flex-col flex-1">
                 <CardBoxComponentBody>
@@ -157,7 +196,6 @@ const ProfilePage = () => {
                 <CardBoxComponentFooter>
                   <Buttons>
                     <Button color="info" type="submit" label="Submit" />
-                    <Button color="info" label="Options" outline />
                   </Buttons>
                 </CardBoxComponentFooter>
               </Form>

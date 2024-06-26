@@ -18,10 +18,7 @@ export default function UserAvatar({
   className = '',
   children,
 }: Props) {
-  const avatarImage = `https://api.dicebear.com/7.x/${api}/svg?seed=${username.replace(
-    /[^a-z0-9]+/gi,
-    '-'
-  )}`
+  const avatarImage = `https://icons.veryicon.com/png/o/internet--web/prejudice/user-128.png`
 
   return (
     <div className={className}>

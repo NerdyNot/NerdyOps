@@ -12,10 +12,10 @@ import FormCheckRadio from '../components/Form/CheckRadio'
 import Divider from '../components/Divider'
 import Buttons from '../components/Buttons'
 import { getPageTitle } from '../config'
-import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
 import { useRouter } from 'next/router'
 import Cookies from 'js-cookie'
+import { saveUser } from '../utils/storage'
 
 type LoginForm = {
   login: string
@@ -25,7 +25,6 @@ type LoginForm = {
 
 const LoginPage = () => {
   const router = useRouter()
-  const { login, error } = useAuth()
 
   const handleSubmit = async (formValues: LoginForm) => {
     try {
@@ -34,15 +33,19 @@ const LoginPage = () => {
         password: formValues.password,
       })
 
-      const { token } = response.data
+      const { token, user } = response.data
 
       // Save the token in cookies
       Cookies.set('token', token, { expires: formValues.remember ? 7 : 1 })
+
+      // Save the user info in local storage
+      saveUser(user)
 
       // Redirect to the index page
       router.push('/')
     } catch (err) {
       console.error('Login failed:', err)
+      alert('Login failed. Please check your credentials and try again.')
     }
   }
 
