@@ -60,6 +60,7 @@ const AgentTasksPage = () => {
       setPendingTasks(pendingResponse.data);
       setCompletedTasks(completedResponse.data);
     } catch (err) {
+      console.error('Error fetching tasks:', err);
       setError(err.response?.data?.error || 'An error occurred');
     } finally {
       setLoading(false);

@@ -272,7 +272,6 @@ def report_result():
     output = data.get('output')
     error = data.get('error')
     
-    # Validate input
     if not task_id:
         return jsonify({"error": "Task ID is required"}), 400
 
@@ -282,30 +281,35 @@ def report_result():
     error_str = error if error is not None else ""
 
     try:
-        # Interpret the result using LangChain
         interpretation = interpret_result(input_text, output_str, error_str)
 
         if interpretation is None:
             interpretation = ""
 
-        # Store the result in Redis
-        safe_input_text = input_text if input_text is not None else ""
-        safe_command = command if command is not None else ""
-        safe_output_str = output_str if output_str is not None else ""
-        safe_error_str = error_str if error_str is not None else ""
-        safe_interpretation = interpretation if interpretation is not None else ""
-
-        redis.hset(result_key, "input", safe_input_text)
-        redis.hset(result_key, "command", safe_command)
-        redis.hset(result_key, "output", safe_output_str)
-        redis.hset(result_key, "error", safe_error_str)
-        redis.hset(result_key, "interpretation", safe_interpretation)
+        redis.hset(result_key, "input", input_text)
+        redis.hset(result_key, "command", command)
+        redis.hset(result_key, "output", output_str)
+        redis.hset(result_key, "error", error_str)
+        redis.hset(result_key, "interpretation", interpretation)
         
-        logging.info(f"Result reported for task ID {task_id}:\nInput: {safe_input_text}\nCommand: {safe_command}\nOutput: {safe_output_str}\nError: {safe_error_str}\nInterpretation: {safe_interpretation}")
-        return jsonify({"status": "Result reported", "task_id": task_id, "interpretation": safe_interpretation})
+        task_data = redis.get(f'task:{task_id}')
+        if task_data:
+            task = json.loads(task_data)
+            task['status'] = 'completed'
+            task['completed_at'] = datetime.now().isoformat()
+            redis.set(f'task:{task_id}', json.dumps(task))
+
+            # debugging
+            logging.info(f"Task {task_id} marked as completed and adding to agent's task list")
+
+            agent_tasks_key = f'agent_tasks:{task["agent_id"]}'
+            redis.lpush(agent_tasks_key, json.dumps(task))
+
+        return jsonify({"status": "Result reported", "task_id": task_id, "interpretation": interpretation})
     except Exception as e:
-        logging.error(f"Error reporting result: {e}")
+        logging.error(f"Error in report-result: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 # Endpoint to check the status of a task
 @app.route('/task-status/<task_id>', methods=['GET'])
@@ -333,7 +337,6 @@ def task_status(task_id):
 def get_agent_tasks():
     agent_id = request.args.get('agent_id')
     
-    # Validate input
     if not agent_id:
         return jsonify({"error": "Agent ID is required"}), 400
 
@@ -345,9 +348,12 @@ def get_agent_tasks():
         task_data = json.loads(task.decode())
         task_id = task_data["task_id"]
         input_text = task_data["input"]
-        command = task_data["command"]
         script_code = task_data["script_code"]
-        timestamp = task_data.get("timestamp", "N/A")  # 기본값 설정
+        submitted_at = task_data.get("submitted_at", "N/A")
+        approved_at = task_data.get("approved_at", None)
+        rejected_at = task_data.get("rejected_at", None)
+        status = task_data.get("status", "pending")
+
         result_key = f"result:{task_id}"
         result = redis.hgetall(result_key)
         if result:
@@ -358,18 +364,23 @@ def get_agent_tasks():
             output = ""
             error = ""
             interpretation = ""
+
         task_list.append({
             "task_id": task_id,
             "input": input_text,
-            "command": command,
             "script_code": script_code,
-            "timestamp": timestamp,
+            "submitted_at": submitted_at,
+            "approved_at": approved_at,
+            "rejected_at": rejected_at,
+            "status": status,
             "output": output,
             "error": error,
             "interpretation": interpretation
         })
     
     return jsonify(task_list)
+
+
 
 # Endpoint to summary the tasks
 @app.route('/get-tasks-summary', methods=['GET'])
