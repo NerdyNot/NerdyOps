@@ -26,7 +26,7 @@ interface Task {
 
 const AgentTasksPage = () => {
   const router = useRouter();
-  const { agent_id } = router.query; // URL 파라미터에서 agent_id를 가져옴
+  const { agent_id } = router.query;
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
   const { agents, loading: agentsLoading, error: agentsError } = useAgents(centralServerUrl);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(agent_id as string || '');
@@ -50,7 +50,9 @@ const AgentTasksPage = () => {
     setError(null);
     try {
       const [pendingResponse, completedResponse] = await Promise.all([
-        axios.get(`${centralServerUrl}/get-pending-tasks`),
+        axios.get(`${centralServerUrl}/get-pending-tasks`, {
+          params: { agent_id: agentId },
+        }),
         axios.get(`${centralServerUrl}/get-agent-tasks`, {
           params: { agent_id: agentId },
         }),
@@ -172,7 +174,7 @@ const AgentTasksPage = () => {
                   </div>
                   <div className="mb-2">
                     <strong>Script Code:</strong>
-                    <p className="p-2 bg-white rounded">{task.script_code}</p>
+                    <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>{task.script_code}</div>
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -214,7 +216,7 @@ const AgentTasksPage = () => {
                   </div>
                   <div className="mb-2">
                     <strong>Script Code:</strong>
-                    <p className="p-2 bg-white rounded">{task.script_code}</p>
+                    <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>{task.script_code}</div>
                   </div>
                   <button
                     onClick={() => handleViewDetails(task)}
@@ -231,7 +233,7 @@ const AgentTasksPage = () => {
 
       {isModalActive && (
         <Modal onClose={handleModalClose}>
-          <div className="p-6 bg-white rounded-lg shadow-md w-full max-w-3xl mx-auto my-20">
+          <div className="p-6 bg-white rounded-lg shadow-md w-full max-w-3xl mx-auto my-15 overflow-auto" style={{ maxHeight: '80vh' }}>
             {selectedTask && (
               <>
                 <h2 className="text-2xl font-semibold mb-4">Task Details</h2>
@@ -261,7 +263,7 @@ const AgentTasksPage = () => {
                 </div>
                 <div className="mb-2">
                   <strong>Script Code:</strong>
-                  <p className="p-2 bg-gray-100 rounded">{selectedTask.script_code}</p>
+                  <div className="p-2 bg-gray-100 rounded" style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.script_code}</div>
                 </div>
                 <div className="mb-2">
                   <strong>Output:</strong>

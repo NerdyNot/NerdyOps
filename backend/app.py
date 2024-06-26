@@ -95,6 +95,11 @@ def submit_task():
 # Endpoint to get pending tasks for review
 @app.route('/get-pending-tasks', methods=['GET'])
 def get_pending_tasks():
+    agent_id = request.args.get('agent_id')
+    
+    if not agent_id:
+        return jsonify({"error": "Agent ID is required"}), 400
+
     pending_task_ids = redis.lrange('pending_tasks', 0, -1)
     pending_tasks = []
     
@@ -102,9 +107,11 @@ def get_pending_tasks():
         task_data = redis.get(f'task:{task_id.decode()}')
         if task_data:
             task = json.loads(task_data)
-            pending_tasks.append(task)
+            if task['agent_id'] == agent_id:
+                pending_tasks.append(task)
     
     return jsonify(pending_tasks)
+
 
 # Endpoint to approve a pending task
 @app.route('/approve-task', methods=['POST'])
