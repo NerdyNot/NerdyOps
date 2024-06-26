@@ -136,7 +136,7 @@ const AgentTasksPage = () => {
                   </option>
                 ))}
               </select>
-              <div className="flex space-x-2 mt-2">
+              <div className="flex justify-end space-x-2 mt-2">
                 <button
                   onClick={handleFetchTasks}
                   className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -176,7 +176,7 @@ const AgentTasksPage = () => {
                     <strong>Script Code:</strong>
                     <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>{task.script_code}</div>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex justify-end space-x-2">
                     <button
                       onClick={() => handleApprove(task.task_id)}
                       className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-300"
@@ -218,12 +218,14 @@ const AgentTasksPage = () => {
                     <strong>Script Code:</strong>
                     <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>{task.script_code}</div>
                   </div>
-                  <button
-                    onClick={() => handleViewDetails(task)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
-                  >
-                    View Details
-                  </button>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => handleViewDetails(task)}
+                      className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
+                    >
+                      View Details
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -275,12 +277,14 @@ const AgentTasksPage = () => {
                     <ReactMarkdown>{selectedTask.interpretation}</ReactMarkdown>
                   </div>
                 </div>
-                <button
-                  onClick={handleModalClose}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
-                >
-                  Close
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleModalClose}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
+                  >
+                    Close
+                  </button>
+                </div>
               </>
             )}
           </div>
