@@ -36,6 +36,16 @@ const menuAside: MenuAsideItem[] = [
     href: '/agent-tasks',
     label: 'Agent Tasks',
     icon: mdiCheckboxMarkedCircleAutoOutline,
+  },  
+  {
+    href: '/batch-approve',
+    label: 'Batch Approve',
+    icon: mdiViewList,
+  },
+  {
+    href: '/batch-results',
+    label: 'Batch Results',
+    icon: mdiTable,
   },/*
   {
     href: '/forms',

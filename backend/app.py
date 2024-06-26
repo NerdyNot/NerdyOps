@@ -112,6 +112,19 @@ def get_pending_tasks():
     
     return jsonify(pending_tasks)
 
+# Endpoint to get all pending tasks for all agents
+@app.route('/get-all-pending-tasks', methods=['GET'])
+def get_all_pending_tasks():
+    pending_task_ids = redis.lrange('pending_tasks', 0, -1)
+    pending_tasks = []
+    
+    for task_id in pending_task_ids:
+        task_data = redis.get(f'task:{task_id.decode()}')
+        if task_data:
+            task = json.loads(task_data)
+            pending_tasks.append(task)
+    
+    return jsonify(pending_tasks)
 
 # Endpoint to approve a pending task
 @app.route('/approve-task', methods=['POST'])
@@ -388,6 +401,21 @@ def get_agent_tasks():
     return jsonify(task_list)
 
 
+# Endpoint to get the list of tasks for a all agent
+@app.route('/get-all-completed-tasks', methods=['GET'])
+def get_all_completed_tasks():
+    task_keys = redis.keys('result:*')
+    completed_tasks = []
+
+    for key in task_keys:
+        task_id = key.decode().split(':')[1]
+        task_data = redis.get(f'task:{task_id}')
+        if task_data:
+            task = json.loads(task_data)
+            if task['status'] == 'completed':
+                completed_tasks.append(task)
+
+    return jsonify(completed_tasks)
 
 # Endpoint to summary the tasks
 @app.route('/get-tasks-summary', methods=['GET'])
