@@ -1,5 +1,4 @@
-// pages/AgentMonitoringPage.js
-import { mdiServer, mdiChartTimelineVariant, mdiMonitor } from '@mdi/js';
+import { mdiServer, mdiChartTimelineVariant, mdiMonitor, mdiReload } from '@mdi/js';
 import Head from 'next/head';
 import React, { ReactElement, useState, useEffect } from 'react';
 import LayoutAuthenticated from '../layouts/Authenticated';
@@ -9,6 +8,7 @@ import CardBox from '../components/CardBox';
 import { getPageTitle } from '../config';
 import axios from 'axios';
 import ChartLineSample from '../components/ChartLineSample';
+import Button from '../components/Button';
 
 const AgentMonitoringPage = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
@@ -33,51 +33,62 @@ const AgentMonitoringPage = () => {
 
   useEffect(() => {
     if (selectedAgent) {
-      setLoading(true);
-      axios.get(`${centralServerUrl}/get-resource-usage?agent_id=${selectedAgent.agent_id}`)
-        .then(response => {
-          const data = response.data;
-          setResourceUsage(data);
-
-          const labels = data.map(item => new Date(item.timestamp * 1000).toLocaleTimeString());
-          const cpuData = data.map(item => item.cpu_usage);
-          const memData = data.map(item => item.mem_usage);
-
-          setCpuChartData({
-            labels,
-            datasets: [{
-              label: 'CPU Usage',
-              data: cpuData,
-              borderColor: 'rgba(75, 192, 192, 1)',
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              fill: true,
-            }],
-          });
-
-          setMemChartData({
-            labels,
-            datasets: [{
-              label: 'Memory Usage',
-              data: memData,
-              borderColor: 'rgba(153, 102, 255, 1)',
-              backgroundColor: 'rgba(153, 102, 255, 0.2)',
-              fill: true,
-            }],
-          });
-          setLoading(false);
-        })
-        .catch(error => {
-          console.error('Error fetching resource usage:', error);
-          setError('Failed to load resource usage');
-          setLoading(false);
-        });
+      fetchResourceUsage(selectedAgent.agent_id);
     }
   }, [selectedAgent, centralServerUrl]);
+
+  const fetchResourceUsage = (agentId) => {
+    setLoading(true);
+    axios.get(`${centralServerUrl}/get-resource-usage?agent_id=${agentId}`)
+      .then(response => {
+        const data = response.data;
+        setResourceUsage(data);
+
+        const labels = data.map(item => new Date(item.timestamp * 1000).toLocaleTimeString());
+        const cpuData = data.map(item => item.cpu_usage);
+        const memData = data.map(item => item.mem_usage);
+
+        setCpuChartData({
+          labels,
+          datasets: [{
+            label: 'CPU Usage',
+            data: cpuData,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: true,
+          }],
+        });
+
+        setMemChartData({
+          labels,
+          datasets: [{
+            label: 'Memory Usage',
+            data: memData,
+            borderColor: 'rgba(153, 102, 255, 1)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            fill: true,
+          }],
+        });
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching resource usage:', error);
+        setError('Failed to load resource usage');
+        setLoading(false);
+      });
+  };
 
   const handleAgentChange = (e) => {
     const agentId = e.target.value;
     const agent = agents.find(agent => agent.agent_id === agentId);
     setSelectedAgent(agent);
+  };
+
+  const handleReload = (e) => {
+    e.preventDefault();
+    if (selectedAgent) {
+      fetchResourceUsage(selectedAgent.agent_id);
+    }
   };
 
   return (
@@ -86,7 +97,9 @@ const AgentMonitoringPage = () => {
         <title>{getPageTitle('Agent Monitoring')}</title>
       </Head>
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiChartTimelineVariant} title="Agent Monitoring" main />
+        <SectionTitleLineWithButton icon={mdiChartTimelineVariant} title="Agent Monitoring" main>
+          <Button icon={mdiReload} color="whiteDark" onClick={handleReload} />
+        </SectionTitleLineWithButton>
 
         <div className="mb-4">
           <select onChange={handleAgentChange} className="border p-2 w-full">
