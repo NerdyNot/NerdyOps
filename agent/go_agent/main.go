@@ -15,6 +15,7 @@ import (
 
 	"github.com/NerdyNot/RunAIOps.git/agent/go_agent/logo"
 	"github.com/NerdyNot/RunAIOps.git/agent/go_agent/monitoring"
+	"github.com/NerdyNot/RunAIOps.git/agent/go_agent/pat"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
 )
@@ -133,7 +134,7 @@ func getShellVersion() string {
 	}
 }
 
-func registerAgent(centralServerURL, agentID string) {
+func registerAgent(centralServerURL, agentID, pat string) {
 	computerName, _ := os.Hostname()
 	privateIP := getPrivateIP()
 	osType := getOSInfo()
@@ -149,6 +150,7 @@ func registerAgent(centralServerURL, agentID string) {
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", "Bearer "+pat).
 		SetBody(agentData).
 		Post(fmt.Sprintf("%s/register-agent", centralServerURL))
 
@@ -198,8 +200,9 @@ func reconnectOrExit(centralServerURL string) string {
 	}
 }
 
-func fetchTask(centralServerURL, agentID string) *Task {
+func fetchTask(centralServerURL, agentID, pat string) *Task {
 	resp, err := client.R().
+		SetHeader("Authorization", "Bearer "+pat).
 		SetQueryParam("agent_id", agentID).
 		Get(fmt.Sprintf("%s/get-task", centralServerURL))
 
@@ -223,9 +226,10 @@ func fetchTask(centralServerURL, agentID string) *Task {
 	return nil
 }
 
-func reportResult(centralServerURL string, result Result) {
+func reportResult(centralServerURL, pat string, result Result) {
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", "Bearer "+pat).
 		SetBody(result).
 		Post(fmt.Sprintf("%s/report-result", centralServerURL))
 
@@ -241,9 +245,10 @@ func reportResult(centralServerURL string, result Result) {
 	}
 }
 
-func reportStatus(centralServerURL, agentID, status string) {
+func reportStatus(centralServerURL, agentID, status, pat string) {
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", "Bearer "+pat).
 		SetBody(map[string]string{"agent_id": agentID, "status": status}).
 		Post(fmt.Sprintf("%s/agent-status", centralServerURL))
 
@@ -289,13 +294,19 @@ func main() {
 	logo.PrintLogo()
 	centralServerURL, agentID := loadConfig()
 
+	// PAT Authentication
+	pat := pat.AuthenticatePAT(centralServerURL)
+	if pat == "" {
+		log.Fatalln("Failed to authenticate with PAT. Exiting.")
+	}
+
 	// Check server connection
 	if !checkServerConnection(centralServerURL) {
 		centralServerURL = reconnectOrExit(centralServerURL)
 	}
 
 	// Register the agent with the central server
-	registerAgent(centralServerURL, agentID)
+	registerAgent(centralServerURL, agentID, pat)
 
 	startTime = time.Now() // Record the start time
 
@@ -303,7 +314,7 @@ func main() {
 
 	// Main loop to fetch and execute tasks
 	for {
-		task := fetchTask(centralServerURL, agentID)
+		task := fetchTask(centralServerURL, agentID, pat)
 		if task != nil {
 			log.Printf("Received task with ID %s. Executing script...\n", task.TaskID)
 			output, error := executeScript(task.ScriptCode)
@@ -314,10 +325,10 @@ func main() {
 				Output:  output,
 				Error:   error,
 			}
-			reportResult(centralServerURL, result)
-			reportStatus(centralServerURL, agentID, "idle")
+			reportResult(centralServerURL, pat, result)
+			reportStatus(centralServerURL, agentID, "idle", pat)
 		} else {
-			reportStatus(centralServerURL, agentID, "idle")
+			reportStatus(centralServerURL, agentID, "idle", pat)
 			time.Sleep(10 * time.Second)
 		}
 	}

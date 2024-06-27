@@ -71,13 +71,22 @@ def verify_pat():
     data = request.get_json()
     token = data.get('token')
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        return jsonify({"message": "Token is valid", "user_id": payload['user_id']})
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token has expired"}), 401
-    except jwt.InvalidTokenError:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # 데이터베이스에서 해당 토큰이 존재하는지 확인
+    cursor.execute('SELECT * FROM user_pats WHERE token = ?', (token,))
+    pat = cursor.fetchone()
+    conn.close()
+
+    if not pat:
         return jsonify({"error": "Invalid token"}), 401
+
+    if pat['expiry_date'] and datetime.fromisoformat(pat['expiry_date']) < datetime.utcnow():
+        return jsonify({"error": "Token has expired"}), 401
+
+    return jsonify({"message": "PAT authentication was successfully completed.", "user_id": pat['user_id']})
+
 
 @pat_bp.route('/get-pat', methods=['GET'])
 def get_pat():
