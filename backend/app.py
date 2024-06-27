@@ -401,7 +401,7 @@ def get_agent_tasks():
     return jsonify(task_list)
 
 
-# Endpoint to get the list of tasks for a all agent
+# Endpoint to get the list of tasks for all agents
 @app.route('/get-all-completed-tasks', methods=['GET'])
 def get_all_completed_tasks():
     task_keys = redis.keys('result:*')
@@ -413,9 +413,16 @@ def get_all_completed_tasks():
         if task_data:
             task = json.loads(task_data)
             if task['status'] == 'completed':
+                # Retrieve the result details
+                result_data = redis.hgetall(f'result:{task_id}')
+                task.update({k.decode(): v.decode() for k, v in result_data.items()})
                 completed_tasks.append(task)
 
+    # Sort the tasks by approved_at in descending order
+    completed_tasks.sort(key=lambda x: x.get('approved_at', ''), reverse=True)
+
     return jsonify(completed_tasks)
+
 
 # Endpoint to summary the tasks
 @app.route('/get-tasks-summary', methods=['GET'])

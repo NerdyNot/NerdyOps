@@ -6,7 +6,14 @@ import LayoutAuthenticated from '../layouts/Authenticated';
 import SectionMain from '../components/Section/Main';
 import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
 import { getPageTitle } from '../config';
-import { Task } from '../interfaces'; // Task 타입 정의 파일
+
+interface Task {
+  task_id: string;
+  agent_id: string;
+  hostname: string;
+  input: string;
+  script_code: string;
+}
 
 const BatchApprovePage = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
@@ -14,6 +21,7 @@ const BatchApprovePage = () => {
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState<{ action: 'approve' | 'reject', visible: boolean }>({ action: 'approve', visible: false });
 
   const fetchAllPendingTasks = async () => {
     setLoading(true);
@@ -71,72 +79,117 @@ const BatchApprovePage = () => {
     }
   };
 
+  const handleConfirmApprove = () => {
+    setShowConfirmModal({ action: 'approve', visible: true });
+  };
+
+  const handleConfirmReject = () => {
+    setShowConfirmModal({ action: 'reject', visible: true });
+  };
+
+  const handleConfirmAction = () => {
+    if (showConfirmModal.action === 'approve') {
+      handleApprove();
+    } else {
+      handleReject();
+    }
+    setShowConfirmModal({ action: 'approve', visible: false });
+  };
+
+  const handleCancelAction = () => {
+    setShowConfirmModal({ action: 'approve', visible: false });
+  };
+
   return (
     <>
       <Head>
         <title>{getPageTitle('Batch Approve Tasks')}</title>
       </Head>
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiServer} title="Batch Approve Tasks" main>
-          <div className="flex space-x-2">
-            <button
-              className="bg-green-500 text-white px-4 py-2 rounded"
-              onClick={handleApprove}
-              disabled={selectedTasks.length === 0}
-            >
-              Approve Selected
-            </button>
-            <button
-              className="bg-red-500 text-white px-4 py-2 rounded"
-              onClick={handleReject}
-              disabled={selectedTasks.length === 0}
-            >
-              Reject Selected
-            </button>
-          </div>
-        </SectionTitleLineWithButton>
+        <SectionTitleLineWithButton icon={mdiServer} title="Batch Approve Tasks" main />
 
         {loading && <p>Loading tasks...</p>}
         {error && <p className="text-red-500">{error}</p>}
         {!loading && !error && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead className="bg-gray-800 text-white">
-                <tr>
-                  <th className="py-2 px-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedTasks.length === tasks.length}
-                      onChange={handleSelectAll}
-                    />
-                  </th>
-                  <th className="py-2 px-4">Agent ID</th>
-                  <th className="py-2 px-4">Hostname</th>
-                  <th className="py-2 px-4">Input</th>
-                  <th className="py-2 px-4">Script Code</th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-700">
-                {tasks.map(task => (
-                  <tr key={task.task_id}>
-                    <td className="py-2 px-4 border">
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white">
+                <thead className="bg-gray-800 text-white">
+                  <tr>
+                    <th className="py-2 px-4">
                       <input
                         type="checkbox"
-                        checked={selectedTasks.includes(task.task_id)}
-                        onChange={() => handleSelectTask(task.task_id)}
+                        checked={selectedTasks.length === tasks.length}
+                        onChange={handleSelectAll}
                       />
-                    </td>
-                    <td className="py-2 px-4 border">{task.agent_id}</td>
-                    <td className="py-2 px-4 border">{task.hostname}</td>
-                    <td className="py-2 px-4 border">{task.input}</td>
-                    <td className="py-2 px-4 border" style={{ whiteSpace: 'pre-wrap' }}>{task.script_code}</td>
+                    </th>
+                    <th className="py-2 px-4">Agent ID</th>
+                    <th className="py-2 px-4">Hostname</th>
+                    <th className="py-2 px-4">Input</th>
+                    <th className="py-2 px-4">Script Code</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="text-gray-700">
+                  {tasks.map(task => (
+                    <tr key={task.task_id}>
+                      <td className="py-2 px-4 border">
+                        <input
+                          type="checkbox"
+                          checked={selectedTasks.includes(task.task_id)}
+                          onChange={() => handleSelectTask(task.task_id)}
+                        />
+                      </td>
+                      <td className="py-2 px-4 border">{task.agent_id}</td>
+                      <td className="py-2 px-4 border">{task.hostname}</td>
+                      <td className="py-2 px-4 border">{task.input}</td>
+                      <td className="py-2 px-4 border" style={{ whiteSpace: 'pre-wrap' }}>{task.script_code}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded mr-2"
+                onClick={handleConfirmApprove}
+                disabled={selectedTasks.length === 0}
+              >
+                Approve Selected
+              </button>
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded"
+                onClick={handleConfirmReject}
+                disabled={selectedTasks.length === 0}
+              >
+                Reject Selected
+              </button>
+            </div>
+          </>
         )}
       </SectionMain>
+
+      {showConfirmModal.visible && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-semibold mb-4">Confirm Action</h2>
+            <p className="mb-4">Are you sure you want to {showConfirmModal.action === 'approve' ? 'approve' : 'reject'} the selected tasks?</p>
+            <div className="flex justify-end">
+              <button
+                className="bg-gray-300 text-black px-4 py-2 rounded mr-2"
+                onClick={handleCancelAction}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+                onClick={handleConfirmAction}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

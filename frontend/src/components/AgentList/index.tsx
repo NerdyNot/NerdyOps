@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Agent } from '../../interfaces';
+import { Agent } from '../../interfaces'; // 에이전트 타입 정의 파일
 import { useRouter } from 'next/router';
 import CardBoxModal from '../CardBox/Modal';
 import Button from '../Button';
@@ -10,18 +10,15 @@ interface Props {
   agents: Agent[];
   onActionClick: (agent: Agent) => void;
   onDeleteClick: (agent: Agent) => void;
-  onSelectAgents: (selectedAgents: string[]) => void; // 새로운 prop 추가
+  onBulkActionClick: (selectedAgents: Agent[]) => void; // 일괄 작업을 위한 함수
 }
 
-const AgentList: React.FC<Props> = ({ agents, onActionClick, onDeleteClick, onSelectAgents }) => {
+const AgentList: React.FC<Props> = ({ agents, onActionClick, onDeleteClick, onBulkActionClick }) => {
   const router = useRouter();
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [isModalActive, setIsModalActive] = useState(false);
-  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
-
-  useEffect(() => {
-    onSelectAgents(selectedAgents); // 선택된 에이전트를 상위 컴포넌트로 전달
-  }, [selectedAgents]);
+  const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]); // 선택된 에이전트들
+  const [selectAll, setSelectAll] = useState<boolean>(false); // 전체 선택 상태
 
   const handleTaskListClick = (agentId: string) => {
     router.push(`/agent-tasks?agent_id=${agentId}`);
@@ -44,10 +41,31 @@ const AgentList: React.FC<Props> = ({ agents, onActionClick, onDeleteClick, onSe
     }
   };
 
-  const handleCheckboxChange = (agentId: string) => {
-    setSelectedAgents((prev) =>
-      prev.includes(agentId) ? prev.filter((id) => id !== agentId) : [...prev, agentId]
-    );
+  const handleCheckboxChange = (agent: Agent) => {
+    setSelectedAgents(prevSelected => {
+      if (prevSelected.includes(agent)) {
+        return prevSelected.filter(a => a.agent_id !== agent.agent_id);
+      } else {
+        return [...prevSelected, agent];
+      }
+    });
+  };
+
+  const handleSelectAllChange = () => {
+    if (selectAll) {
+      setSelectedAgents([]);
+    } else {
+      setSelectedAgents(agents);
+    }
+    setSelectAll(!selectAll);
+  };
+
+  useEffect(() => {
+    setSelectAll(selectedAgents.length === agents.length);
+  }, [selectedAgents, agents.length]);
+
+  const handleBulkActionClick = () => {
+    onBulkActionClick(selectedAgents);
   };
 
   return (
@@ -58,16 +76,10 @@ const AgentList: React.FC<Props> = ({ agents, onActionClick, onDeleteClick, onSe
             <th className="py-2 px-4">
               <input
                 type="checkbox"
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedAgents(agents.map((agent) => agent.agent_id));
-                  } else {
-                    setSelectedAgents([]);
-                  }
-                }}
-                checked={selectedAgents.length === agents.length}
+                checked={selectAll}
+                onChange={handleSelectAllChange}
               />
-            </th>
+            </th> {/* 체크박스 열 추가 */}
             <th className="py-2 px-4">ID</th>
             <th className="py-2 px-4">Hostname</th>
             <th className="py-2 px-4">OS</th>
@@ -77,13 +89,13 @@ const AgentList: React.FC<Props> = ({ agents, onActionClick, onDeleteClick, onSe
           </tr>
         </thead>
         <tbody className="text-gray-700">
-          {agents.map((agent) => (
+          {agents.map(agent => (
             <tr key={agent.agent_id}>
               <td className="py-2 px-4 border">
                 <input
                   type="checkbox"
-                  checked={selectedAgents.includes(agent.agent_id)}
-                  onChange={() => handleCheckboxChange(agent.agent_id)}
+                  checked={selectedAgents.includes(agent)}
+                  onChange={() => handleCheckboxChange(agent)}
                 />
               </td>
               <td className="py-2 px-4 border">{agent.agent_id}</td>
@@ -128,6 +140,17 @@ const AgentList: React.FC<Props> = ({ agents, onActionClick, onDeleteClick, onSe
         >
           <p>Are you sure you want to delete agent {selectedAgent.agent_id}?</p>
         </CardBoxModal>
+      )}
+      {/* 일괄 작업 버튼 추가 */}
+      {selectedAgents.length > 0 && (
+        <div className="flex justify-end mt-4">
+          <button
+            className="bg-red-500 text-white px-4 py-2 rounded"
+            onClick={handleBulkActionClick}
+          >
+            Action to Selected Agents
+          </button>
+        </div>
       )}
     </div>
   );
