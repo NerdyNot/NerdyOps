@@ -1,3 +1,4 @@
+// pages/batch-results.tsx
 import { mdiServer } from '@mdi/js';
 import Head from 'next/head';
 import React, { ReactElement, useState, useEffect } from 'react';
@@ -8,33 +9,25 @@ import SectionTitleLineWithButton from '../components/Section/TitleLineWithButto
 import { getPageTitle } from '../config';
 import Modal from '../components/Modal';
 import ReactMarkdown from 'react-markdown';
-
-interface Task {
-  task_id: string;
-  agent_id: string;
-  hostname: string;
-  submitted_at: string;
-  approved_at?: string;
-  input: string;
-  script_code: string;
-  output: string;
-  error: string;
-  interpretation: string;
-}
+import { Task } from '../interfaces'; // Assuming you have a Task interface defined in interfaces.ts
 
 const BatchResultsPage = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Task; direction: 'ascending' | 'descending' } | null>(null);
+  const [filter, setFilter] = useState<string>('');
 
   const fetchAllCompletedTasks = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await axios.get(`${centralServerUrl}/get-all-completed-tasks`);
-      setTasks(response.data.sort((a: Task, b: Task) => new Date(b.approved_at!).getTime() - new Date(a.approved_at!).getTime()));
+      setTasks(response.data);
+      setFilteredTasks(response.data);
     } catch (err) {
       console.error('Error fetching tasks:', err);
       setError(err.response?.data?.error || 'An error occurred');
@@ -55,6 +48,34 @@ const BatchResultsPage = () => {
     setSelectedTask(null);
   };
 
+  const handleSort = (key: keyof Task) => {
+    let direction = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+    setFilteredTasks([...filteredTasks].sort((a, b) => {
+      if (a[key] < b[key]) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (a[key] > b[key]) {
+        return direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    }));
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFilter(value);
+    setFilteredTasks(tasks.filter(task =>
+      task.agent_id.includes(value) ||
+      task.task_id.includes(value) ||
+      task.input.includes(value) ||
+      (task.hostname && task.hostname.includes(value))
+    ));
+  };
+
   return (
     <>
       <Head>
@@ -63,6 +84,16 @@ const BatchResultsPage = () => {
       <SectionMain>
         <SectionTitleLineWithButton icon={mdiServer} title="Batch Task Results" main />
 
+        <div className="mb-4">
+          <input
+            type="text"
+            value={filter}
+            onChange={handleFilterChange}
+            placeholder="Filter tasks"
+            className="border p-2 w-full rounded-md"
+          />
+        </div>
+
         {loading && <p>Loading tasks...</p>}
         {error && <p className="text-red-500">{error}</p>}
         {!loading && !error && (
@@ -70,16 +101,24 @@ const BatchResultsPage = () => {
             <table className="min-w-full bg-white">
               <thead className="bg-gray-800 text-white">
                 <tr>
-                  <th className="py-2 px-4">Agent ID</th>
-                  <th className="py-2 px-4">Task ID</th>
-                  <th className="py-2 px-4">Submitted At</th>
-                  <th className="py-2 px-4">Approved At</th>
+                  <th className="py-2 px-4 cursor-pointer" onClick={() => handleSort('agent_id')}>
+                    Agent ID {sortConfig?.key === 'agent_id' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
+                  </th>
+                  <th className="py-2 px-4 cursor-pointer" onClick={() => handleSort('task_id')}>
+                    Task ID {sortConfig?.key === 'task_id' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
+                  </th>
+                  <th className="py-2 px-4 cursor-pointer" onClick={() => handleSort('submitted_at')}>
+                    Submitted At {sortConfig?.key === 'submitted_at' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
+                  </th>
+                  <th className="py-2 px-4 cursor-pointer" onClick={() => handleSort('approved_at')}>
+                    Approved At {sortConfig?.key === 'approved_at' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
+                  </th>
                   <th className="py-2 px-4">Input</th>
                   <th className="py-2 px-4">Details</th>
                 </tr>
               </thead>
               <tbody className="text-gray-700">
-                {tasks.map(task => (
+                {filteredTasks.map(task => (
                   <tr key={task.task_id}>
                     <td className="py-2 px-4 border">{task.agent_id}</td>
                     <td className="py-2 px-4 border">{task.task_id}</td>

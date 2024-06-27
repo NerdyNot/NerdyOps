@@ -1,3 +1,4 @@
+# monitoring.py
 from flask import Blueprint, request, jsonify
 from utils.redis_connection import get_redis_connection
 import json
@@ -14,6 +15,7 @@ def report_resource_usage():
     mem_usage = data.get('mem_usage')
     running_time = data.get('running_time')
     timestamp = data.get('timestamp')
+    imds = data.get('imds')
 
     if not agent_id or cpu_usage is None or mem_usage is None or running_time is None or timestamp is None:
         return jsonify({"error": "Missing required fields"}), 400
@@ -22,7 +24,8 @@ def report_resource_usage():
         "cpu_usage": cpu_usage,
         "mem_usage": mem_usage,
         "running_time": running_time,
-        "timestamp": timestamp
+        "timestamp": timestamp,
+        "imds": imds  # Include IMDS data
     }
 
     redis.rpush(f'resource_usage:{agent_id}', json.dumps(resource_data))
