@@ -1,5 +1,4 @@
-// pages/batch-results.tsx
-import { mdiServer } from '@mdi/js';
+import { mdiViewListOutline } from '@mdi/js';
 import Head from 'next/head';
 import React, { ReactElement, useState, useEffect } from 'react';
 import axios from 'axios';
@@ -82,7 +81,7 @@ const BatchResultsPage = () => {
         <title>{getPageTitle('Batch Task Results')}</title>
       </Head>
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiServer} title="Batch Task Results" main />
+        <SectionTitleLineWithButton icon={mdiViewListOutline} title="Batch Task Results" main />
 
         <div className="mb-4">
           <input

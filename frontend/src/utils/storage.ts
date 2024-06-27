@@ -1,4 +1,3 @@
-// utils/storage.ts
 export const loadUser = () => {
   try {
     const serializedUser = localStorage.getItem('user');

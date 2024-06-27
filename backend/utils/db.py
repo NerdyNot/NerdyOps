@@ -40,6 +40,14 @@ def init_db():
         )
     ''')  # Create 'user_pats' table if it doesn't exist
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS api_keys (
+            key_name TEXT PRIMARY KEY,
+            key_value TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')  # Create 'api_keys' table if it doesn't exist
+
     # Check if the admin user already exists
     cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
     admin_user = cursor.fetchone()
@@ -60,3 +68,22 @@ def get_db_connection():
     conn = sqlite3.connect('central_server.db')  # Connect to the SQLite database
     conn.row_factory = sqlite3.Row  # Enable name-based column access
     return conn  # Return the database connection
+
+def get_api_key(key_name):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('SELECT key_value FROM api_keys WHERE key_name = ?', (key_name,))
+        row = cursor.fetchone()
+    except sqlite3.OperationalError as e:
+        init_db()  # Ensure the table exists
+        cursor.execute('SELECT key_value FROM api_keys WHERE key_name = ?', (key_name,))
+        row = cursor.fetchone()
+
+    conn.close()
+
+    if row:
+        return row['key_value']
+    else:
+        return ""  # Return an empty string if the API key is not found

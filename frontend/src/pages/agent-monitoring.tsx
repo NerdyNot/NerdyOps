@@ -1,4 +1,4 @@
-import { mdiChartTimelineVariant, mdiMonitor, mdiReload, mdiInformationOutline } from '@mdi/js';
+import { mdiChartTimelineVariant, mdiMonitor, mdiReload, mdiInformationOutline, mdiMonitorDashboard } from '@mdi/js';
 import Head from 'next/head';
 import React, { ReactElement, useState, useEffect } from 'react';
 import LayoutAuthenticated from '../layouts/Authenticated';
@@ -145,7 +145,7 @@ const AgentMonitoringPage: React.FC = () => {
         <title>{getPageTitle('Agent Monitoring')}</title>
       </Head>
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiChartTimelineVariant} title="Agent Monitoring" main>
+        <SectionTitleLineWithButton icon={mdiMonitorDashboard} title="Agent Monitoring" main>
           <Button icon={mdiReload} color="whiteDark" onClick={handleReload} />
         </SectionTitleLineWithButton>
 

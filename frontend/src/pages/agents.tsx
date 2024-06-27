@@ -1,4 +1,3 @@
-// agents.tsx
 import { mdiServer } from '@mdi/js';
 import Head from 'next/head';
 import React, { ReactElement, useState, useEffect } from 'react';

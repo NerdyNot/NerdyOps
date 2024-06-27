@@ -4,11 +4,12 @@ import {
   mdiLock,
   mdiAlertCircle,
   mdiSquareEditOutline,
-  mdiTable,
+  mdiViewListOutline,
   mdiCheckboxMarkedCircleAutoOutline,
   mdiServer,
   mdiViewList,
   mdiMonitorDashboard,
+  mdiAccountCog,
 } from '@mdi/js';
 import { MenuAsideItem } from './interfaces';
 
@@ -35,13 +36,13 @@ const menuAside: MenuAsideItem[] = [
     href: '/batch-approve',
     label: 'Batch Approve',
     icon: mdiViewList,
-    roles: ['admin'], // 관리자만 접근 가능
+    roles: ['user', 'admin'], // 관리자만 접근 가능
   },
   {
     href: '/batch-results',
     label: 'Batch Results',
-    icon: mdiTable,
-    roles: ['admin'], // 관리자만 접근 가능
+    icon: mdiViewListOutline,
+    roles: ['user', 'admin'], // 관리자만 접근 가능
   },
   {
     href: '/agent-monitoring',
@@ -52,7 +53,7 @@ const menuAside: MenuAsideItem[] = [
   {
     href: '/admin',
     label: 'Admin',
-    icon: mdiMonitorDashboard,
+    icon: mdiAccountCog,
     roles: ['admin'], // 관리자만 접근 가능
   },
 ];

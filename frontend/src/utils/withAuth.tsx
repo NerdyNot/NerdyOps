@@ -10,7 +10,7 @@ const withAuth = (Component: React.FC, allowedRoles: string[]) => {
 
     useEffect(() => {
       if (userRole && !allowedRoles.includes(userRole)) {
-        router.push('/index'); // 권한이 없으면 로그인 페이지로 리디렉션
+        router.push('/'); // 권한이 없으면 인덱스 페이지로 리디렉션
       }
     }, [userRole]);
 
@@ -20,6 +20,11 @@ const withAuth = (Component: React.FC, allowedRoles: string[]) => {
 
     return <Component {...props} />;
   };
+
+  // getLayout 메소드 복사
+  if (Component.getLayout) {
+    AuthComponent.getLayout = Component.getLayout;
+  }
 
   return AuthComponent;
 };

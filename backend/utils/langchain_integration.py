@@ -1,15 +1,21 @@
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-import os
+from utils.db import get_api_key
 import logging
 import re
+import os
 
-# Set the OpenAI API key from the environment
-os.environ["OPENAI_API_KEY"]
-
-# Initialize the OpenAI model
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+def get_llm():
+    # Set the OpenAI API key from the database
+    api_key = get_api_key('openai_api_key')
+    os.environ["OPENAI_API_KEY"] = api_key
+    if not api_key:
+        logging.warning("OpenAI API key not found. Please set the API key using the admin settings page.")
+        return None
+    
+    # Initialize the OpenAI model only if the API key is set
+    return ChatOpenAI(model="gpt-4o", temperature=0)
 
 # Define the prompt template for Bash scripts
 bash_template = ChatPromptTemplate.from_messages([
@@ -80,6 +86,10 @@ def convert_natural_language_to_script(command_text: str, os_type: str) -> str:
     Returns:
         str: Code part of the converted script.
     """
+    llm = get_llm()
+    if not llm:
+        raise ValueError("OpenAI API key not set. Please set the API key using the admin settings page.")
+
     if os_type.lower() == 'windows':
         # Use PowerShell prompt template
         prompt = powershell_template.invoke({"command": command_text, "os_type": os_type})
@@ -118,6 +128,9 @@ def interpret_result(command_text: str, output: str, error: str) -> str:
     Returns:
         str: Summary of the result interpreted by the LLM.
     """
+    llm = get_llm()
+    if not llm:
+        raise ValueError("OpenAI API key not set. Please set the API key using the admin settings page.")
     
     prompt = interpret_template.invoke({"command_text": command_text, "output": output, "error": error})
 

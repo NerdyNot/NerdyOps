@@ -9,6 +9,7 @@ from endpoints.tasks import tasks_bp
 from endpoints.monitoring import monitoring_bp
 from endpoints.pat import pat_bp
 from endpoints.agent import agent_bp, schedule_agent_status_check
+from endpoints.config import config_bp
 import json
 import logging
 
@@ -26,6 +27,7 @@ app.register_blueprint(tasks_bp)
 app.register_blueprint(monitoring_bp)
 app.register_blueprint(pat_bp)
 app.register_blueprint(agent_bp)
+app.register_blueprint(config_bp)
 
 @app.before_request
 def initialize_database():

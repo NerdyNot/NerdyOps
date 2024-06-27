@@ -155,3 +155,63 @@ def change_password():
     conn.close()
 
     return jsonify({"status": "Password updated successfully"})
+
+# Endpoint to get all users (Admin only)
+@auth_bp.route('/users', methods=['GET'])
+def get_all_users():
+    token = request.headers.get('Authorization').split(" ")[1]
+    user_id = verify_token(token)
+
+    if not user_id:
+        return jsonify({"error": "Invalid or expired token"}), 401
+
+    # Retrieve user information to check role
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT role FROM users WHERE user_id = ?', (user_id,))
+    user = cursor.fetchone()
+
+    if not user or user['role'] != 'admin':
+        conn.close()
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    # Retrieve all users
+    cursor.execute('SELECT user_id, username, email, role FROM users')
+    users = cursor.fetchall()
+    conn.close()
+
+    user_list = [dict(user) for user in users]
+    return jsonify(user_list)
+
+# Endpoint to update user role (Admin only)
+@auth_bp.route('/update-role', methods=['POST'])
+def update_user_role():
+    data = request.get_json()
+    token = request.headers.get('Authorization').split(" ")[1]
+    admin_id = verify_token(token)
+
+    if not admin_id:
+        return jsonify({"error": "Invalid or expired token"}), 401
+
+    user_id = data.get('user_id')
+    new_role = data.get('new_role')
+
+    if not user_id or not new_role:
+        return jsonify({"error": "User ID and new role are required"}), 400
+
+    # Retrieve admin information to check role
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT role FROM users WHERE user_id = ?', (admin_id,))
+    admin = cursor.fetchone()
+
+    if not admin or admin['role'] != 'admin':
+        conn.close()
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    # Update user role in the database
+    cursor.execute('UPDATE users SET role = ? WHERE user_id = ?', (new_role, user_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status": "User role updated successfully"})
