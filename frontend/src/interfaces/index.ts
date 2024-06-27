@@ -12,6 +12,7 @@ export type MenuAsideItem = {
   color?: ColorButtonKey
   isLogout?: boolean
   menu?: MenuAsideItem[]
+  roles?: string[] // 접근 가능한 사용자 역할
 }
 
 export type MenuNavBarItem = {
