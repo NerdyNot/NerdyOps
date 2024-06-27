@@ -6,6 +6,7 @@ from utils.db import init_db, get_db_connection
 from utils.logo import print_logo
 from endpoints.auth import auth_bp
 from endpoints.tasks import tasks_bp
+from endpoints.monitoring import monitoring_bp
 import json
 import logging
 
@@ -20,6 +21,7 @@ db_initialized = False
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(tasks_bp)
+app.register_blueprint(monitoring_bp)
 
 @app.before_request
 def initialize_database():

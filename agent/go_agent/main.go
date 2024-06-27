@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"github.com/NerdyNot/RunAIOps.git/agent/go_agent/logo"
+	"github.com/NerdyNot/RunAIOps.git/agent/go_agent/monitoring"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
 )
 
-// Struct to hold agent data
 type AgentData struct {
 	AgentID      string `json:"agent_id"`
 	ComputerName string `json:"computer_name"`
@@ -27,7 +27,6 @@ type AgentData struct {
 	ShellVersion string `json:"shell_version"`
 }
 
-// Struct to hold task data fetched from the central server
 type Task struct {
 	TaskID     string `json:"task_id"`
 	Input      string `json:"input"`
@@ -35,7 +34,6 @@ type Task struct {
 	ScriptCode string `json:"script_code"`
 }
 
-// Struct to hold result data to be reported to the central server
 type Result struct {
 	TaskID  string `json:"task_id"`
 	Input   string `json:"input"`
@@ -46,8 +44,8 @@ type Result struct {
 
 var configFile = "agent_config.json"
 var client = resty.New()
+var startTime time.Time
 
-// Initial setup function to configure the agent
 func initialSetup() {
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		viper.SetConfigFile(configFile)
@@ -78,7 +76,6 @@ func initialSetup() {
 	}
 }
 
-// Load configuration from the config file
 func loadConfig() (string, string) {
 	viper.SetConfigFile(configFile)
 	err := viper.ReadInConfig()
@@ -88,14 +85,12 @@ func loadConfig() (string, string) {
 	return viper.GetString("CentralServerURL"), viper.GetString("AgentID")
 }
 
-// Generate a default agent ID based on the hostname and private IP address
 func getDefaultAgentID() string {
 	hostname, _ := os.Hostname()
 	privateIP := getPrivateIP()
 	return fmt.Sprintf("%s_%s", hostname, strings.ReplaceAll(privateIP, ".", "-"))
 }
 
-// Get the private IP address of the machine
 func getPrivateIP() string {
 	ifaces, err := net.Interfaces()
 	if err != nil {
@@ -124,12 +119,10 @@ func getPrivateIP() string {
 	return "127.0.0.1"
 }
 
-// Get the operating system type of the machine
 func getOSInfo() string {
 	return strings.ToLower(runtime.GOOS)
 }
 
-// Get the shell version installed on the machine
 func getShellVersion() string {
 	if getOSInfo() == "windows" {
 		out, _ := exec.Command("powershell", "-Command", "$PSVersionTable.PSVersion").Output()
@@ -140,7 +133,6 @@ func getShellVersion() string {
 	}
 }
 
-// Register the agent with the central server
 func registerAgent(centralServerURL, agentID string) {
 	computerName, _ := os.Hostname()
 	privateIP := getPrivateIP()
@@ -171,7 +163,6 @@ func registerAgent(centralServerURL, agentID string) {
 	}
 }
 
-// Check the connection to the central server
 func checkServerConnection(centralServerURL string) bool {
 	resp, err := client.R().Get(centralServerURL + "/health")
 	if err != nil || resp.StatusCode() != http.StatusOK {
@@ -180,7 +171,6 @@ func checkServerConnection(centralServerURL string) bool {
 	return true
 }
 
-// Handle server reconnection or URL change when disconnected
 func reconnectOrExit(centralServerURL string) string {
 	for {
 		fmt.Printf("Failed to connect to the Central Server at %s.\n", centralServerURL)
@@ -208,7 +198,6 @@ func reconnectOrExit(centralServerURL string) string {
 	}
 }
 
-// Fetch a task for the agent from the central server
 func fetchTask(centralServerURL, agentID string) *Task {
 	resp, err := client.R().
 		SetQueryParam("agent_id", agentID).
@@ -234,7 +223,6 @@ func fetchTask(centralServerURL, agentID string) *Task {
 	return nil
 }
 
-// Report the result of the executed task back to the central server
 func reportResult(centralServerURL string, result Result) {
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -253,7 +241,6 @@ func reportResult(centralServerURL string, result Result) {
 	}
 }
 
-// Report the current status of the agent to the central server
 func reportStatus(centralServerURL, agentID, status string) {
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -272,7 +259,6 @@ func reportStatus(centralServerURL, agentID, status string) {
 	}
 }
 
-// Execute the script provided by the central server
 func executeScript(scriptCode string) (string, string) {
 	log.Printf("Executing script: %s\n", scriptCode)
 	var cmd *exec.Cmd
@@ -310,6 +296,10 @@ func main() {
 
 	// Register the agent with the central server
 	registerAgent(centralServerURL, agentID)
+
+	startTime = time.Now() // Record the start time
+
+	go monitoring.ReportResourceUsage(centralServerURL, agentID, startTime) // Run resource usage reporting asynchronously
 
 	// Main loop to fetch and execute tasks
 	for {
