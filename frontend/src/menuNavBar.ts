@@ -10,6 +10,7 @@ import {
   mdiThemeLightDark,
   mdiGithub,
   mdiVuejs,
+  mdiKeyVariant,
 } from '@mdi/js'
 import { MenuNavBarItem } from './interfaces'
 
@@ -42,6 +43,11 @@ const menuNavBar: MenuNavBarItem[] = [
         icon: mdiAccount,
         label: 'My Profile',
         href: '/profile',
+      },
+      {
+        icon: mdiKeyVariant,
+        label: 'My PAT',
+        href: '/pat',
       },
     ],
   },

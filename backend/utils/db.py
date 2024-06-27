@@ -30,14 +30,15 @@ def init_db():
     ''')  # Create 'users' table if it doesn't exist
 
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS pats (
+        CREATE TABLE IF NOT EXISTS user_pats (
             pat_id TEXT PRIMARY KEY,
             token TEXT UNIQUE,
             expiry_date TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             user_id TEXT,
             FOREIGN KEY (user_id) REFERENCES users (user_id)
         )
-    ''')  # Create 'pats' table if it doesn't exist
+    ''')  # Create 'user_pats' table if it doesn't exist
 
     # Check if the admin user already exists
     cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
