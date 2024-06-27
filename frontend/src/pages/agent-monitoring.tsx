@@ -1,4 +1,3 @@
-// pages/agent-monitoring.tsx
 import { mdiChartTimelineVariant, mdiMonitor, mdiReload, mdiInformationOutline } from '@mdi/js';
 import Head from 'next/head';
 import React, { ReactElement, useState, useEffect } from 'react';
@@ -16,6 +15,9 @@ interface Agent {
   agent_id: string;
   computer_name: string;
   private_ip: string;
+  os_type: string; // OS 타입 추가
+  status: string; // 상태 추가
+  last_report_time: number; // UNIX timestamp
 }
 
 interface ResourceUsage {
@@ -126,6 +128,17 @@ const AgentMonitoringPage: React.FC = () => {
     return `${h}h ${m}m ${s}s`;
   };
 
+  const getAgentStatus = (agent: Agent) => {
+    const currentTime = Math.floor(Date.now() / 1000); // 현재 시간 (UNIX timestamp)
+    const lastReportTime = agent.last_report_time;
+    const timeDifference = currentTime - lastReportTime;
+
+    if (timeDifference > 60) {
+      return 'down';
+    }
+    return agent.status;
+  };
+
   return (
     <>
       <Head>
@@ -158,6 +171,7 @@ const AgentMonitoringPage: React.FC = () => {
             <p><strong>Agent ID:</strong> {selectedAgent.agent_id}</p>
             <p><strong>Hostname:</strong> {selectedAgent.computer_name}</p>
             <p><strong>Private IP:</strong> {selectedAgent.private_ip}</p>
+            <p><strong>Status:</strong> {getAgentStatus(selectedAgent)}</p>
             <p><strong>Running Time:</strong> {resourceUsage.length > 0 ? secondsToHMS(resourceUsage[resourceUsage.length - 1].running_time) : 'N/A'}</p>
             <p><strong>CPU Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage.length - 1].cpu_usage : 'N/A'}%</p>
             <p><strong>Memory Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage.length - 1].mem_usage : 'N/A'}%</p>
