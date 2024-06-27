@@ -9,6 +9,7 @@ import {
   mdiCheckboxMarkedCircleAutoOutline,
   mdiServer,
   mdiViewList,
+  mdiMonitorDashboard,
   mdiTelevisionGuide,
   mdiResponsive,
   mdiPalette,
@@ -46,7 +47,12 @@ const menuAside: MenuAsideItem[] = [
     href: '/batch-results',
     label: 'Batch Results',
     icon: mdiTable,
-  },/*
+  },
+  {
+    href: '/agent-monitoring',
+    label: 'Monitoring',
+    icon: mdiMonitorDashboard,
+  },  /*
   {
     href: '/forms',
     label: 'Forms',

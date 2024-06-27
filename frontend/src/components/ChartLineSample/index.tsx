@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   Chart,
   LineElement,
@@ -7,31 +7,39 @@ import {
   LinearScale,
   CategoryScale,
   Tooltip,
-} from 'chart.js'
-import { Line } from 'react-chartjs-2'
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 
-Chart.register(LineElement, PointElement, LineController, LinearScale, CategoryScale, Tooltip)
+Chart.register(LineElement, PointElement, LineController, LinearScale, CategoryScale, Tooltip);
 
 const options = {
   responsive: true,
   maintainAspectRatio: false,
   scales: {
     y: {
-      display: false,
+      display: true,
+      title: {
+        display: true,
+        text: 'Usage (%)',
+      },
     },
     x: {
       display: true,
+      title: {
+        display: true,
+        text: 'Time',
+      },
     },
   },
   plugins: {
     legend: {
-      display: false,
+      display: true,
     },
   },
-}
+};
 
 const ChartLineSample = ({ data }) => {
-  return <Line options={options} data={data} className="h-96" />
-}
+  return <Line options={options} data={data} className="h-96" />;
+};
 
-export default ChartLineSample
+export default ChartLineSample;
