@@ -1,4 +1,3 @@
-// pages/profile.tsx
 import {
   mdiAccount,
   mdiAsterisk,

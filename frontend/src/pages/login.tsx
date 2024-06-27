@@ -1,4 +1,3 @@
-// pages/login.tsx
 import React from 'react';
 import type { ReactElement } from 'react';
 import Head from 'next/head';
