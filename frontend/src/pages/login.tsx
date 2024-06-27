@@ -1,59 +1,61 @@
 // pages/login.tsx
-import React from 'react'
-import type { ReactElement } from 'react'
-import Head from 'next/head'
-import Button from '../components/Button'
-import CardBox from '../components/CardBox'
-import SectionFullScreen from '../components/Section/FullScreen'
-import LayoutGuest from '../layouts/Guest'
-import { Field, Form, Formik } from 'formik'
-import FormField from '../components/Form/Field'
-import FormCheckRadio from '../components/Form/CheckRadio'
-import Divider from '../components/Divider'
-import Buttons from '../components/Buttons'
-import { getPageTitle } from '../config'
-import axios from 'axios'
-import { useRouter } from 'next/router'
-import Cookies from 'js-cookie'
-import { saveUser } from '../utils/storage'
+import React from 'react';
+import type { ReactElement } from 'react';
+import Head from 'next/head';
+import Button from '../components/Button';
+import CardBox from '../components/CardBox';
+import SectionFullScreen from '../components/Section/FullScreen';
+import LayoutGuest from '../layouts/Guest';
+import { Field, Form, Formik } from 'formik';
+import FormField from '../components/Form/Field';
+import FormCheckRadio from '../components/Form/CheckRadio';
+import Divider from '../components/Divider';
+import Buttons from '../components/Buttons';
+import { getPageTitle } from '../config';
+import axios from 'axios';
+import { useRouter } from 'next/router';
+import Cookies from 'js-cookie';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../stores/mainSlice';
 
 type LoginForm = {
-  login: string
-  password: string
-  remember: boolean
-}
+  login: string;
+  password: string;
+  remember: boolean;
+};
 
 const LoginPage = () => {
-  const router = useRouter()
+  const router = useRouter();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (formValues: LoginForm) => {
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/login`, {
         username: formValues.login,
         password: formValues.password,
-      })
+      });
 
-      const { token, user } = response.data
+      const { token, user_id, username, email, role } = response.data;
 
       // Save the token in cookies
-      Cookies.set('token', token, { expires: formValues.remember ? 7 : 1 })
+      Cookies.set('token', token, { expires: formValues.remember ? 7 : 1 });
 
-      // Save the user info in local storage
-      saveUser(user)
+      // Save the user info in Redux store
+      dispatch(setUser({ name: username, email, role }));
 
       // Redirect to the index page
-      router.push('/')
+      router.push('/');
     } catch (err) {
-      console.error('Login failed:', err)
-      alert('Login failed. Please check your credentials and try again.')
+      console.error('Login failed:', err);
+      alert('Login failed. Please check your credentials and try again.');
     }
-  }
+  };
 
   const initialValues: LoginForm = {
     login: '',
     password: '',
     remember: false,
-  }
+  };
 
   return (
     <>
@@ -88,11 +90,11 @@ const LoginPage = () => {
         </CardBox>
       </SectionFullScreen>
     </>
-  )
-}
+  );
+};
 
 LoginPage.getLayout = function getLayout(page: ReactElement) {
-  return <LayoutGuest>{page}</LayoutGuest>
-}
+  return <LayoutGuest>{page}</LayoutGuest>;
+};
 
-export default LoginPage
+export default LoginPage;

@@ -1,6 +1,7 @@
+// agents.tsx
 import { mdiServer } from '@mdi/js';
 import Head from 'next/head';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useState, useEffect } from 'react';
 import axios from 'axios';
 import CardBox from '../components/CardBox';
 import LayoutAuthenticated from '../layouts/Authenticated';
@@ -11,8 +12,16 @@ import TaskSubmitModal from '../components/TaskSubmitModal';
 import { getPageTitle } from '../config';
 import useAgents from '../hooks/useAgents';
 import { Agent } from '../interfaces'; // 에이전트 타입 정의 파일
+import { useDispatch } from 'react-redux';
+import { initializeUser } from '../stores/mainSlice';
 
 const AgentsPage = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(initializeUser());
+  }, [dispatch]);
+
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL; // 환경 변수 사용
   const { agents, loading, error, mutate } = useAgents(centralServerUrl); // mutate 함수 추가
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);

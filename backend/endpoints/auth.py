@@ -78,7 +78,15 @@ def authenticate_user():
     # Generate token
     token = generate_token(user['user_id'])
 
-    return jsonify({"status": "Login successful", "user_id": user['user_id'], "role": user['role'], "token": token})
+    return jsonify({
+        "status": "Login successful",
+        "user_id": user['user_id'],
+        "username": user['username'],
+        "email": user['email'],   # Include email in the response
+        "role": user['role'],
+        "token": token
+    })
+
 
 # Endpoint to verify token
 @auth_bp.route('/verify-token', methods=['POST'])

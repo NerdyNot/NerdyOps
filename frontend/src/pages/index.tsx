@@ -1,4 +1,3 @@
-// pages/index.tsx
 import axios from 'axios'
 import {
   mdiChartTimelineVariant,
@@ -19,7 +18,6 @@ import { getPageTitle } from '../config'
 import { GetServerSideProps } from 'next'
 import { useDispatch } from 'react-redux'
 import { setUser } from '../stores/mainSlice'
-import Cookies from 'js-cookie'
 
 const IndexPage = ({ user, agentCount, successTaskCount, failureTaskCount }: { user: { name: string, email: string, role: string }, agentCount: number, successTaskCount: number, failureTaskCount: number }) => {
   const dispatch = useDispatch()

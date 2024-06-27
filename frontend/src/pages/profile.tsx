@@ -1,56 +1,62 @@
+// pages/profile.tsx
 import {
   mdiAccount,
   mdiAsterisk,
   mdiFormTextboxPassword,
   mdiGithub,
   mdiMail,
-  mdiUpload,
-} from '@mdi/js'
-import { Formik, Form, Field } from 'formik'
-import Head from 'next/head'
-import type { ReactElement } from 'react'
-import Button from '../components/Button'
-import Buttons from '../components/Buttons'
-import Divider from '../components/Divider'
-import CardBox from '../components/CardBox'
-import CardBoxComponentBody from '../components/CardBox/Component/Body'
-import CardBoxComponentFooter from '../components/CardBox/Component/Footer'
-import FormField from '../components/Form/Field'
-import FormFilePicker from '../components/Form/FilePicker'
-import LayoutAuthenticated from '../layouts/Authenticated'
-import SectionMain from '../components/Section/Main'
-import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton'
-import CardBoxUser from '../components/CardBox/User'
-import type { UserForm } from '../interfaces'
-import { getPageTitle } from '../config'
-import { useAppSelector } from '../stores/hooks'
-import axios from 'axios'
-import { useRouter } from 'next/router'
-import Cookies from 'js-cookie'
+} from '@mdi/js';
+import { Formik, Form, Field } from 'formik';
+import Head from 'next/head';
+import type { ReactElement } from 'react';
+import Button from '../components/Button';
+import Buttons from '../components/Buttons';
+import Divider from '../components/Divider';
+import CardBox from '../components/CardBox';
+import CardBoxComponentBody from '../components/CardBox/Component/Body';
+import CardBoxComponentFooter from '../components/CardBox/Component/Footer';
+import FormField from '../components/Form/Field';
+import LayoutAuthenticated from '../layouts/Authenticated';
+import SectionMain from '../components/Section/Main';
+import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
+import CardBoxUser from '../components/CardBox/User';
+import type { UserForm } from '../interfaces';
+import { getPageTitle } from '../config';
+import { useAppSelector, useAppDispatch } from '../stores/hooks';
+import axios from 'axios';
+import { useRouter } from 'next/router';
+import Cookies from 'js-cookie';
+import { initializeUser } from '../stores/mainSlice';
+import { useEffect } from 'react';
 
 const ProfilePage = () => {
-  const userName = useAppSelector((state) => state.main.userName)
-  const userEmail = useAppSelector((state) => state.main.userEmail)
-  const userRole = useAppSelector((state) => state.main.userRole)
-  const router = useRouter()
+  const dispatch = useAppDispatch();
+  const userName = useAppSelector((state) => state.main.userName);
+  const userEmail = useAppSelector((state) => state.main.userEmail);
+  const userRole = useAppSelector((state) => state.main.userRole);
+  const router = useRouter();
+
+  useEffect(() => {
+    dispatch(initializeUser());
+  }, [dispatch]);
 
   const userForm: UserForm = {
-    name: userName,
-    email: userEmail,
-  }
+    name: userName || '',
+    email: userEmail || '',
+  };
 
   const handlePasswordChange = async (values: {
-    currentPassword: string
-    newPassword: string
-    newPasswordConfirmation: string
+    currentPassword: string;
+    newPassword: string;
+    newPasswordConfirmation: string;
   }) => {
     if (values.newPassword !== values.newPasswordConfirmation) {
-      alert('New passwords do not match')
-      return
+      alert('New passwords do not match');
+      return;
     }
 
     try {
-      const token = Cookies.get('token')
+      const token = Cookies.get('token');
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/change-password`,
         {
@@ -62,19 +68,19 @@ const ProfilePage = () => {
             Authorization: `Bearer ${token}`,
           },
         }
-      )
+      );
 
       if (response.status === 200) {
-        alert('Password changed successfully')
-        router.push('/')
+        alert('Password changed successfully');
+        router.push('/');
       } else {
-        alert('Failed to change password')
+        alert('Failed to change password');
       }
     } catch (error) {
-      console.error('Error changing password:', error)
-      alert('An error occurred while changing the password')
+      console.error('Error changing password:', error);
+      alert('An error occurred while changing the password');
     }
-  }
+  };
 
   return (
     <>
@@ -99,11 +105,11 @@ const ProfilePage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="flex flex-col">
-
             <CardBox className="flex-1" hasComponentLayout>
               <Formik
                 initialValues={userForm}
                 onSubmit={(values: UserForm) => alert('Profile information is read-only')}
+                enableReinitialize={true}
               >
                 <Form className="flex flex-col flex-1">
                   <CardBoxComponentBody>
@@ -129,7 +135,7 @@ const ProfilePage = () => {
                       labelFor="role"
                       icons={[mdiAccount]}
                     >
-                      <Field name="role" id="role" placeholder="Role" value={userRole} readOnly />
+                      <Field name="role" id="role" placeholder="Role" value={userRole || ''} readOnly />
                     </FormField>
                   </CardBoxComponentBody>
                 </Form>
@@ -204,11 +210,11 @@ const ProfilePage = () => {
         </div>
       </SectionMain>
     </>
-  )
-}
+  );
+};
 
 ProfilePage.getLayout = function getLayout(page: ReactElement) {
-  return <LayoutAuthenticated>{page}</LayoutAuthenticated>
-}
+  return <LayoutAuthenticated>{page}</LayoutAuthenticated>;
+};
 
-export default ProfilePage
+export default ProfilePage;
