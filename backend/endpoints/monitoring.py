@@ -51,16 +51,18 @@ def get_resource_usage():
     return jsonify(resource_data)
 
 
+
 @monitoring_bp.route('/add-slack-notification', methods=['POST'])
 def add_slack_notification():
     data = request.get_json()
     message = data.get('message')
+    notification_type = data.get('type')
 
-    if not message:
-        return jsonify({"message": "Message is required"}), 400
+    if not message or not notification_type:
+        return jsonify({"message": "Message and type are required"}), 400
 
     # Add notification to Redis queue
     redis_conn = get_redis_connection()
-    redis_conn.lpush('slack_notifications', json.dumps({'message': message}))
+    redis_conn.lpush('slack_notifications', json.dumps({'message': message, 'type': notification_type}))
 
     return jsonify({"message": "Notification added to queue"}), 200

@@ -47,7 +47,7 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS completed_tasks (
             task_id TEXT PRIMARY KEY,
@@ -63,19 +63,29 @@ def init_db():
             interpretation TEXT
         )
     ''')
-    
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS config (
+            config_key TEXT PRIMARY KEY,
+            config_value TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Check if the admin user already exists
     cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
     admin_user = cursor.fetchone()
     
     if not admin_user:
+        # Hash the default admin password
         hashed_password = generate_password_hash('admin', method='pbkdf2:sha256')
         cursor.execute('''
             INSERT INTO users (user_id, username, email, password, role)
             VALUES (?, ?, ?, ?, ?)
         ''', (str(uuid.uuid4()), 'admin', 'admin@admin.com', hashed_password, 'admin'))
-        conn.commit()
-    
-    conn.close()
+        conn.commit()  # Save changes
+
+    conn.close()  # Close the connection
 
 # Establish and return a connection to the SQLite database
 def get_db_connection():

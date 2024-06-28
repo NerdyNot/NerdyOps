@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from utils.db import get_db_connection, init_db
-from utils.slack_integration import save_slack_service_hook, get_slack_service_hook
+from utils.slack_integration import save_slack_service_hook
 
 config_bp = Blueprint('config_bp', __name__)
 
@@ -61,37 +61,41 @@ def set_slack_webhook():
 @config_bp.route('/get-slack-webhook', methods=['GET'])
 def get_slack_webhook():
     conn = get_db_connection()
-    webhook_url = get_slack_service_hook(conn)
+    cursor = conn.cursor()
+    cursor.execute('SELECT key_value FROM api_keys WHERE key_name = ?', ('slack_webhook_url',))
+    row = cursor.fetchone()
     conn.close()
 
-    if webhook_url:
-        return jsonify({"webhookUrl": webhook_url}), 200
+    if row:
+        return jsonify({"webhookUrl": row['key_value']}), 200
     else:
         return jsonify({"message": "Slack webhook URL not found"}), 404
 
 @config_bp.route('/set-slack-notification-settings', methods=['POST'])
 def set_slack_notification_settings():
     data = request.json
-    setting_key = data.get('settingKey')
-    setting_value = data.get('settingValue')
-
-    if not setting_key or setting_value is None:
-        return jsonify({"message": "Setting key and value are required"}), 400
+    settings = {
+        'slack_notifications_enabled': 'true' if data.get('notificationsEnabled', False) else 'false',
+        'slack_task_created': 'true' if data.get('taskCreated', False) else 'false',
+        'slack_task_approved': 'true' if data.get('taskApproved', False) else 'false',
+        'slack_task_rejected': 'true' if data.get('taskRejected', False) else 'false'
+    }
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('''
-        INSERT INTO config (config_key, config_value)
-        VALUES (?, ?)
-        ON CONFLICT(config_key)
-        DO UPDATE SET config_value = excluded.config_value
-    ''', (setting_key, str(setting_value)))
+    for key, value in settings.items():
+        cursor.execute('''
+            INSERT INTO config (config_key, config_value)
+            VALUES (?, ?)
+            ON CONFLICT(config_key)
+            DO UPDATE SET config_value = excluded.config_value
+        ''', (key, value))
 
     conn.commit()
     conn.close()
 
-    return jsonify({"message": "Slack notification setting saved successfully!"}), 200
+    return jsonify({"message": "Slack notification settings saved successfully!"}), 200
 
 @config_bp.route('/get-slack-notification-settings', methods=['GET'])
 def get_slack_notification_settings():
@@ -101,5 +105,5 @@ def get_slack_notification_settings():
     rows = cursor.fetchall()
     conn.close()
 
-    settings = {row['config_key']: row['config_value'] for row in rows}
+    settings = {row['config_key']: row['config_value'] == 'true' for row in rows}
     return jsonify(settings), 200

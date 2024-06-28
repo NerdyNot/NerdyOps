@@ -4,7 +4,7 @@ import logging
 import threading
 from time import sleep
 from utils.redis_connection import get_redis_connection
-from utils.db import get_db_connection
+from utils.db import get_db_connection, get_api_key
 
 logging.basicConfig(level=logging.INFO)
 
@@ -23,20 +23,23 @@ def send_slack_notification(webhook_url, message):
 def save_slack_service_hook(db_conn, webhook_url):
     cursor = db_conn.cursor()
     cursor.execute('''
-        INSERT INTO config (config_key, config_value)
+        INSERT INTO api_keys (key_name, key_value)
         VALUES (?, ?)
-        ON CONFLICT(config_key)
-        DO UPDATE SET config_value = excluded.config_value
+        ON CONFLICT(key_name)
+        DO UPDATE SET key_value = excluded.key_value
     ''', ('slack_webhook_url', webhook_url))
     db_conn.commit()
 
-def get_slack_service_hook(db_conn):
-    cursor = db_conn.cursor()
-    cursor.execute('SELECT config_value FROM config WHERE config_key = ?', ('slack_webhook_url',))
-    row = cursor.fetchone()
-    if row:
-        return row['config_value']
-    return None
+def get_slack_service_hook():
+    return get_api_key('slack_webhook_url')
+
+def get_notification_settings():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT config_key, config_value FROM config WHERE config_key LIKE "slack_%"')
+    rows = cursor.fetchall()
+    conn.close()
+    return {row['config_key']: row['config_value'] == 'true' for row in rows}
 
 def process_redis_notifications():
     redis_conn = get_redis_connection()
@@ -45,14 +48,18 @@ def process_redis_notifications():
         if notification:
             try:
                 notification_data = json.loads(notification)
-                db_conn = get_db_connection()
-                webhook_url = get_slack_service_hook(db_conn)
-                db_conn.close()
-                if webhook_url:
-                    send_slack_notification(webhook_url, notification_data['message'])
-                    logging.info(f"Notification sent: {notification_data['message']}")
+                webhook_url = get_slack_service_hook()
+                settings = get_notification_settings()
+                notification_type = notification_data['type']
+
+                if webhook_url and settings.get('slack_notifications_enabled', True):
+                    if settings.get(notification_type, settings.get('slack_notifications_enabled', False)):
+                        send_slack_notification(webhook_url, notification_data['message'])
+                        logging.info(f"Notification sent: {notification_data['message']}")
+                    else:
+                        logging.info(f"Notification type {notification_type} is disabled. Removing from queue.")
                 else:
-                    logging.error("Slack webhook URL not found.")
+                    logging.info("Slack notifications are disabled.")
             except Exception as e:
                 logging.error(f"Failed to process notification: {e}")
         sleep(10)  # Check for new notifications every 10 seconds
