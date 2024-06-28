@@ -1,10 +1,13 @@
 from flask import Blueprint, request, jsonify
 from utils.db import get_db_connection
+from utils.redis_connection import get_redis_connection
 from datetime import datetime, timedelta
 import logging
 
 agent_bp = Blueprint('agent', __name__)
 logging.basicConfig(level=logging.INFO)
+
+redis = get_redis_connection()
 
 @agent_bp.route('/register-agent', methods=['POST'])
 def register_agent():
@@ -85,6 +88,31 @@ def check_agent_status():
     
     conn.commit()
     conn.close()
+
+# Endpoint to delete an agent
+@app.route('/delete-agent', methods=['POST'])
+def delete_agent():
+    data = request.get_json()
+    agent_id = data.get('agent_id')
+    
+    # Validate input
+    if not agent_id:
+        return jsonify({"error": "Agent ID is required"}), 400
+    
+    # Delete agent information from SQLite database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM agents WHERE agent_id = ?', (agent_id,))
+    conn.commit()
+    conn.close()
+    
+    # Delete agent tasks from Redis
+    task_queue_key = f'task_queue:{agent_id}'
+    agent_tasks_key = f'agent_tasks:{agent_id}'
+    redis.delete(task_queue_key)
+    redis.delete(agent_tasks_key)
+    
+    return jsonify({"status": "Agent deleted", "agent_id": agent_id})
 
 def schedule_agent_status_check():
     import schedule
