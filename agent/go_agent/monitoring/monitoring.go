@@ -158,7 +158,7 @@ func CheckRunningProcess(processes, centralServerURL, agentID, pat string) {
 		if runtime.GOOS == "windows" {
 			cmd = exec.Command("powershell", "-Command", fmt.Sprintf("Get-Process -Name %s -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '%s' }", process, process))
 		} else {
-			cmd = exec.Command("pgrep", "-x", process)
+			cmd = exec.Command("sh", "-c", fmt.Sprintf("ps -ef | grep %s | grep -v grep", process))
 		}
 		var out bytes.Buffer
 		cmd.Stdout = &out
