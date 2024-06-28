@@ -1,8 +1,7 @@
-# endpoints/tasks.py
 from flask import Blueprint, request, jsonify
 from utils.redis_connection import get_redis_connection
 from utils.langchain_integration import convert_natural_language_to_script, interpret_result
-from utils.db import get_db_connection
+from utils.db import get_db_connection, DB_TYPE
 import json
 import uuid
 import logging
@@ -34,10 +33,28 @@ def sync_redis_and_db():
                 if task['status'] == 'completed':
                     result_data = redis.hgetall(f'result:{task_id}')
                     task.update({k.decode(): v.decode() for k, v in result_data.items()})
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO completed_tasks (task_id, agent_id, input, script_code, status, submitted_at, approved_at, completed_at, output, error, interpretation)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
+                    if DB_TYPE == 'mysql':
+                        query = '''
+                            INSERT INTO completed_tasks (task_id, agent_id, input, script_code, status, submitted_at, approved_at, completed_at, output, error, interpretation)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            ON DUPLICATE KEY UPDATE
+                            agent_id=VALUES(agent_id),
+                            input=VALUES(input),
+                            script_code=VALUES(script_code),
+                            status=VALUES(status),
+                            submitted_at=VALUES(submitted_at),
+                            approved_at=VALUES(approved_at),
+                            completed_at=VALUES(completed_at),
+                            output=VALUES(output),
+                            error=VALUES(error),
+                            interpretation=VALUES(interpretation)
+                        '''
+                    else:  # sqlite
+                        query = '''
+                            INSERT OR REPLACE INTO completed_tasks (task_id, agent_id, input, script_code, status, submitted_at, approved_at, completed_at, output, error, interpretation)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        '''
+                    cursor.execute(query, (
                         task['task_id'], task['agent_id'], task['input'], task['script_code'], task['status'],
                         task.get('submitted_at'), task.get('approved_at'), task.get('completed_at'),
                         task.get('output'), task.get('error'), task.get('interpretation')
@@ -54,9 +71,12 @@ def sync_redis_and_db():
                 "input": row['input'],
                 "script_code": row['script_code'],
                 "status": row['status'],
-                "submitted_at": row['submitted_at'],
-                "approved_at": row['approved_at'],
-                "completed_at": row['completed_at']
+                "submitted_at": row['submitted_at'].isoformat() if row['submitted_at'] else None,
+                "approved_at": row['approved_at'].isoformat() if row['approved_at'] else None,
+                "completed_at": row['completed_at'].isoformat() if row['completed_at'] else None,
+                "output": row['output'],
+                "error": row['error'],
+                "interpretation": row['interpretation']
             }
             redis.set(f'task:{task_id}', json.dumps(task_data))
             redis.hset(f'result:{task_id}', "output", row['output'])
@@ -76,8 +96,6 @@ def start_sync_thread():
     sync_thread.daemon = True
     sync_thread.start()
 
-
-
 @tasks_bp.route('/submit-task', methods=['POST'])
 def submit_task():
     data = request.get_json()
@@ -89,7 +107,8 @@ def submit_task():
     
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT os_type FROM agents WHERE agent_id = ?', (target_agent_id,))
+    query = 'SELECT os_type FROM agents WHERE agent_id = %s' if DB_TYPE == 'mysql' else 'SELECT os_type FROM agents WHERE agent_id = ?'
+    cursor.execute(query, (target_agent_id,))
     agent_info = cursor.fetchone()
     conn.close()
     
@@ -124,7 +143,6 @@ def submit_task():
     
     return jsonify({"task_id": task_id, "status": "Task created and pending review"})
 
-
 @tasks_bp.route('/get-pending-tasks', methods=['GET'])
 def get_pending_tasks():
     agent_id = request.args.get('agent_id')
@@ -144,7 +162,6 @@ def get_pending_tasks():
     
     return jsonify(pending_tasks)
 
-
 @tasks_bp.route('/get-all-pending-tasks', methods=['GET'])
 def get_all_pending_tasks():
     pending_task_ids = redis.lrange('pending_tasks', 0, -1)
@@ -157,7 +174,6 @@ def get_all_pending_tasks():
             pending_tasks.append(task)
     
     return jsonify(pending_tasks)
-
 
 @tasks_bp.route('/approve-task', methods=['POST'])
 def approve_task():
@@ -184,7 +200,6 @@ def approve_task():
     
     return jsonify({"status": "Task approved", "task_id": task_id})
 
-
 @tasks_bp.route('/reject-task', methods=['POST'])
 def reject_task():
     data = request.get_json()
@@ -207,7 +222,6 @@ def reject_task():
     redis.lrem('pending_tasks', 0, task_id)
     
     return jsonify({"status": "Task rejected", "task_id": task_id})
-
 
 @tasks_bp.route('/get-task', methods=['GET'])
 def get_task():
@@ -238,7 +252,6 @@ def get_task():
         return jsonify({"task_id": task_id, "input": input_text, "script_code": script_code, "timestamp": timestamp, "output": output, "error": error, "interpretation": interpretation})
     else:
         return jsonify({"error": "No task found for this agent"}), 404
-
 
 @tasks_bp.route('/report-result', methods=['POST'])
 def report_result():
@@ -283,7 +296,6 @@ def report_result():
     except Exception as e:
         logging.error(f"Error in report-result: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 @tasks_bp.route('/task-status/<task_id>', methods=['GET'])
 def task_status(task_id):
@@ -352,7 +364,6 @@ def get_agent_tasks():
     
     return jsonify(task_list)
 
-
 @tasks_bp.route('/get-all-completed-tasks', methods=['GET'])
 def get_all_completed_tasks():
     completed_tasks = []
@@ -382,9 +393,9 @@ def get_all_completed_tasks():
                 "input": row['input'],
                 "script_code": row['script_code'],
                 "status": row['status'],
-                "submitted_at": row['submitted_at'],
-                "approved_at": row['approved_at'],
-                "completed_at": row['completed_at'],
+                "submitted_at": row['submitted_at'].isoformat() if row['submitted_at'] else None,
+                "approved_at": row['approved_at'].isoformat() if row['approved_at'] else None,
+                "completed_at": row['completed_at'].isoformat() if row['completed_at'] else None,
                 "output": row['output'],
                 "error": row['error'],
                 "interpretation": row['interpretation']
@@ -395,7 +406,6 @@ def get_all_completed_tasks():
     completed_tasks.sort(key=lambda x: x.get('approved_at', ''), reverse=True)
 
     return jsonify(completed_tasks)
-
 
 # Endpoint to summary the tasks
 @tasks_bp.route('/get-tasks-summary', methods=['GET'])
@@ -412,4 +422,3 @@ def get_tasks_summary():
             success_count += 1
     
     return jsonify({"successCount": success_count, "failureCount": failure_count})
-

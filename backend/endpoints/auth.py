@@ -2,7 +2,7 @@ from flask import request, jsonify, Blueprint
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from datetime import datetime, timedelta
-from utils.db import get_db_connection
+from utils.db import get_db_connection, DB_TYPE
 import uuid
 import os
 
@@ -43,14 +43,19 @@ def register_user():
     # Create a unique user ID
     user_id = str(uuid.uuid4())
 
-    # Save user information in SQLite database
+    # Save user information in the database
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''
+    query = '''
+        INSERT INTO users (user_id, username, email, password, role)
+        VALUES (%s, %s, %s, %s, %s)
+    ''' if DB_TYPE == 'mysql' else '''
         INSERT INTO users (user_id, username, email, password, role)
         VALUES (?, ?, ?, ?, ?)
-    ''', (user_id, username, email, hashed_password, role))
+    '''
+    cursor.execute(query, (user_id, username, email, hashed_password, role))
     conn.commit()
+    cursor.close()
     conn.close()
     
     return jsonify({"status": "User registered", "user_id": user_id})
@@ -65,11 +70,13 @@ def authenticate_user():
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
 
-    # Retrieve user information from SQLite database
+    # Retrieve user information from the database
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+    query = 'SELECT * FROM users WHERE username = %s' if DB_TYPE == 'mysql' else 'SELECT * FROM users WHERE username = ?'
+    cursor.execute(query, (username,))
     user = cursor.fetchone()
+    cursor.close()
     conn.close()
 
     if not user or not check_password_hash(user['password'], password):
@@ -86,7 +93,6 @@ def authenticate_user():
         "role": user['role'],
         "token": token
     })
-
 
 # Endpoint to verify token
 @auth_bp.route('/verify-token', methods=['POST'])
@@ -114,8 +120,10 @@ def get_user_info():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT username, email, role FROM users WHERE user_id = ?', (user_id,))
+    query = 'SELECT username, email, role FROM users WHERE user_id = %s' if DB_TYPE == 'mysql' else 'SELECT username, email, role FROM users WHERE user_id = ?'
+    cursor.execute(query, (user_id,))
     user = cursor.fetchone()
+    cursor.close()
     conn.close()
 
     if not user:
@@ -136,13 +144,15 @@ def change_password():
     if not user_id or not current_password or not new_password:
         return jsonify({"error": "Current password and new password are required"}), 400
 
-    # Retrieve user information from SQLite database
+    # Retrieve user information from the database
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+    query = 'SELECT * FROM users WHERE user_id = %s' if DB_TYPE == 'mysql' else 'SELECT * FROM users WHERE user_id = ?'
+    cursor.execute(query, (user_id,))
     user = cursor.fetchone()
 
     if not user or not check_password_hash(user['password'], current_password):
+        cursor.close()
         conn.close()
         return jsonify({"error": "Invalid user ID or current password"}), 401
 
@@ -150,8 +160,10 @@ def change_password():
     hashed_new_password = generate_password_hash(new_password, method='pbkdf2:sha256')
 
     # Update user's password in the database
-    cursor.execute('UPDATE users SET password = ? WHERE user_id = ?', (hashed_new_password, user_id))
+    query = 'UPDATE users SET password = %s WHERE user_id = %s' if DB_TYPE == 'mysql' else 'UPDATE users SET password = ? WHERE user_id = ?'
+    cursor.execute(query, (hashed_new_password, user_id))
     conn.commit()
+    cursor.close()
     conn.close()
 
     return jsonify({"status": "Password updated successfully"})
@@ -168,16 +180,20 @@ def get_all_users():
     # Retrieve user information to check role
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT role FROM users WHERE user_id = ?', (user_id,))
+    query = 'SELECT role FROM users WHERE user_id = %s' if DB_TYPE == 'mysql' else 'SELECT role FROM users WHERE user_id = ?'
+    cursor.execute(query, (user_id,))
     user = cursor.fetchone()
 
     if not user or user['role'] != 'admin':
+        cursor.close()
         conn.close()
         return jsonify({"error": "Unauthorized access"}), 403
 
     # Retrieve all users
-    cursor.execute('SELECT user_id, username, email, role FROM users')
+    query = 'SELECT user_id, username, email, role FROM users'
+    cursor.execute(query)
     users = cursor.fetchall()
+    cursor.close()
     conn.close()
 
     user_list = [dict(user) for user in users]
@@ -202,16 +218,20 @@ def update_user_role():
     # Retrieve admin information to check role
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT role FROM users WHERE user_id = ?', (admin_id,))
+    query = 'SELECT role FROM users WHERE user_id = %s' if DB_TYPE == 'mysql' else 'SELECT role FROM users WHERE user_id = ?'
+    cursor.execute(query, (admin_id,))
     admin = cursor.fetchone()
 
     if not admin or admin['role'] != 'admin':
+        cursor.close()
         conn.close()
         return jsonify({"error": "Unauthorized access"}), 403
 
     # Update user role in the database
-    cursor.execute('UPDATE users SET role = ? WHERE user_id = ?', (new_role, user_id))
+    query = 'UPDATE users SET role = %s WHERE user_id = %s' if DB_TYPE == 'mysql' else 'UPDATE users SET role = ? WHERE user_id = ?'
+    cursor.execute(query, (new_role, user_id))
     conn.commit()
+    cursor.close()
     conn.close()
 
     return jsonify({"status": "User role updated successfully"})

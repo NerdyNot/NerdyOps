@@ -1,7 +1,6 @@
-# monitoring.py
 from flask import Blueprint, request, jsonify
 from utils.redis_connection import get_redis_connection
-from utils.db import get_db_connection
+from utils.db import get_db_connection, DB_TYPE
 import json
 
 monitoring_bp = Blueprint('monitoring', __name__)
@@ -81,7 +80,14 @@ def set_monitoring_settings():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('''
+    query = '''
+        INSERT INTO agent_monitoring_settings (agent_id, check_schedule, check_ping, running_process, listen_port)
+        VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE check_schedule = VALUES(check_schedule),
+                                check_ping = VALUES(check_ping),
+                                running_process = VALUES(running_process),
+                                listen_port = VALUES(listen_port)
+    ''' if DB_TYPE == 'mysql' else '''
         INSERT INTO agent_monitoring_settings (agent_id, check_schedule, check_ping, running_process, listen_port)
         VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(agent_id)
@@ -89,9 +95,11 @@ def set_monitoring_settings():
                       check_ping = excluded.check_ping,
                       running_process = excluded.running_process,
                       listen_port = excluded.listen_port
-    ''', (agent_id, check_schedule, check_ping, running_process, listen_port))
+    '''
+    cursor.execute(query, (agent_id, check_schedule, check_ping, running_process, listen_port))
 
     conn.commit()
+    cursor.close()
     conn.close()
 
     return jsonify({"message": "Monitoring settings saved successfully"})
@@ -105,8 +113,12 @@ def get_monitoring_settings():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT check_schedule, check_ping, running_process, listen_port FROM agent_monitoring_settings WHERE agent_id = ?', (agent_id,))
+
+    query = 'SELECT check_schedule, check_ping, running_process, listen_port FROM agent_monitoring_settings WHERE agent_id = %s' if DB_TYPE == 'mysql' else 'SELECT check_schedule, check_ping, running_process, listen_port FROM agent_monitoring_settings WHERE agent_id = ?'
+    cursor.execute(query, (agent_id,))
     row = cursor.fetchone()
+
+    cursor.close()
     conn.close()
 
     if row:

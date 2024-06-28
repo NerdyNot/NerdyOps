@@ -4,7 +4,7 @@ import logging
 import threading
 from time import sleep
 from utils.redis_connection import get_redis_connection
-from utils.db import get_db_connection, get_api_key
+from utils.db import get_db_connection, get_api_key, DB_TYPE
 
 logging.basicConfig(level=logging.INFO)
 
@@ -22,12 +22,17 @@ def send_slack_notification(webhook_url, message):
 
 def save_slack_service_hook(db_conn, webhook_url):
     cursor = db_conn.cursor()
-    cursor.execute('''
+    query = '''
+        INSERT INTO api_keys (key_name, key_value)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)
+    ''' if DB_TYPE == 'mysql' else '''
         INSERT INTO api_keys (key_name, key_value)
         VALUES (?, ?)
         ON CONFLICT(key_name)
         DO UPDATE SET key_value = excluded.key_value
-    ''', ('slack_webhook_url', webhook_url))
+    '''
+    cursor.execute(query, ('slack_webhook_url', webhook_url))
     db_conn.commit()
 
 def get_slack_service_hook():
@@ -36,7 +41,8 @@ def get_slack_service_hook():
 def get_notification_settings():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT config_key, config_value FROM config WHERE config_key LIKE "slack_%"')
+    query = 'SELECT config_key, config_value FROM config WHERE config_key LIKE %s' if DB_TYPE == 'mysql' else 'SELECT config_key, config_value FROM config WHERE config_key LIKE ?'
+    cursor.execute(query, ("slack_%",))
     rows = cursor.fetchall()
     conn.close()
     return {row['config_key']: row['config_value'] == 'true' for row in rows}

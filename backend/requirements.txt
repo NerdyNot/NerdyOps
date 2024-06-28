@@ -6,3 +6,6 @@ redis
 flask-cors
 pyjwt
 schedule
+pymysql
+python-dotenv
+cryptography

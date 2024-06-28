@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from utils.db import get_db_connection, init_db
+from utils.db import get_db_connection, init_db, DB_TYPE
 from utils.slack_integration import save_slack_service_hook
 
 config_bp = Blueprint('config_bp', __name__)
@@ -15,14 +15,20 @@ def set_api_key():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('''
+    query = '''
+        INSERT INTO api_keys (key_name, key_value)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)
+    ''' if DB_TYPE == 'mysql' else '''
         INSERT INTO api_keys (key_name, key_value)
         VALUES (?, ?)
         ON CONFLICT(key_name)
         DO UPDATE SET key_value = excluded.key_value
-    ''', ('openai_api_key', api_key))
+    '''
+    cursor.execute(query, ('openai_api_key', api_key))
 
     conn.commit()
+    cursor.close()
     conn.close()
 
     return jsonify({"message": "API key saved successfully!"}), 200
@@ -32,9 +38,11 @@ def get_api_key():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT key_value FROM api_keys WHERE key_name = ?', ('openai_api_key',))
+    query = 'SELECT key_value FROM api_keys WHERE key_name = %s' if DB_TYPE == 'mysql' else 'SELECT key_value FROM api_keys WHERE key_name = ?'
+    cursor.execute(query, ('openai_api_key',))
     row = cursor.fetchone()
 
+    cursor.close()
     conn.close()
 
     if row:
@@ -62,8 +70,12 @@ def set_slack_webhook():
 def get_slack_webhook():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT key_value FROM api_keys WHERE key_name = ?', ('slack_webhook_url',))
+
+    query = 'SELECT key_value FROM api_keys WHERE key_name = %s' if DB_TYPE == 'mysql' else 'SELECT key_value FROM api_keys WHERE key_name = ?'
+    cursor.execute(query, ('slack_webhook_url',))
     row = cursor.fetchone()
+
+    cursor.close()
     conn.close()
 
     if row:
@@ -84,15 +96,21 @@ def set_slack_notification_settings():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    query = '''
+        INSERT INTO config (config_key, config_value)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)
+    ''' if DB_TYPE == 'mysql' else '''
+        INSERT INTO config (config_key, config_value)
+        VALUES (?, ?)
+        ON CONFLICT(config_key)
+        DO UPDATE SET config_value = excluded.config_value
+    '''
     for key, value in settings.items():
-        cursor.execute('''
-            INSERT INTO config (config_key, config_value)
-            VALUES (?, ?)
-            ON CONFLICT(config_key)
-            DO UPDATE SET config_value = excluded.config_value
-        ''', (key, value))
+        cursor.execute(query, (key, value))
 
     conn.commit()
+    cursor.close()
     conn.close()
 
     return jsonify({"message": "Slack notification settings saved successfully!"}), 200
@@ -101,8 +119,10 @@ def set_slack_notification_settings():
 def get_slack_notification_settings():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT config_key, config_value FROM config WHERE config_key LIKE "slack_%"')
+    query = 'SELECT config_key, config_value FROM config WHERE config_key LIKE %s' if DB_TYPE == 'mysql' else 'SELECT config_key, config_value FROM config WHERE config_key LIKE ?'
+    cursor.execute(query, ('slack_%',))
     rows = cursor.fetchall()
+    cursor.close()
     conn.close()
 
     settings = {row['config_key']: row['config_value'] == 'true' for row in rows}
@@ -122,29 +142,24 @@ def set_redis_config():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('''
+    query = '''
+        INSERT INTO config (config_key, config_value)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)
+    ''' if DB_TYPE == 'mysql' else '''
         INSERT INTO config (config_key, config_value)
         VALUES (?, ?)
         ON CONFLICT(config_key)
         DO UPDATE SET config_value = excluded.config_value
-    ''', ('redis_host', redis_host))
-    
-    cursor.execute('''
-        INSERT INTO config (config_key, config_value)
-        VALUES (?, ?)
-        ON CONFLICT(config_key)
-        DO UPDATE SET config_value = excluded.config_value
-    ''', ('redis_port', str(redis_port)))
+    '''
+    cursor.execute(query, ('redis_host', redis_host))
+    cursor.execute(query, ('redis_port', str(redis_port)))
 
     if redis_password:
-        cursor.execute('''
-            INSERT INTO config (config_key, config_value)
-            VALUES (?, ?)
-            ON CONFLICT(config_key)
-            DO UPDATE SET config_value = excluded.config_value
-        ''', ('redis_password', redis_password))
+        cursor.execute(query, ('redis_password', redis_password))
 
     conn.commit()
+    cursor.close()
     conn.close()
 
     return jsonify({"message": "Redis configuration saved successfully!"}), 200
@@ -153,9 +168,10 @@ def set_redis_config():
 def get_redis_config():
     conn = get_db_connection()
     cursor = conn.cursor()
-
-    cursor.execute('SELECT config_key, config_value FROM config WHERE config_key IN ("redis_host", "redis_port", "redis_password")')
+    query = 'SELECT config_key, config_value FROM config WHERE config_key IN (%s, %s, %s)' if DB_TYPE == 'mysql' else 'SELECT config_key, config_value FROM config WHERE config_key IN (?, ?, ?)'
+    cursor.execute(query, ('redis_host', 'redis_port', 'redis_password'))
     rows = cursor.fetchall()
+    cursor.close()
     conn.close()
 
     config = {row['config_key']: row['config_value'] for row in rows}
