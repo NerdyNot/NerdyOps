@@ -7,12 +7,76 @@ import json
 import uuid
 import logging
 from datetime import datetime
+import threading
+from time import sleep
 
 logging.basicConfig(level=logging.INFO)
 
 tasks_bp = Blueprint('tasks', __name__)
 
 redis = get_redis_connection()
+
+# Initialize a lock for synchronization
+sync_lock = threading.Lock()
+
+def sync_redis_and_db():
+    with sync_lock:  # Acquire lock
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Sync from Redis to DB
+        task_keys = redis.keys('result:*')
+        for key in task_keys:
+            task_id = key.decode().split(':')[1]
+            task_data = redis.get(f'task:{task_id}')
+            if task_data:
+                task = json.loads(task_data)
+                if task['status'] == 'completed':
+                    result_data = redis.hgetall(f'result:{task_id}')
+                    task.update({k.decode(): v.decode() for k, v in result_data.items()})
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO completed_tasks (task_id, agent_id, input, script_code, status, submitted_at, approved_at, completed_at, output, error, interpretation)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        task['task_id'], task['agent_id'], task['input'], task['script_code'], task['status'],
+                        task.get('submitted_at'), task.get('approved_at'), task.get('completed_at'),
+                        task.get('output'), task.get('error'), task.get('interpretation')
+                    ))
+
+        # Sync from DB to Redis
+        cursor.execute('SELECT * FROM completed_tasks')
+        rows = cursor.fetchall()
+        for row in rows:
+            task_id = row['task_id']
+            task_data = {
+                "task_id": row['task_id'],
+                "agent_id": row['agent_id'],
+                "input": row['input'],
+                "script_code": row['script_code'],
+                "status": row['status'],
+                "submitted_at": row['submitted_at'],
+                "approved_at": row['approved_at'],
+                "completed_at": row['completed_at']
+            }
+            redis.set(f'task:{task_id}', json.dumps(task_data))
+            redis.hset(f'result:{task_id}', "output", row['output'])
+            redis.hset(f'result:{task_id}', "error", row['error'])
+            redis.hset(f'result:{task_id}', "interpretation", row['interpretation'])
+
+        conn.commit()
+        conn.close()
+
+def sync_redis_to_db_background():
+    while True:
+        sync_redis_and_db()
+        sleep(60)  # Perform sync every 1 minute
+
+def start_sync_thread():
+    sync_thread = threading.Thread(target=sync_redis_to_db_background)
+    sync_thread.daemon = True
+    sync_thread.start()
+
+
 
 @tasks_bp.route('/submit-task', methods=['POST'])
 def submit_task():
@@ -291,9 +355,10 @@ def get_agent_tasks():
 
 @tasks_bp.route('/get-all-completed-tasks', methods=['GET'])
 def get_all_completed_tasks():
-    task_keys = redis.keys('result:*')
     completed_tasks = []
 
+    # First try to get data from Redis
+    task_keys = redis.keys('result:*')
     for key in task_keys:
         task_id = key.decode().split(':')[1]
         task_data = redis.get(f'task:{task_id}')
@@ -303,10 +368,34 @@ def get_all_completed_tasks():
                 result_data = redis.hgetall(f'result:{task_id}')
                 task.update({k.decode(): v.decode() for k, v in result_data.items()})
                 completed_tasks.append(task)
+    
+    # If Redis doesn't have data, fetch from DB
+    if not completed_tasks:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM completed_tasks')
+        rows = cursor.fetchall()
+        for row in rows:
+            task = {
+                "task_id": row['task_id'],
+                "agent_id": row['agent_id'],
+                "input": row['input'],
+                "script_code": row['script_code'],
+                "status": row['status'],
+                "submitted_at": row['submitted_at'],
+                "approved_at": row['approved_at'],
+                "completed_at": row['completed_at'],
+                "output": row['output'],
+                "error": row['error'],
+                "interpretation": row['interpretation']
+            }
+            completed_tasks.append(task)
+        conn.close()
 
     completed_tasks.sort(key=lambda x: x.get('approved_at', ''), reverse=True)
 
     return jsonify(completed_tasks)
+
 
 # Endpoint to summary the tasks
 @tasks_bp.route('/get-tasks-summary', methods=['GET'])

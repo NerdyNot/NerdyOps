@@ -4,9 +4,9 @@ import uuid
 
 # Initialize the SQLite database and create the necessary tables if they don't exist
 def init_db():
-    conn = sqlite3.connect('central_server.db')  # Connect to the SQLite database
-    cursor = conn.cursor()  # Create a cursor to execute SQL commands
-
+    conn = sqlite3.connect('central_server.db')
+    cursor = conn.cursor()
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS agents (
             agent_id TEXT PRIMARY KEY,
@@ -17,8 +17,8 @@ def init_db():
             shell_version TEXT,
             last_update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    ''')  # Create 'agents' table if it doesn't exist
-
+    ''')
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id TEXT PRIMARY KEY,
@@ -27,8 +27,8 @@ def init_db():
             password TEXT,
             role TEXT
         )
-    ''')  # Create 'users' table if it doesn't exist
-
+    ''')
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_pats (
             pat_id TEXT PRIMARY KEY,
@@ -38,30 +38,44 @@ def init_db():
             user_id TEXT,
             FOREIGN KEY (user_id) REFERENCES users (user_id)
         )
-    ''')  # Create 'user_pats' table if it doesn't exist
-
+    ''')
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS api_keys (
             key_name TEXT PRIMARY KEY,
             key_value TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    ''')  # Create 'api_keys' table if it doesn't exist
-
-    # Check if the admin user already exists
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS completed_tasks (
+            task_id TEXT PRIMARY KEY,
+            agent_id TEXT,
+            input TEXT,
+            script_code TEXT,
+            status TEXT,
+            submitted_at TIMESTAMP,
+            approved_at TIMESTAMP,
+            completed_at TIMESTAMP,
+            output TEXT,
+            error TEXT,
+            interpretation TEXT
+        )
+    ''')
+    
     cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
     admin_user = cursor.fetchone()
-
+    
     if not admin_user:
-        # Hash the default admin password
         hashed_password = generate_password_hash('admin', method='pbkdf2:sha256')
         cursor.execute('''
             INSERT INTO users (user_id, username, email, password, role)
             VALUES (?, ?, ?, ?, ?)
         ''', (str(uuid.uuid4()), 'admin', 'admin@admin.com', hashed_password, 'admin'))
-        conn.commit()  # Save changes
-
-    conn.close()  # Close the connection
+        conn.commit()
+    
+    conn.close()
 
 # Establish and return a connection to the SQLite database
 def get_db_connection():

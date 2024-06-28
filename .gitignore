@@ -3,3 +3,4 @@
 **/*.db
 **/*.ini
 agent/**/*.json
+**/dist/*

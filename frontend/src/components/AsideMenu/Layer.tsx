@@ -41,7 +41,7 @@ export default function AsideMenuLayer({ menu, className = '', ...props }: Props
           className={`aside-brand flex flex-row h-14 items-center justify-between dark:bg-slate-900`}
         >
           <div className="text-center flex-1 lg:text-left lg:pl-6 xl:text-center xl:pl-0">
-            <b className="font-black">RunAIOps</b>
+            <b className="font-black">NerdyOps</b>
           </div>
           <button
             className="hidden lg:inline-block xl:hidden p-3"

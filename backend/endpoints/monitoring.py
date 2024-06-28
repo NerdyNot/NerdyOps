@@ -2,10 +2,13 @@
 from flask import Blueprint, request, jsonify
 from utils.redis_connection import get_redis_connection
 import json
-import time
 
 monitoring_bp = Blueprint('monitoring', __name__)
 redis = get_redis_connection()
+
+def add_notification_to_queue(message):
+    redis_conn = get_redis_connection()
+    redis_conn.lpush('slack_notifications', json.dumps({'message': message}))
 
 @monitoring_bp.route('/report-resource-usage', methods=['POST'])
 def report_resource_usage():
@@ -46,3 +49,18 @@ def get_resource_usage():
 
     resource_data = [json.loads(data) for data in resource_data_list]
     return jsonify(resource_data)
+
+
+@monitoring_bp.route('/add-slack-notification', methods=['POST'])
+def add_slack_notification():
+    data = request.get_json()
+    message = data.get('message')
+
+    if not message:
+        return jsonify({"message": "Message is required"}), 400
+
+    # Add notification to Redis queue
+    redis_conn = get_redis_connection()
+    redis_conn.lpush('slack_notifications', json.dumps({'message': message}))
+
+    return jsonify({"message": "Notification added to queue"}), 200

@@ -2,15 +2,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.redis_connection import get_redis_connection
-from utils.db import init_db, get_db_connection
+from utils.db import init_db
 from utils.logo import print_logo
+from utils.slack_integration import start_notification_thread
 from endpoints.auth import auth_bp
-from endpoints.tasks import tasks_bp
+from endpoints.tasks import tasks_bp, start_sync_thread
 from endpoints.monitoring import monitoring_bp
 from endpoints.pat import pat_bp
 from endpoints.agent import agent_bp, schedule_agent_status_check
 from endpoints.config import config_bp
-import json
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -45,4 +45,6 @@ if __name__ == '__main__':
     print_logo()
     init_db()
     schedule_agent_status_check()
+    start_sync_thread()
+    start_notification_thread()
     app.run(host='0.0.0.0', port=5001)
