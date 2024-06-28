@@ -11,6 +11,12 @@ import ChartLineSample from '../components/ChartLineSample';
 import Button from '../components/Button';
 import ImdsModal from '../components/Imds';
 import SettingsModal from '../components/SettingsModal';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import { registerLocale } from 'react-datepicker';
+import ko from 'date-fns/locale/ko';
+
+registerLocale('ko', ko);
 
 interface Agent {
   agent_id: string;
@@ -41,6 +47,8 @@ const AgentMonitoringPage: React.FC = () => {
   const [imdsData, setImdsData] = useState<any>(null);
   const [isImdsModalOpen, setIsImdsModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
     axios.get(`${centralServerUrl}/get-agents`)
@@ -65,32 +73,7 @@ const AgentMonitoringPage: React.FC = () => {
       .then(response => {
         const data = response.data;
         setResourceUsage(data);
-
-        const labels = data.map((item: ResourceUsage) => new Date(item.timestamp * 1000).toLocaleTimeString());
-        const cpuData = data.map((item: ResourceUsage) => item.cpu_usage);
-        const memData = data.map((item: ResourceUsage) => item.mem_usage);
-
-        setCpuChartData({
-          labels,
-          datasets: [{
-            label: 'CPU Usage',
-            data: cpuData,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            fill: true,
-          }],
-        });
-
-        setMemChartData({
-          labels,
-          datasets: [{
-            label: 'Memory Usage',
-            data: memData,
-            borderColor: 'rgba(153, 102, 255, 1)',
-            backgroundColor: 'rgba(153, 102, 255, 0.2)',
-            fill: true,
-          }],
-        });
+        updateChartData(data);
         setLoading(false);
       })
       .catch(error => {
@@ -98,6 +81,41 @@ const AgentMonitoringPage: React.FC = () => {
         setError('Failed to load resource usage');
         setLoading(false);
       });
+  };
+
+  const updateChartData = (data: ResourceUsage[]) => {
+    const filteredData = data.filter((item: ResourceUsage) => {
+      const itemDate = new Date(item.timestamp * 1000);
+      if (startDate && itemDate < startDate) return false;
+      if (endDate && itemDate > endDate) return false;
+      return true;
+    });
+
+    const labels = filteredData.map((item: ResourceUsage) => new Date(item.timestamp * 1000).toLocaleString());
+    const cpuData = filteredData.map((item: ResourceUsage) => item.cpu_usage);
+    const memData = filteredData.map((item: ResourceUsage) => item.mem_usage);
+
+    setCpuChartData({
+      labels,
+      datasets: [{
+        label: 'CPU Usage',
+        data: cpuData,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        fill: true,
+      }],
+    });
+
+    setMemChartData({
+      labels,
+      datasets: [{
+        label: 'Memory Usage',
+        data: memData,
+        borderColor: 'rgba(153, 102, 255, 1)',
+        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+        fill: true,
+      }],
+    });
   };
 
   const handleAgentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -131,6 +149,15 @@ const AgentMonitoringPage: React.FC = () => {
     setIsSettingsModalOpen(false);
   };
 
+  const handleDateChange = (dates: [Date | null, Date | null]) => {
+    const [start, end] = dates;
+    setStartDate(start);
+    setEndDate(end);
+    if (resourceUsage.length > 0) {
+      updateChartData(resourceUsage);
+    }
+  };
+
   const secondsToHMS = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -160,7 +187,7 @@ const AgentMonitoringPage: React.FC = () => {
         </SectionTitleLineWithButton>
 
         <div className="mb-4">
-          <select onChange={handleAgentChange} className="border p-2 w-full">
+          <select onChange={handleAgentChange} className="border p-2 w-full rounded-lg shadow-sm">
             <option value="">Select an Agent</option>
             {agents.map(agent => (
               <option key={agent.agent_id} value={agent.agent_id}>
@@ -171,34 +198,46 @@ const AgentMonitoringPage: React.FC = () => {
         </div>
 
         {selectedAgent && (
-          <CardBox>
+          <>
+            <CardBox>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Agent Details</h2>
+                <div>
+                  <Button icon={mdiInformationOutline} color="primary" onClick={() => handleImdsModalOpen(resourceUsage[resourceUsage.length - 1]?.imds || '{}')}>
+                    Show IMDS Info
+                  </Button>
+                  <Button icon={mdiCogOutline} color="primary" onClick={handleSettingsModalOpen} className="ml-2">
+                    Settings
+                  </Button>
+                </div>
+              </div>
+              <p><strong>Agent ID:</strong> {selectedAgent.agent_id}</p>
+              <p><strong>Hostname:</strong> {selectedAgent.computer_name}</p>
+              <p><strong>Private IP:</strong> {selectedAgent.private_ip}</p>
+              <p><strong>Status:</strong> {getAgentStatus(selectedAgent)}</p>
+              <p><strong>Running Time:</strong> {resourceUsage.length > 0 ? secondsToHMS(resourceUsage[resourceUsage.length - 1].running_time) : 'N/A'}</p>
+              <p><strong>CPU Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage.length - 1].cpu_usage : 'N/A'}%</p>
+              <p><strong>Memory Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage.length - 1].mem_usage : 'N/A'}%</p>
+            </CardBox>
+
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Agent Details</h2>
-              <div>
-                <Button icon={mdiInformationOutline} color="primary" onClick={() => handleImdsModalOpen(resourceUsage[resourceUsage.length - 1]?.imds || '{}')}>
-                  Show IMDS Info
-                </Button>
-                <Button icon={mdiCogOutline} color="primary" onClick={handleSettingsModalOpen} className="ml-2">
-                  Settings
-                </Button>
+              <SectionTitleLineWithButton icon={mdiMonitor} title="CPU Usage" />
+              <div className="inline-block p-2 bg-white rounded-lg shadow-lg">
+                <DatePicker
+                  selected={startDate}
+                  onChange={handleDateChange}
+                  startDate={startDate}
+                  endDate={endDate}
+                  selectsRange
+                  dateFormat="Pp"
+                  locale="ko"
+                  isClearable
+                  className="border rounded-lg p-2"
+                  placeholderText="Select a date range"
+                />
               </div>
             </div>
-            <p><strong>Agent ID:</strong> {selectedAgent.agent_id}</p>
-            <p><strong>Hostname:</strong> {selectedAgent.computer_name}</p>
-            <p><strong>Private IP:</strong> {selectedAgent.private_ip}</p>
-            <p><strong>Status:</strong> {getAgentStatus(selectedAgent)}</p>
-            <p><strong>Running Time:</strong> {resourceUsage.length > 0 ? secondsToHMS(resourceUsage[resourceUsage.length - 1].running_time) : 'N/A'}</p>
-            <p><strong>CPU Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage.length - 1].cpu_usage : 'N/A'}%</p>
-            <p><strong>Memory Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage.length - 1].mem_usage : 'N/A'}%</p>
-          </CardBox>
-        )}
 
-        {loading && <p>Loading resource usage...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-
-        {!loading && !error && selectedAgent && resourceUsage.length > 0 && (
-          <>
-            <SectionTitleLineWithButton icon={mdiMonitor} title="CPU Usage" />
             <CardBox className="mb-6">
               <ChartLineSample data={cpuChartData} />
             </CardBox>
@@ -208,6 +247,9 @@ const AgentMonitoringPage: React.FC = () => {
             </CardBox>
           </>
         )}
+
+        {loading && <p>Loading resource usage...</p>}
+        {error && <p className="text-red-500">{error}</p>}
       </SectionMain>
       <ImdsModal isOpen={isImdsModalOpen} onClose={() => setIsImdsModalOpen(false)} json={imdsData} />
       {selectedAgent && (
