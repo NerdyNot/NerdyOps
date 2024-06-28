@@ -164,7 +164,7 @@ func CheckRunningProcess(processes, centralServerURL, agentID, pat string) {
 		cmd.Stdout = &out
 		err := cmd.Run()
 		if err != nil || out.String() == "" {
-			message := fmt.Sprintf("*Running Process Error*\n - Process %s is not running for agent %s", process, agentID)
+			message := fmt.Sprintf("*Running Process Error*\n*Agent ID* : %s \n- Process *%s is not running*", agentID, process)
 			sendSlackNotification(centralServerURL, message, "running_process", agentID, pat)
 		}
 	}
@@ -184,7 +184,7 @@ func CheckPing(hosts, centralServerURL, agentID, pat string) {
 		cmd.Stdout = &out
 		err := cmd.Run()
 		if err != nil {
-			message := fmt.Sprintf("*ICMP Error* \n - Ping to host %s failed for agent %s", host, agentID)
+			message := fmt.Sprintf("*ICMP Error* \n*Agent ID* : %s \n - Ping to host *%s failed*", agentID, host)
 			sendSlackNotification(centralServerURL, message, "ping_check", agentID, pat)
 		}
 	}
@@ -196,7 +196,7 @@ func CheckListenPort(ports, centralServerURL, agentID, pat string) {
 		port = strings.TrimSpace(port)
 		var cmd *exec.Cmd
 		if runtime.GOOS == "windows" {
-			cmd = exec.Command("powershell", "-Command", fmt.Sprintf("Test-NetConnection -Port %s", port))
+			cmd = exec.Command("cmd", "/c", "netstat", "-an", "|", "findstr", fmt.Sprintf(":%s", port))
 		} else {
 			cmd = exec.Command("netstat", "-an", "|", "grep", fmt.Sprintf(":%s", port))
 		}
@@ -204,7 +204,7 @@ func CheckListenPort(ports, centralServerURL, agentID, pat string) {
 		cmd.Stdout = &out
 		err := cmd.Run()
 		if err != nil || out.String() == "" {
-			message := fmt.Sprintf("*ListenPort Error* \n - Port %s is not listening for agent %s", port, agentID)
+			message := fmt.Sprintf("*ListenPort Error*\n*Agent ID*: %s\n - Port *%s is not listening*", agentID, port)
 			sendSlackNotification(centralServerURL, message, "listen_port", agentID, pat)
 		}
 	}
@@ -228,7 +228,7 @@ func CheckIMDSSchedule(centralServerURL, agentID, pat string) {
 			return
 		}
 		if events, ok := result["Events"].([]interface{}); ok && len(events) > 0 {
-			message := fmt.Sprintf("*IMDS maintenance events detected* for agent %s: \n%v", agentID, events)
+			message := fmt.Sprintf("*IMDS maintenance events detected*\n AgentID: %s\n%v", agentID, events)
 			sendSlackNotification(centralServerURL, message, "imds_schedule", agentID, pat)
 		}
 	} else {
