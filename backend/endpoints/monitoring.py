@@ -1,6 +1,7 @@
 # monitoring.py
 from flask import Blueprint, request, jsonify
 from utils.redis_connection import get_redis_connection
+from utils.db import get_db_connection
 import json
 
 monitoring_bp = Blueprint('monitoring', __name__)
@@ -66,3 +67,57 @@ def add_slack_notification():
     redis_conn.lpush('slack_notifications', json.dumps({'message': message, 'type': notification_type}))
 
     return jsonify({"message": "Notification added to queue"}), 200
+
+@monitoring_bp.route('/set-monitoring-settings', methods=['POST'])
+def set_monitoring_settings():
+    data = request.get_json()
+    agent_id = data.get('agent_id')
+    check_schedule = data.get('check_schedule', False)
+    check_ping = data.get('check_ping', "")
+    running_process = data.get('running_process', "")
+    listen_port = data.get('listen_port', "")
+
+    if not agent_id:
+        return jsonify({"error": "Agent ID is required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        INSERT INTO agent_monitoring_settings (agent_id, check_schedule, check_ping, running_process, listen_port)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(agent_id)
+        DO UPDATE SET check_schedule = excluded.check_schedule,
+                      check_ping = excluded.check_ping,
+                      running_process = excluded.running_process,
+                      listen_port = excluded.listen_port
+    ''', (agent_id, check_schedule, check_ping, running_process, listen_port))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Monitoring settings saved successfully"})
+
+@monitoring_bp.route('/get-monitoring-settings', methods=['GET'])
+def get_monitoring_settings():
+    agent_id = request.args.get('agent_id')
+
+    if not agent_id:
+        return jsonify({"error": "Agent ID is required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT check_schedule, check_ping, running_process, listen_port FROM agent_monitoring_settings WHERE agent_id = ?', (agent_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        settings = {
+            "check_schedule": row['check_schedule'],
+            "check_ping": row['check_ping'],
+            "running_process": row['running_process'],
+            "listen_port": row['listen_port']
+        }
+        return jsonify(settings)
+    else:
+        return jsonify({"error": "Settings not found for this agent"}), 404

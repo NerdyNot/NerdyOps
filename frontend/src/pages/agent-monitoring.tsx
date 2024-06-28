@@ -1,4 +1,4 @@
-import { mdiChartTimelineVariant, mdiMonitor, mdiReload, mdiInformationOutline, mdiMonitorDashboard } from '@mdi/js';
+import { mdiChartTimelineVariant, mdiMonitor, mdiReload, mdiInformationOutline, mdiMonitorDashboard, mdiCogOutline } from '@mdi/js';
 import Head from 'next/head';
 import React, { ReactElement, useState, useEffect } from 'react';
 import LayoutAuthenticated from '../layouts/Authenticated';
@@ -10,14 +10,15 @@ import axios from 'axios';
 import ChartLineSample from '../components/ChartLineSample';
 import Button from '../components/Button';
 import ImdsModal from '../components/Imds';
+import SettingsModal from '../components/SettingsModal';
 
 interface Agent {
   agent_id: string;
   computer_name: string;
   private_ip: string;
-  os_type: string; // OS 타입 추가
-  status: string; // 상태 추가
-  last_report_time: number; // UNIX timestamp
+  os_type: string;
+  status: string;
+  last_report_time: number;
 }
 
 interface ResourceUsage {
@@ -25,7 +26,7 @@ interface ResourceUsage {
   mem_usage: number;
   running_time: number;
   timestamp: number;
-  imds?: string; // IMDS 값을 문자열로 받음
+  imds?: string;
 }
 
 const AgentMonitoringPage: React.FC = () => {
@@ -39,6 +40,7 @@ const AgentMonitoringPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [imdsData, setImdsData] = useState<any>(null);
   const [isImdsModalOpen, setIsImdsModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   useEffect(() => {
     axios.get(`${centralServerUrl}/get-agents`)
@@ -121,6 +123,14 @@ const AgentMonitoringPage: React.FC = () => {
     setIsImdsModalOpen(true);
   };
 
+  const handleSettingsModalOpen = () => {
+    setIsSettingsModalOpen(true);
+  };
+
+  const handleSettingsModalClose = () => {
+    setIsSettingsModalOpen(false);
+  };
+
   const secondsToHMS = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -129,7 +139,7 @@ const AgentMonitoringPage: React.FC = () => {
   };
 
   const getAgentStatus = (agent: Agent) => {
-    const currentTime = Math.floor(Date.now() / 1000); // 현재 시간 (UNIX timestamp)
+    const currentTime = Math.floor(Date.now() / 1000);
     const lastReportTime = agent.last_report_time;
     const timeDifference = currentTime - lastReportTime;
 
@@ -164,9 +174,14 @@ const AgentMonitoringPage: React.FC = () => {
           <CardBox>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Agent Details</h2>
-              <Button icon={mdiInformationOutline} color="primary" onClick={() => handleImdsModalOpen(resourceUsage[resourceUsage.length - 1].imds || '{}')}>
-                Show IMDS Info
-              </Button>
+              <div>
+                <Button icon={mdiInformationOutline} color="primary" onClick={() => handleImdsModalOpen(resourceUsage[resourceUsage.length - 1]?.imds || '{}')}>
+                  Show IMDS Info
+                </Button>
+                <Button icon={mdiCogOutline} color="primary" onClick={handleSettingsModalOpen} className="ml-2">
+                  Settings
+                </Button>
+              </div>
             </div>
             <p><strong>Agent ID:</strong> {selectedAgent.agent_id}</p>
             <p><strong>Hostname:</strong> {selectedAgent.computer_name}</p>
@@ -195,6 +210,14 @@ const AgentMonitoringPage: React.FC = () => {
         )}
       </SectionMain>
       <ImdsModal isOpen={isImdsModalOpen} onClose={() => setIsImdsModalOpen(false)} json={imdsData} />
+      {selectedAgent && (
+        <SettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={handleSettingsModalClose}
+          agentId={selectedAgent.agent_id}
+          centralServerUrl={centralServerUrl}
+        />
+      )}
     </>
   );
 };

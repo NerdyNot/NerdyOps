@@ -72,6 +72,17 @@ def init_db():
         )
     ''')
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS agent_monitoring_settings (
+            agent_id TEXT PRIMARY KEY,
+            check_schedule BOOLEAN,
+            check_ping TEXT,
+            running_process TEXT,
+            listen_port TEXT,
+            FOREIGN KEY (agent_id) REFERENCES agents(agent_id)
+        )
+    ''')
+
     # Check if the admin user already exists
     cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
     admin_user = cursor.fetchone()
