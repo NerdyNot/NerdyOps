@@ -90,7 +90,7 @@ def check_agent_status():
     conn.close()
 
 # Endpoint to delete an agent
-@app.route('/delete-agent', methods=['POST'])
+@agent_bp.route('/delete-agent', methods=['POST'])
 def delete_agent():
     data = request.get_json()
     agent_id = data.get('agent_id')
