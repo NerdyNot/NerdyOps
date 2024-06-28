@@ -27,6 +27,9 @@ const AdminPage: React.FC = () => {
   const [slackMessage, setSlackMessage] = useState('');
   const [notificationSettings, setNotificationSettings] = useState({ notificationsEnabled: false, taskCreated: false, taskApproved: false, taskRejected: false });
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [redisConfig, setRedisConfig] = useState({ redis_host: '', redis_port: '', redis_password: '' });
+  const [newRedisConfig, setNewRedisConfig] = useState({ redis_host: '', redis_port: '', redis_password: '' });
+  const [redisMessage, setRedisMessage] = useState('');
   const token = Cookies.get('token');
 
   useEffect(() => {
@@ -34,6 +37,7 @@ const AdminPage: React.FC = () => {
     fetchApiKey();
     fetchSlackWebhook();
     fetchNotificationSettings();
+    fetchRedisConfig();
   }, []);
 
   const fetchUsers = async () => {
@@ -95,6 +99,29 @@ const AdminPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error fetching notification settings:', error);
+    }
+  };
+
+  const fetchRedisConfig = async () => {
+    try {
+      const response = await axios.get(`${centralServerUrl}/get-redis-config`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const config = response.data;
+      setRedisConfig({
+        redis_host: config.redis_host || '',
+        redis_port: config.redis_port || '',
+        redis_password: config.redis_password || '',
+      });
+      setNewRedisConfig({
+        redis_host: config.redis_host || '',
+        redis_port: config.redis_port || '',
+        redis_password: config.redis_password || '',
+      });
+    } catch (error) {
+      console.error('Error fetching Redis config:', error);
     }
   };
 
@@ -200,6 +227,22 @@ const AdminPage: React.FC = () => {
     } catch (error) {
       console.error('Error sending test message:', error);
       setNotificationMessage('Failed to send test message.');
+    }
+  };
+
+  const handleSaveRedisConfig = async () => {
+    try {
+      await axios.post(`${centralServerUrl}/set-redis-config`, newRedisConfig, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setRedisMessage('Redis configuration saved successfully!');
+      setRedisConfig(newRedisConfig);
+      setNewRedisConfig({ redis_host: '', redis_port: '', redis_password: '' });
+    } catch (error) {
+      console.error('Error saving Redis config:', error);
+      setRedisMessage('Failed to save Redis configuration.');
     }
   };
 
@@ -325,6 +368,39 @@ const AdminPage: React.FC = () => {
         )}
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Redis Configuration</h2>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Redis Host"
+              value={newRedisConfig.redis_host}
+              onChange={(e) => setNewRedisConfig({ ...newRedisConfig, redis_host: e.target.value })}
+              className="border p-2 w-full rounded-md"
+            />
+          </div>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Redis Port"
+              value={newRedisConfig.redis_port}
+              onChange={(e) => setNewRedisConfig({ ...newRedisConfig, redis_port: e.target.value })}
+              className="border p-2 w-full rounded-md"
+            />
+          </div>
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="Redis Password"
+              value={newRedisConfig.redis_password}
+              onChange={(e) => setNewRedisConfig({ ...newRedisConfig, redis_password: e.target.value })}
+              className="border p-2 w-full rounded-md"
+            />
+          </div>
+          <Button label="Save Redis Configuration" onClick={handleSaveRedisConfig} color="primary" />
+          {redisMessage && <p>{redisMessage}</p>}
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h2 className="text-2xl font-semibold mb-4">OpenAI API Key</h2>
           {apiKey ? (
             <p>Current API Key: {apiKey}</p>
@@ -333,7 +409,7 @@ const AdminPage: React.FC = () => {
           )}
           <div className="mb-4">
             <input
-              type="text"
+              type="password"
               placeholder="Enter new OpenAI API Key"
               value={newApiKey}
               onChange={(e) => setNewApiKey(e.target.value)}
@@ -353,7 +429,7 @@ const AdminPage: React.FC = () => {
           )}
           <div className="mb-4">
             <input
-              type="text"
+              type="password"
               placeholder="Enter new Slack Webhook URL"
               value={newSlackWebhookUrl}
               onChange={(e) => setNewSlackWebhookUrl(e.target.value)}

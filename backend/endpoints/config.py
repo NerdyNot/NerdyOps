@@ -107,3 +107,56 @@ def get_slack_notification_settings():
 
     settings = {row['config_key']: row['config_value'] == 'true' for row in rows}
     return jsonify(settings), 200
+
+# Redis configuration endpoints
+@config_bp.route('/set-redis-config', methods=['POST'])
+def set_redis_config():
+    data = request.json
+    redis_host = data.get('redis_host')
+    redis_port = data.get('redis_port')
+    redis_password = data.get('redis_password')
+
+    if not redis_host or not redis_port:
+        return jsonify({"message": "Redis host and port are required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        INSERT INTO config (config_key, config_value)
+        VALUES (?, ?)
+        ON CONFLICT(config_key)
+        DO UPDATE SET config_value = excluded.config_value
+    ''', ('redis_host', redis_host))
+    
+    cursor.execute('''
+        INSERT INTO config (config_key, config_value)
+        VALUES (?, ?)
+        ON CONFLICT(config_key)
+        DO UPDATE SET config_value = excluded.config_value
+    ''', ('redis_port', str(redis_port)))
+
+    if redis_password:
+        cursor.execute('''
+            INSERT INTO config (config_key, config_value)
+            VALUES (?, ?)
+            ON CONFLICT(config_key)
+            DO UPDATE SET config_value = excluded.config_value
+        ''', ('redis_password', redis_password))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Redis configuration saved successfully!"}), 200
+
+@config_bp.route('/get-redis-config', methods=['GET'])
+def get_redis_config():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT config_key, config_value FROM config WHERE config_key IN ("redis_host", "redis_port", "redis_password")')
+    rows = cursor.fetchall()
+    conn.close()
+
+    config = {row['config_key']: row['config_value'] for row in rows}
+    return jsonify(config), 200
