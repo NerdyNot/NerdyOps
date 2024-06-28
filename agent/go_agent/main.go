@@ -311,6 +311,7 @@ func main() {
 	startTime = time.Now() // Record the start time
 
 	go monitoring.ReportResourceUsage(centralServerURL, agentID, startTime) // Run resource usage reporting asynchronously
+	go monitoring.MonitorAgent(centralServerURL, agentID, pat)              // Run agent monitoring based on settings
 
 	// Main loop to fetch and execute tasks
 	for {

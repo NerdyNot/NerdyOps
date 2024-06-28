@@ -51,8 +51,6 @@ def get_resource_usage():
     resource_data = [json.loads(data) for data in resource_data_list]
     return jsonify(resource_data)
 
-
-
 @monitoring_bp.route('/add-slack-notification', methods=['POST'])
 def add_slack_notification():
     data = request.get_json()
