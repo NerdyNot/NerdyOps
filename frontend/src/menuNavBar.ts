@@ -61,7 +61,7 @@ const menuNavBar: MenuNavBarItem[] = [
     icon: mdiGithub,
     label: 'GitHub',
     isDesktopNoLabel: true,
-    href: 'https://github.com/NerdyNot/RunAIOps',
+    href: 'https://github.com/NerdyNot/NerdyOps',
     target: '_blank',
   },
 ]

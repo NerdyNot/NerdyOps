@@ -1,4 +1,4 @@
-# RunAIOps Backend
+# NerdyOps Backend
 
 This project serves as the central server component of a remote agent task system. It allows users to input natural language commands for remote agents. These commands are converted into executable scripts using LangChain tools, queued, and dispatched to the agents. Agents execute these scripts and report the results back to the server, where the results are interpreted into natural language. Users can check the status and details of each task using the task ID.
 
@@ -30,8 +30,8 @@ This project serves as the central server component of a remote agent task syste
 1. Clone the repository.
     
     ```
-    git clone <https://github.com/NerdyNot/RunAIOps.git>
-    cd RunAIOps/central_server
+    git clone <https://github.com/NerdyNot/NerdyOps.git>
+    cd NerdyOps/central_server
     
     ```
     
@@ -247,7 +247,7 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ---
 
-# RunAIOps Backend
+# NerdyOps Backend
 
 이 프로젝트는 원격 에이전트 작업 시스템의 중앙 서버 구성 요소입니다. 사용자는 원격 에이전트를 위한 자연어 명령을 입력할 수 있습니다. 이러한 명령은 LangChain 도구를 사용하여 실행 가능한 스크립트로 변환되고, 큐에 추가되어 에이전트로 전달됩니다. 에이전트는 이러한 스크립트를 실행하고 결과를 서버에 보고하며, 서버는 이 결과를 자연어로 해석합니다. 사용자는 작업 ID를 사용하여 각 작업의 상태와 세부 정보를 확인할 수 있습니다.
 
@@ -282,8 +282,8 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 1. 리포지토리를 복제합니다.
     
     ```
-    git clone <https://github.com/NerdyNot/RunAIOps.git>
-    cd RunAIOps/central_server
+    git clone <https://github.com/NerdyNot/NerdyOps.git>
+    cd NerdyOps/central_server
     
     ```
     

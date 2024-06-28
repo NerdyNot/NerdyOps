@@ -1,6 +1,6 @@
 ## Overview
 
-The `RunAIOps` project is an advanced remote operations platform that leverages LangChain to automate the execution of scripts on remote Linux and Windows servers. LangChain's integration with large language models (LLMs) allows the system to transform natural language commands into executable scripts, distribute tasks to agents, execute them remotely, and interpret the results back into human-readable summaries.
+The `NerdyOps` project is an advanced remote operations platform that leverages LangChain to automate the execution of scripts on remote Linux and Windows servers. LangChain's integration with large language models (LLMs) allows the system to transform natural language commands into executable scripts, distribute tasks to agents, execute them remotely, and interpret the results back into human-readable summaries.
 
 This repository includes the following key components:
 1. **Frontend**: A web-based user interface that allows users to submit commands, monitor task execution, and view results.
@@ -12,7 +12,7 @@ This repository includes the following key components:
 ### Repository Structure
 
 ```
-RunAIOps/
+NerdyOps/
 ├── frontend/                # Frontend web application
 │   ├── public/              # Static assets
 │   ├── src/                 # Source code
@@ -37,7 +37,7 @@ RunAIOps/
 
 ## Frontend
 
-The frontend of `RunAIOps` is a web-based application built using React.js. It provides users with an intuitive interface to interact with the system, submit commands, monitor task execution progress, and view task results.
+The frontend of `NerdyOps` is a web-based application built using React.js. It provides users with an intuitive interface to interact with the system, submit commands, monitor task execution progress, and view task results.
 
 - **User Interface**: The frontend includes various components and pages designed to facilitate user interactions.
 - **Task Submission**: Users can submit natural language commands via input fields or forms.
@@ -59,7 +59,7 @@ The central server acts as the command center, coordinating tasks between the us
 ### Backend Files
 
 - **app.py**: The main Flask application for the central server.
-- **auth.py**: Manages user authentication functionalities including signup, login, and token validation within the RunAIOps project.
+- **auth.py**: Manages user authentication functionalities including signup, login, and token validation within the NerdyOps project.
 - **db.py**: Manages SQLite database connections and initializations.
 - **langchain_integration.py**: Integrates LangChain to convert natural language commands into scripts and interpret execution results.
 - **redis_connection.py**: Handles connections to the Redis server.
@@ -105,8 +105,8 @@ The Python Agent is a versatile client written in Python, mirroring the function
 1. **Clone the Repository**:
     
     ```
-    git clone <https://github.com/NerdyNot/RunAIOps.git>
-    cd RunAIOps
+    git clone <https://github.com/NerdyNot/NerdyOps.git>
+    cd NerdyOps
     ```
     
 2. **Central Server Setup**:
@@ -182,7 +182,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## 개요
 
-`RunAIOps` 프로젝트는 LangChain을 활용하여 원격 Linux 및 Windows 서버에서 스크립트 실행을 자동화하는 고급 원격 운영 플랫폼입니다. LangChain과 대형 언어 모델(LLM)의 통합을 통해 시스템은 자연어 명령을 실행 가능한 스크립트로 변환하고, 작업을 에이전트에 분배하며, 원격으로 이를 실행하고 실행 결과를 사람이 읽을 수 있는 요약으로 해석할 수 있습니다.
+`NerdyOps` 프로젝트는 LangChain을 활용하여 원격 Linux 및 Windows 서버에서 스크립트 실행을 자동화하는 고급 원격 운영 플랫폼입니다. LangChain과 대형 언어 모델(LLM)의 통합을 통해 시스템은 자연어 명령을 실행 가능한 스크립트로 변환하고, 작업을 에이전트에 분배하며, 원격으로 이를 실행하고 실행 결과를 사람이 읽을 수 있는 요약으로 해석할 수 있습니다.
 
 이 리포지토리에는 다음과 같은 주요 구성 요소가 포함되어 있습니다:
 
@@ -195,7 +195,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ### 리포지토리 구조
 
 ```
-RunAIOps/
+NerdyOps/
 ├── frontend/                # 프론트엔드 웹 애플리케이션
 │   ├── public/              # 정적 자산
 │   ├── src/                 # 소스 코드
@@ -219,7 +219,7 @@ RunAIOps/
 
 ## 프론트엔드
 
-`RunAIOps`의 프론트엔드는 React.js를 사용하여 구축된 웹 기반 응용 프로그램입니다. 사용자에게 시스템과 상호 작용할 직관적 인터페이스를 제공하여 명령을 제출하고, 작업 실행 상황을 모니터링하며, 작업 결과를 확인할 수 있습니다.
+`NerdyOps`의 프론트엔드는 React.js를 사용하여 구축된 웹 기반 응용 프로그램입니다. 사용자에게 시스템과 상호 작용할 직관적 인터페이스를 제공하여 명령을 제출하고, 작업 실행 상황을 모니터링하며, 작업 결과를 확인할 수 있습니다.
 
 - **사용자 인터페이스**: 프론트엔드에는 사용자 상호 작용을 용이하게 하는 다양한 컴포넌트와 페이지가 포함되어 있습니다.
 - **작업 제출**: 사용자는 입력 필드나 폼을 통해 자연어 명령을 제출할 수 있습니다.
@@ -241,7 +241,7 @@ RunAIOps/
 ### 중앙 서버 파일
 
 - **app.py**: 중앙 서버의 메인 Flask 애플리케이션.
-- **auth.py** : RunAIOps 프로젝트 내에서 회원 가입, 로그인, 토큰 유효성 검사 등 사용자 인증 기능을 관리합니다.
+- **auth.py** : NerdyOps 프로젝트 내에서 회원 가입, 로그인, 토큰 유효성 검사 등 사용자 인증 기능을 관리합니다.
 - **db.py**: SQLite 데이터베이스 연결 및 초기화를 관리합니다.
 - **langchain_integration.py**: LangChain을 통합하여 자연어 명령을 스크립트로 변환하고, 실행 결과를 해석합니다.
 - **redis_connection.py**: Redis 서버와의 연결을 처리합니다.
@@ -289,8 +289,8 @@ Python 에이전트는 Python으로 작성된 유연한 클라이언트로, Go �
 1. **리포지토리 클론**:
     
     ```
-    git clone <https://github.com/NerdyNot/RunAIOps.git>
-    cd RunAIOps
+    git clone <https://github.com/NerdyNot/NerdyOps.git>
+    cd NerdyOps
     
     ```
     

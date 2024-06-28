@@ -1,4 +1,4 @@
-module github.com/NerdyNot/RunAIOps.git/agent/go_agent
+module github.com/NerdyNot/NerdyOps.git/agent/go_agent
 
 go 1.22.4
 

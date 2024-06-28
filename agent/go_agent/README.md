@@ -21,8 +21,8 @@ This project is a remote agent written in Go that communicates with a central se
 1. **Clone the Repository**
     
     ```
-    git clone <https://github.com/NerdyNot/RunAIOps.git>
-    cd RunAIOps/agent/go_agent
+    git clone <https://github.com/NerdyNot/NerdyOps.git>
+    cd NerdyOps/agent/go_agent
     
     ```
     
@@ -135,8 +135,8 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 1. **리포지토리 클론**
     
     ```
-    git clone <https://github.com/NerdyNot/RunAIOps.git>
-    cd RunAIOps/agent/go_agent
+    git clone <https://github.com/NerdyNot/NerdyOps.git>
+    cd NerdyOps/agent/go_agent
     
     ```
     

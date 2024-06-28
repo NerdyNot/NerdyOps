@@ -36,7 +36,7 @@ const IndexPage = ({ user, agentCount, successTaskCount, failureTaskCount }: { u
       <SectionMain>
         <SectionTitleLineWithButton icon={mdiChartTimelineVariant} title="Overview" main>
           <Button
-            href="https://github.com/NerdyNot/RunAIOps"
+            href="https://github.com/NerdyNot/NerdyOps"
             target="_blank"
             icon={mdiGithub}
             label="Star on GitHub"

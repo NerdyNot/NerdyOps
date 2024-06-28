@@ -4,7 +4,7 @@ import pandas as pd
 import time
 
 # Title of the app
-st.title("RunAIOps Test Client")
+st.title("NerdyOps Test Client")
 
 # Input for Central Server URL
 central_server_url = st.text_input("Enter Central Server URL:", "http://localhost:5001")
