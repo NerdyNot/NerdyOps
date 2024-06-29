@@ -166,13 +166,33 @@ def get_pending_tasks():
 def get_all_pending_tasks():
     pending_task_ids = redis.lrange('pending_tasks', 0, -1)
     pending_tasks = []
+    conn = get_db_connection()
+    cursor = conn.cursor()
     
     for task_id in pending_task_ids:
         task_data = redis.get(f'task:{task_id.decode()}')
         if task_data:
             task = json.loads(task_data)
+            agent_id = task.get('agent_id')
+            print(agent_id)
+            
+            # if agent_id is available, get hostname from agents table
+            if agent_id:
+                query = 'SELECT computer_name FROM agents WHERE agent_id = %s' if DB_TYPE == 'mysql' else 'SELECT computer_name FROM agents WHERE agent_id = ?'
+                cursor.execute(query, (agent_id,))
+                result = cursor.fetchone()
+                print(result)
+                
+                logging.debug(f'Query: {query} | Parameters: {agent_id} | Result: {result}')  # Add logging
+
+                if result:
+                    task['hostname'] = result['computer_name']  # Add hostname to task data
+                else:
+                    task['hostname'] = None  # Set hostname to None if not found
             pending_tasks.append(task)
     
+    cursor.close()
+    conn.close()
     return jsonify(pending_tasks)
 
 @tasks_bp.route('/approve-task', methods=['POST'])

@@ -11,6 +11,8 @@ import { getPageTitle } from '../config';
 import Modal from '../components/Modal';
 import ReactMarkdown from 'react-markdown';
 import TaskSubmitModal from '../components/TaskSubmitModal';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface Task {
   task_id: string;
@@ -174,7 +176,11 @@ const AgentTasksPage = () => {
                   </div>
                   <div className="mb-2">
                     <strong>Script Code:</strong>
-                    <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>{task.script_code}</div>
+                    <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>
+                      <SyntaxHighlighter language="bash" style={atomDark}>
+                        {task.script_code}
+                      </SyntaxHighlighter>
+                    </div>
                   </div>
                   <div className="flex justify-end space-x-2">
                     <button
@@ -216,7 +222,11 @@ const AgentTasksPage = () => {
                   </div>
                   <div className="mb-2">
                     <strong>Script Code:</strong>
-                    <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>{task.script_code}</div>
+                    <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>
+                      <SyntaxHighlighter language="bash" style={atomDark}>
+                        {task.script_code}
+                      </SyntaxHighlighter>
+                    </div>
                   </div>
                   <div className="flex justify-end">
                     <button
@@ -265,7 +275,11 @@ const AgentTasksPage = () => {
                 </div>
                 <div className="mb-2">
                   <strong>Script Code:</strong>
-                  <div className="p-2 bg-gray-100 rounded" style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.script_code}</div>
+                  <div className="p-2 bg-gray-100 rounded" style={{ whiteSpace: 'pre-wrap' }}>
+                    <SyntaxHighlighter language="bash" style={atomDark}>
+                      {selectedTask.script_code}
+                    </SyntaxHighlighter>
+                  </div>
                 </div>
                 <div className="mb-2">
                   <strong>Output:</strong>

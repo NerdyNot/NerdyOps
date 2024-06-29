@@ -5,6 +5,7 @@ from utils.db import init_db
 from utils.logo import print_logo
 from utils.slack_integration import start_notification_thread
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 
@@ -12,6 +13,9 @@ app = Flask(__name__)
 CORS(app)
 
 db_initialized = False
+
+if not os.path.exists('downloads'):
+    os.makedirs('downloads')
 
 @app.before_request
 def initialize_database():

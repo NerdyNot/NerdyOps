@@ -1,6 +1,7 @@
 import {
   mdiAccountCircle,
   mdiMonitor,
+  mdiDownload,
   mdiLock,
   mdiAlertCircle,
   mdiSquareEditOutline,
@@ -36,18 +37,24 @@ const menuAside: MenuAsideItem[] = [
     href: '/batch-approve',
     label: 'Batch Approve',
     icon: mdiViewList,
-    roles: ['user', 'admin'], // 관리자만 접근 가능
+    roles: ['user', 'admin'], // 모든 사용자 접근 가능
   },
   {
     href: '/batch-results',
     label: 'Batch Results',
     icon: mdiViewListOutline,
-    roles: ['user', 'admin'], // 관리자만 접근 가능
+    roles: ['user', 'admin'], // 모든 사용자 접근 가능
   },
   {
     href: '/agent-monitoring',
     label: 'Monitoring',
     icon: mdiMonitorDashboard,
+    roles: ['user', 'admin'], // 모든 사용자 접근 가능
+  },
+  {
+    href: '/agent-download',
+    label: 'Agent Download',
+    icon: mdiDownload,
     roles: ['user', 'admin'], // 모든 사용자 접근 가능
   },
   {

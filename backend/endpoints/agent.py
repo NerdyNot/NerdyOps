@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify
+import os
+from flask import Blueprint, request, jsonify, send_from_directory
 from utils.db import get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
 from datetime import datetime, timedelta
@@ -7,6 +8,20 @@ import logging
 agent_bp = Blueprint('agent', __name__)
 logging.basicConfig(level=logging.INFO)
 
+# Config download build binaries path
+DOWNLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../downloads'))
+if not os.path.exists(DOWNLOAD_FOLDER):
+    os.makedirs(DOWNLOAD_FOLDER)
+
+# Set extension for windows and others
+def get_mimetype(filename):
+    if filename.endswith('.exe'):
+        return 'application/vnd.microsoft.portable-executable'
+    elif filename.endswith('.tar.gz'):
+        return 'application/gzip'
+    else:
+        return 'application/octet-stream'
+    
 @agent_bp.route('/register-agent', methods=['POST'])
 def register_agent():
     data = request.get_json()
@@ -123,6 +138,32 @@ def delete_agent():
     redis.delete(agent_tasks_key)
     
     return jsonify({"status": "Agent deleted", "agent_id": agent_id})
+
+@agent_bp.route('/install-agent', methods=['GET'])
+def install_agent():
+    os_type = request.args.get('os_type')
+    arch_type = request.args.get('arch_type')
+    
+    if not os_type or not arch_type:
+        return jsonify({"error": "OS type and architecture type are required"}), 400
+    
+    filename = f"NerdyOps-Agent-{os_type}-{arch_type}"
+    if os_type == 'windows':
+        filename += '.zip'
+    else:
+        filename += '.tar.gz'
+    
+    try:
+        file_path = os.path.join(DOWNLOAD_FOLDER, filename)
+        logging.info(f"Attempting to send file from: {file_path}")
+        
+        # Set the correct mimetype based on the file extension
+        mimetype = get_mimetype(filename)
+        
+        return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True, mimetype=mimetype)
+    except FileNotFoundError:
+        logging.error(f"File not found: {file_path}")
+        return jsonify({"error": "File not found"}), 404
 
 def schedule_agent_status_check():
     import schedule

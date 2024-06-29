@@ -9,6 +9,8 @@ import { getPageTitle } from '../config';
 import Modal from '../components/Modal';
 import ReactMarkdown from 'react-markdown';
 import { Task } from '../interfaces'; // Assuming you have a Task interface defined in interfaces.ts
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const BatchResultsPage = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
@@ -164,11 +166,19 @@ const BatchResultsPage = () => {
             </div>
             <div className="mb-2">
               <strong>Script Code:</strong>
-              <div className="p-2 bg-gray-100 rounded" style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.script_code}</div>
+              <div className="p-2 bg-gray-100 rounded" style={{ whiteSpace: 'pre-wrap' }}>
+                <SyntaxHighlighter language="bash" style={atomDark}>
+                  {selectedTask.script_code}
+                </SyntaxHighlighter>
+              </div>
             </div>
             <div className="mb-2">
               <strong>Output:</strong>
-              <div className="p-2 bg-gray-100 rounded" style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.output}</div>
+              <div className="p-2 bg-gray-100 rounded" style={{ whiteSpace: 'pre-wrap' }}>
+                <SyntaxHighlighter language="bash" style={atomDark}>
+                  {selectedTask.output}
+                </SyntaxHighlighter>
+              </div>
             </div>
             <div className="mb-2">
               <strong>Error:</strong>
