@@ -8,9 +8,9 @@ import SectionTitleLineWithButton from '../components/Section/TitleLineWithButto
 import { getPageTitle } from '../config';
 import Modal from '../components/Modal';
 import ReactMarkdown from 'react-markdown';
-import { Task } from '../interfaces'; // Assuming you have a Task interface defined in interfaces.ts
+import { Task } from '../interfaces';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
 
 const BatchResultsPage = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;

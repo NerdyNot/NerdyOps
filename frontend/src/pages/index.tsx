@@ -1,32 +1,72 @@
-import axios from 'axios'
+import axios from 'axios';
 import {
   mdiChartTimelineVariant,
   mdiServer,
   mdiAlertCircle,
   mdiCheckBold,
   mdiGithub,
-} from '@mdi/js'
-import Head from 'next/head'
-import React, { useEffect } from 'react'
-import type { ReactElement } from 'react'
-import Button from '../components/Button'
-import LayoutAuthenticated from '../layouts/Authenticated'
-import SectionMain from '../components/Section/Main'
-import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton'
-import CardBoxWidget from '../components/CardBox/Widget'
-import { getPageTitle } from '../config'
-import { GetServerSideProps } from 'next'
-import { useDispatch } from 'react-redux'
-import { setUser } from '../stores/mainSlice'
+} from '@mdi/js';
+import Head from 'next/head';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import Button from '../components/Button';
+import LayoutAuthenticated from '../layouts/Authenticated';
+import SectionMain from '../components/Section/Main';
+import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
+import CardBoxWidget from '../components/CardBox/Widget';
+import { getPageTitle } from '../config';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../stores/mainSlice';
+import { useRouter } from 'next/router';
 
-const IndexPage = ({ user, agentCount, successTaskCount, failureTaskCount }: { user: { name: string, email: string, role: string }, agentCount: number, successTaskCount: number, failureTaskCount: number }) => {
-  const dispatch = useDispatch()
+const IndexPage = () => {
+  const [user, setUserState] = useState<{ name: string; email: string; role: string } | null>(null);
+  const [agentCount, setAgentCount] = useState(0);
+  const [successTaskCount, setSuccessTaskCount] = useState(0);
+  const [failureTaskCount, setFailureTaskCount] = useState(0);
+  const dispatch = useDispatch();
+  const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-      dispatch(setUser(user))
-    }
-  }, [user, dispatch])
+    const fetchData = async () => {
+      const token = document.cookie.split(';').find(cookie => cookie.trim().startsWith('token='));
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const tokenValue = token.split('=')[1];
+        const verifyResponse = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/verify-token`, { token: tokenValue });
+
+        if (verifyResponse.status !== 200) {
+          router.push('/login');
+          return;
+        }
+
+        const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/user-info`, {
+          headers: {
+            Authorization: `Bearer ${tokenValue}`,
+          },
+        });
+
+        const agentResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/get-agents`);
+        const tasksResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/get-tasks-summary`);
+        const { successCount, failureCount } = tasksResponse.data;
+
+        setUserState(userResponse.data);
+        setAgentCount(agentResponse.data.length);
+        setSuccessTaskCount(successCount);
+        setFailureTaskCount(failureCount);
+
+        dispatch(setUser(userResponse.data));
+      } catch (error) {
+        router.push('/login');
+      }
+    };
+
+    fetchData();
+  }, [dispatch, router]);
 
   return (
     <>
@@ -77,65 +117,11 @@ const IndexPage = ({ user, agentCount, successTaskCount, failureTaskCount }: { u
         </div>
       </SectionMain>
     </>
-  )
+  );
 }
 
 IndexPage.getLayout = function getLayout(page: ReactElement) {
-  return <LayoutAuthenticated>{page}</LayoutAuthenticated>
-}
+  return <LayoutAuthenticated>{page}</LayoutAuthenticated>;
+};
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { req } = context
-  const token = req.cookies.token || ''
-
-  if (!token) {
-    return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
-      },
-    }
-  }
-
-  try {
-    const verifyResponse = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/verify-token`, { token })
-
-    if (verifyResponse.status !== 200) {
-      return {
-        redirect: {
-          destination: '/login',
-          permanent: false,
-        },
-      }
-    }
-
-    const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/user-info`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    const agentResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/get-agents`)
-    const agents = agentResponse.data
-    const tasksResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/get-tasks-summary`)
-    const { successCount, failureCount } = tasksResponse.data
-
-    return {
-      props: {
-        user: userResponse.data,
-        agentCount: agents.length,
-        successTaskCount: successCount,
-        failureTaskCount: failureCount,
-      },
-    }
-  } catch (error) {
-    return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
-      },
-    }
-  }
-}
-
-export default IndexPage
+export default IndexPage;

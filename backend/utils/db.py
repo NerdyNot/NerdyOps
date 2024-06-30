@@ -16,6 +16,7 @@ DB_PORT = os.getenv('DB_PORT', 3306)
 DB_USER = os.getenv('DB_USER', 'root')
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 
+
 # Initialize the database and create the necessary tables if they don't exist
 def init_db():
     conn = get_db_connection()
@@ -52,7 +53,7 @@ def init_db():
                     expiry_date TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     user_id TEXT,
-                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                    FOREIGN KEY (user_id) REFERENCES users (username)
                 )
             ''')
             

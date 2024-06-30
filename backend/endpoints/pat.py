@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 @pat_bp.route('/generate_pat', methods=['POST'])
 def generate_pat():
     data = request.get_json()
-    username = data.get('user_id') 
+    username = data.get('user_id')
     expiry_days = data.get('expiry_days')
 
     logging.info(f"Generating PAT for username: {username}, expiry_days: {expiry_days}")
@@ -53,11 +53,13 @@ def generate_pat():
     created_at = datetime.utcnow()
     payload = {
         'user_id': username,
-        'exp': expiry_date
+        'exp': expiry_date,
+        'iat': created_at
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
     try:
+        pat_id = str(uuid.uuid4())
         query = '''
             INSERT INTO user_pats (pat_id, token, expiry_date, created_at, user_id)
             VALUES (%s, %s, %s, %s, %s)
@@ -65,7 +67,7 @@ def generate_pat():
             INSERT INTO user_pats (pat_id, token, expiry_date, created_at, user_id)
             VALUES (?, ?, ?, ?, ?)
         '''
-        cursor.execute(query, (str(uuid.uuid4()), token, expiry_date.isoformat() if expiry_date else None, created_at.isoformat(), username))
+        cursor.execute(query, (pat_id, token, expiry_date.isoformat() if expiry_date else None, created_at.isoformat(), username))
         conn.commit()
     except Exception as e:
         logging.error(f"Error inserting PAT: {e}")
@@ -74,7 +76,7 @@ def generate_pat():
         conn.close()
 
     return jsonify({
-        "pat_id": str(uuid.uuid4()),
+        "pat_id": pat_id,
         "token": token,
         "expiry_date": expiry_date.isoformat() if expiry_date else None,
         "created_at": created_at.isoformat()

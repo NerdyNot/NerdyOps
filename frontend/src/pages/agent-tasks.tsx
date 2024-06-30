@@ -12,7 +12,7 @@ import Modal from '../components/Modal';
 import ReactMarkdown from 'react-markdown';
 import TaskSubmitModal from '../components/TaskSubmitModal';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
 
 interface Task {
   task_id: string;

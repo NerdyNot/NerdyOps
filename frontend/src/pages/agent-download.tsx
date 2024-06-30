@@ -9,7 +9,7 @@ import { getPageTitle } from '../config';
 import axios from 'axios';
 import Button from '../components/Button';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
 
 const AgentDownloadPage: React.FC = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;

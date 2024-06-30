@@ -8,7 +8,7 @@ import SectionTitleLineWithButton from '../components/Section/TitleLineWithButto
 import { getPageTitle } from '../config';
 import { Task } from '../interfaces'; // Task 타입 정의 파일
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
 
 const BatchApprovePage = () => {
   const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
