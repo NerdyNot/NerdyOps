@@ -84,7 +84,7 @@ const LoginPage = () => {
           <Formik initialValues={initialValues} onSubmit={handleSubmit}>
             {({ isSubmitting }) => (
               <Form>
-                <FormField label="Backend URL" help="Please enter your backend URL">
+                <FormField label="NerdyOps Server URL" help="Please enter your NerdyOps Backend URL">
                   <Field name="backendUrl" />
                 </FormField>
 
