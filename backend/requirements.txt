@@ -9,3 +9,4 @@ schedule
 pymysql
 python-dotenv
 cryptography
+gunicorn
