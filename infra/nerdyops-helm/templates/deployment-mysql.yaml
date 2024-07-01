@@ -30,4 +30,4 @@ spec:
       volumes:
       - name: mysql-data
         persistentVolumeClaim:
-          claimName: mysql-pvc
+          claimName: pvc-nerdyops-mysql
