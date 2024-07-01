@@ -13,12 +13,12 @@ service:
 
 env:
   DB_TYPE: mysql
-  DB_HOST: NerdyOps-MySQL
+  DB_HOST: svc-nerdyops-mysql
   DB_PORT: 3306
   DB_USER: user
   DB_PASSWORD: password
   DB_NAME: nerdyops
-  REDIS_URL: redis://NerdyOps-Redis:6379
+  REDIS_URL: redis://svc-nerdyops-redis:6379
 
 persistence:
   enabled: true
