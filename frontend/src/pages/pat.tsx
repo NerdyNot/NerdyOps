@@ -136,15 +136,6 @@ import {
   
         <SectionMain>
           <SectionTitleLineWithButton icon={mdiAccount} title="PAT Management" main>
-            <Button
-              href="https://github.com/NerdyNot/NerdyOps"
-              target="_blank"
-              icon={mdiGithub}
-              label="Star on GitHub"
-              color="contrast"
-              roundedFull
-              small
-            />
           </SectionTitleLineWithButton>
   
           <CardBox className="mb-6">
