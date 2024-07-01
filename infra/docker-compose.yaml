@@ -52,10 +52,7 @@ services:
     restart: always
 
   scheduler:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
-    image: nerdyops-scheduler:latest
+    image: nerdyops-backend:latest
     container_name: NerdyOps-Scheduler
     restart: always
     command: ["python", "scheduler.py"]
