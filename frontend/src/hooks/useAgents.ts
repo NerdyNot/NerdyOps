@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Agent } from '../interfaces'; // 에이전트 타입 정의 파일
+import { Agent } from '../interfaces'; 
 
 const useAgents = (url: string) => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUrlLoaded, setIsUrlLoaded] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (url) {
+      setIsUrlLoaded(true);
+    }
+  }, [url]);
 
   const fetchAgents = async () => {
+    if (!isUrlLoaded) return;
+
     setLoading(true);
     try {
       const response = await axios.get(`${url}/get-agents`);
@@ -21,7 +30,7 @@ const useAgents = (url: string) => {
 
   useEffect(() => {
     fetchAgents();
-  }, [url]);
+  }, [isUrlLoaded, url]);
 
   return { agents, loading, error, mutate: fetchAgents };
 };

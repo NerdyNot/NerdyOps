@@ -36,10 +36,19 @@ const ProfilePage = () => {
   const userRole = useAppSelector((state) => state.main.userRole);
   const router = useRouter();
   const { backendUrl } = useBackendUrl();
-
+  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+  
   useEffect(() => {
-    dispatch(initializeUser());
-  }, [dispatch]);
+    if (backendUrl) {
+      setIsBackendUrlLoaded(true);
+    }
+  }, [backendUrl]);
+  
+  useEffect(() => {
+    if (isBackendUrlLoaded) {
+      dispatch(initializeUser());
+    }
+  }, [dispatch, isBackendUrlLoaded]);
 
   const userForm: UserForm = {
     name: userName || '',
@@ -51,11 +60,13 @@ const ProfilePage = () => {
     newPassword: string;
     newPasswordConfirmation: string;
   }) => {
+    if (!isBackendUrlLoaded) return;
+  
     if (values.newPassword !== values.newPasswordConfirmation) {
       alert('New passwords do not match');
       return;
     }
-
+  
     try {
       const token = Cookies.get('token');
       const response = await axios.post(
@@ -70,7 +81,7 @@ const ProfilePage = () => {
           },
         }
       );
-
+  
       if (response.status === 200) {
         alert('Password changed successfully');
         router.push('/');

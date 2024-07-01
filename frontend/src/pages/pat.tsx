@@ -34,13 +34,24 @@ import {
     const [expiryDate, setExpiryDate] = useState<Date | null>(null);
     const [isUnlimited, setIsUnlimited] = useState(false);
     const { backendUrl } = useBackendUrl();
-
+    const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+    
     useEffect(() => {
-      dispatch(initializeUser());
-      fetchPats();
-    }, [dispatch]);
-  
+      if (backendUrl) {
+        setIsBackendUrlLoaded(true);
+      }
+    }, [backendUrl]);
+    
+    useEffect(() => {
+      if (isBackendUrlLoaded) {
+        dispatch(initializeUser());
+        fetchPats();
+      }
+    }, [dispatch, isBackendUrlLoaded]);
+    
     const fetchPats = async () => {
+      if (!isBackendUrlLoaded) return;
+    
       try {
         const token = Cookies.get('token');
         const response = await axios.get(`${backendUrl}/get-pat`, {
@@ -54,8 +65,10 @@ import {
         console.error('Error fetching PATs:', error);
       }
     };
-  
+    
     const handleGeneratePat = async () => {
+      if (!isBackendUrlLoaded) return;
+    
       try {
         const token = Cookies.get('token');
         const response = await axios.post(
@@ -77,7 +90,7 @@ import {
         alert('Failed to generate PAT');
       }
     };
-  
+    
     const handleDeletePat = async (pat_id: string) => {
       try {
         const token = Cookies.get('token');

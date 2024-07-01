@@ -23,8 +23,17 @@ const BatchResultsPage = () => {
   const [sortConfig, setSortConfig] = useState<{ key: keyof Task; direction: 'ascending' | 'descending' } | null>(null);
   const [filter, setFilter] = useState<string>('');
   const { backendUrl } = useBackendUrl();
-
+  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+  
+  useEffect(() => {
+    if (backendUrl) {
+      setIsBackendUrlLoaded(true);
+    }
+  }, [backendUrl]);
+  
   const fetchAllCompletedTasks = async () => {
+    if (!isBackendUrlLoaded) return;
+  
     setLoading(true);
     setError(null);
     try {
@@ -38,11 +47,13 @@ const BatchResultsPage = () => {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
-    fetchAllCompletedTasks();
-  }, []);
-
+    if (isBackendUrlLoaded) {
+      fetchAllCompletedTasks();
+    }
+  }, [isBackendUrlLoaded]);
+  
   const handleViewDetails = (task: Task) => {
     setSelectedTask(task);
   };
