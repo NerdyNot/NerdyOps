@@ -1,5 +1,5 @@
 import {
-  mdiAccountCircle,
+  mdiToolbox,
   mdiMonitor,
   mdiDownload,
   mdiLock,
@@ -22,39 +22,53 @@ const menuAside: MenuAsideItem[] = [
     roles: ['user', 'admin'], // 모든 사용자 접근 가능
   },
   {
-    href: '/agents',
-    label: 'Agent List',
-    icon: mdiServer,
-    roles: ['user', 'admin'], // 모든 사용자 접근 가능
-  },
-  {
-    href: '/agent-tasks',
-    label: 'Agent Tasks',
-    icon: mdiCheckboxMarkedCircleAutoOutline,
-    roles: ['user', 'admin'], // 모든 사용자 접근 가능
-  },
-  {
-    href: '/batch-approve',
-    label: 'Batch Approve',
+    label: 'Agent Job',
     icon: mdiViewList,
+    menu: [
+      {
+        href: '/agents',
+        label: 'Agent List',
+        icon: mdiServer,
+        roles: ['user','admin']
+      },
+      {
+        href: '/agent-tasks',
+        label: 'Task List',
+        icon: mdiCheckboxMarkedCircleAutoOutline,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
+      {
+        href: '/batch-approve',
+        label: 'Batch Approve',
+        icon: mdiViewList,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
+      {
+        href: '/batch-results',
+        label: 'Batch Results',
+        icon: mdiViewListOutline,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
+    ],
     roles: ['user', 'admin'], // 모든 사용자 접근 가능
   },
   {
-    href: '/batch-results',
-    label: 'Batch Results',
-    icon: mdiViewListOutline,
-    roles: ['user', 'admin'], // 모든 사용자 접근 가능
-  },
-  {
-    href: '/agent-monitoring',
-    label: 'Monitoring',
-    icon: mdiMonitorDashboard,
-    roles: ['user', 'admin'], // 모든 사용자 접근 가능
-  },
-  {
-    href: '/agent-download',
-    label: 'Agent Download',
-    icon: mdiDownload,
+    label: 'Utils',
+    icon: mdiToolbox,
+    menu: [
+      {
+        href: '/agent-monitoring',
+        label: 'Agent Monitoring',
+        icon: mdiMonitorDashboard,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
+      {
+        href: '/agent-download',
+        label: 'Agent Download',
+        icon: mdiDownload,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
+    ],
     roles: ['user', 'admin'], // 모든 사용자 접근 가능
   },
   {

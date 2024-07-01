@@ -30,7 +30,7 @@ export default function AsideMenu({
     <>
       <AsideMenuLayer
         menu={filteredMenu}
-        className={`${isAsideMobileExpanded ? 'left-0' : '-left-60 lg:left-0'} ${
+        className={`${isAsideMobileExpanded ? 'left-0' : '-left-70 lg:left-0'} ${
           !isAsideLgActive ? 'lg:hidden xl:flex' : ''
         }`}
         onAsideLgCloseClick={props.onAsideLgClose}
