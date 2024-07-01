@@ -2,25 +2,43 @@ import schedule
 import threading
 import time
 import logging
-from utils.db import get_db_connection, DB_TYPE
+from utils.db import get_db_connection, DB_TYPE, init_db
 from utils.redis_connection import get_redis_connection
 from datetime import datetime, timedelta
 from utils.slack_integration import process_redis_notifications
 import json
 
-redis = get_redis_connection()
-
 logging.basicConfig(level=logging.INFO)
+
+redis = get_redis_connection()
+db_initialized = False
+
+def initialize_database():
+    global db_initialized
+    if not db_initialized:
+        try:
+            init_db()
+            db_initialized = True
+            logging.info("Database initialized successfully.")
+        except Exception as e:
+            logging.error(f"Error initializing database: {e}")
+
+def get_initialized_db_connection():
+    initialize_database()
+    return get_db_connection()
 
 def check_agent_status():
     logging.info("Checking agent statuses...")
-    conn = get_db_connection()
+    conn = get_initialized_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT agent_id, last_update_date, status FROM agents')
     agents = cursor.fetchall()
     
     for agent in agents:
-        last_update_date = datetime.fromisoformat(agent['last_update_date'])
+        last_update_date = agent['last_update_date']
+        if not isinstance(last_update_date, str):
+            last_update_date = str(last_update_date)
+        last_update_date = datetime.fromisoformat(last_update_date)
         time_diff = datetime.utcnow() - last_update_date
         if time_diff > timedelta(minutes=1) and agent['status'] != 'down':
             query = 'UPDATE agents SET status = %s WHERE agent_id = %s' if DB_TYPE == 'mysql' else 'UPDATE agents SET status = ? WHERE agent_id = ?'
@@ -33,7 +51,7 @@ def check_agent_status():
 
 def sync_redis_and_db():
     logging.info("Syncing Redis and DB...")
-    conn = get_db_connection()
+    conn = get_initialized_db_connection()
     cursor = conn.cursor()
 
     # Sync from Redis to DB
@@ -134,6 +152,7 @@ def start_sync_thread():
     sync_thread.start()
 
 if __name__ == "__main__":
+    initialize_database()
     schedule_agent_status_check()
     start_notification_thread()
     start_sync_thread()
