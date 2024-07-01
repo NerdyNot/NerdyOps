@@ -5,7 +5,7 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    image: nerdyops-backend:latest 
+    image: nerdyops-backend:latest
     container_name: NerdyOps-Backend
     restart: always
     ports:
@@ -17,7 +17,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=redis://NerdyOps-Redis:6379
     depends_on:
       - mysql
       - redis
@@ -26,14 +26,13 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
-    image: nerdyops-frontend:latest 
+      args:
+        NEXT_PUBLIC_CENTRAL_SERVER_URL: http://localhost:5001
+    image: nerdyops-frontend:latest
     container_name: NerdyOps-Frontend
     restart: always
     ports:
-      - "80:3000"
-    environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_CENTRAL_SERVER_URL=http://localhost:5001
+      - "8088:3000"
     depends_on:
       - web
 
@@ -48,21 +47,17 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
-    ports:
-      - "3306:3306"
 
   redis:
     image: redis:latest
     container_name: NerdyOps-Redis
     restart: always
-    ports:
-      - "6379:6379"
 
   scheduler:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    image: nerdyops-scheduler:latest 
+    image: nerdyops-scheduler:latest
     container_name: NerdyOps-Scheduler
     restart: always
     command: ["python", "scheduler.py"]
@@ -73,7 +68,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=redis://NerdyOps-Redis:6379
     depends_on:
       - mysql
       - redis

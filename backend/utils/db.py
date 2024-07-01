@@ -107,7 +107,7 @@ def init_db():
                     status VARCHAR(255),
                     computer_name VARCHAR(255),
                     private_ip VARCHAR(255),
-                    shell_version VARCHAR(255),
+                    shell_version VARCHAR(512),
                     last_update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')

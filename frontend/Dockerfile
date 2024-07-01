@@ -9,7 +9,12 @@ RUN npm install
 
 # Copy all files and build the application
 COPY . .
-RUN npm run build
+
+# Set build-time environment variables
+ARG NEXT_PUBLIC_CENTRAL_SERVER_URL
+
+# Ensure environment variables are available during build
+RUN NEXT_PUBLIC_CENTRAL_SERVER_URL=$NEXT_PUBLIC_CENTRAL_SERVER_URL npm run build
 
 # Expose port 3000
 EXPOSE 3000

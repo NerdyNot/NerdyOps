@@ -30,15 +30,8 @@ def initialize_database():
 def ping():
     return jsonify({"status": "ok"}), 200
 
-# Main entry point for the application
-if __name__ == '__main__':
-    print_logo()
-    try:
-        init_db()
-        logging.info("Database initialized successfully.")
-    except Exception as e:
-        logging.error(f"Error initializing database: {e}")
-
+# Blueprint registrations and other setup
+def register_blueprints(app):
     from utils.redis_connection import get_redis_connection
     redis = get_redis_connection()
 
@@ -55,5 +48,16 @@ if __name__ == '__main__':
     app.register_blueprint(pat_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(config_bp)
-    
+
+register_blueprints(app)
+
+# Main entry point for the application
+if __name__ == '__main__':
+    print_logo()
+    try:
+        init_db()
+        logging.info("Database initialized successfully.")
+    except Exception as e:
+        logging.error(f"Error initializing database: {e}")
+
     app.run(host='0.0.0.0', port=5001)
