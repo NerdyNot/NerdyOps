@@ -1,11 +1,11 @@
 replicaCount: 1
 
 image:
-  backend: nerdynot/nerdyops-backend:1.0
-  frontend: nerdynot/nerdyops-frontend:1.0
+  backend: nerdynot/nerdyops-backend:1.0.1
+  frontend: nerdynot/nerdyops-frontend:1.0.2
   mysql: mysql:8.0
   redis: redis:latest
-  scheduler: nerdynot/nerdyops-backend:1.0
+  scheduler: nerdynot/nerdyops-backend:1.0.1
 
 service:
   type: LoadBalancer
