@@ -26,7 +26,7 @@ import axios from 'axios';
 import { useRouter } from 'next/router';
 import Cookies from 'js-cookie';
 import { initializeUser } from '../stores/mainSlice';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 const ProfilePage = () => {
