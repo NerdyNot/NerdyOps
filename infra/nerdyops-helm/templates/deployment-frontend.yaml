@@ -12,6 +12,10 @@ spec:
       labels:
         app: nerdyops-frontend
     spec:
+      initContainers:
+      - name: wait-for-backend
+        image: busybox
+        command: ['sh', '-c', 'until nc -z -v -w30 svc-nerdyops-backend 5001; do echo waiting for backend; sleep 5; done']
       containers:
       - name: frontend
         image: {{ .Values.image.frontend }}

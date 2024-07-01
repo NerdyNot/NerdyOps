@@ -12,6 +12,16 @@ spec:
       labels:
         app: nerdyops-backend
     spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox
+        command: ['sh', '-c', 'until nc -z -v -w30 {{ .Values.env.DB_HOST }} {{ .Values.env.DB_PORT }}; do echo waiting for mysql; sleep 5; done']
+      - name: wait-for-redis
+        image: busybox
+        env:
+        - name: REDIS_URL
+          value: {{ .Values.env.REDIS_URL }}
+        command: ['sh', '-c', 'host=$(echo $REDIS_URL | sed "s/redis:\\/\\///" | cut -d ":" -f 1); port=$(echo $REDIS_URL | sed "s/redis:\\/\\///" | cut -d ":" -f 2); until nc -z -v -w30 $host $port; do echo waiting for redis; sleep 5; done']
       containers:
       - name: backend
         image: {{ .Values.image.backend }}
