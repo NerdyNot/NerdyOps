@@ -1,0 +1,43 @@
+replicaCount: 1
+
+image:
+  backend: nerdyops-backend:latest
+  frontend: nerdyops-frontend:latest
+  mysql: mysql:8.0
+  redis: redis:latest
+  scheduler: nerdyops-scheduler:latest
+
+service:
+  type: LoadBalancer
+  port: 80
+
+env:
+  DB_TYPE: mysql
+  DB_HOST: NerdyOps-MySQL
+  DB_PORT: 3306
+  DB_USER: user
+  DB_PASSWORD: password
+  DB_NAME: nerdyops
+  REDIS_URL: redis://NerdyOps-Redis:6379
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+ingress:
+  enabled: true
+  annotations: {}
+  frontend:
+    hosts:
+      - host: frontend.local
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+  backend:
+    hosts:
+      - host: backend.local
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+  tls: []

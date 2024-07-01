@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+    spec:
+      containers:
+      - name: scheduler
+        image: {{ .Values.image.scheduler }}
+        command: ["python", "scheduler.py"]
+        env:
+        - name: DB_TYPE
+          value: {{ .Values.env.DB_TYPE }}
+        - name: DB_HOST
+          value: {{ .Values.env.DB_HOST }}
+        - name: DB_PORT
+          value: "{{ .Values.env.DB_PORT }}"
+        - name: DB_USER
+          value: {{ .Values.env.DB_USER }}
+        - name: DB_PASSWORD
+          value: {{ .Values.env.DB_PASSWORD }}
+        - name: DB_NAME
+          value: {{ .Values.env.DB_NAME }}
+        - name: REDIS_URL
+          value: {{ .Values.env.REDIS_URL }}
