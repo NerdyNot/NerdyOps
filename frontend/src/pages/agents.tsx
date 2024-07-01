@@ -18,20 +18,12 @@ import { useBackendUrl } from '../contexts/BackendUrlContext';
 const AgentsPage = () => {
   const dispatch = useDispatch();
   const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
-  
-  useEffect(() => {
-    if (isBackendUrlLoaded) {
-      dispatch(initializeUser());
-    }
-  }, [dispatch, isBackendUrlLoaded]);
-  
-  
+
   useEffect(() => {
     dispatch(initializeUser());
   }, [dispatch]);
 
-  const { agents, loading, error, mutate } = useAgents(isBackendUrlLoaded ? backendUrl : ''); // 백엔드 URL이 로드된 후에만 호출
+  const { agents, loading, error, mutate } = useAgents(backendUrl); // mutate 함수 추가
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [selectedAgentsForBulkAction, setSelectedAgentsForBulkAction] = useState<Agent[]>([]); // 일괄 작업을 위한 상태 추가
 

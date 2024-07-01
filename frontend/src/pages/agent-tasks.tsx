@@ -30,6 +30,8 @@ interface Task {
 const AgentTasksPage = () => {
   const router = useRouter();
   const { agent_id } = router.query;
+  const { backendUrl } = useBackendUrl();
+  const { agents, loading: agentsLoading, error: agentsError } = useAgents(backendUrl);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(agent_id as string || '');
   const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
@@ -38,26 +40,15 @@ const AgentTasksPage = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalActive, setIsModalActive] = useState<boolean>(false);
   const [isTaskSubmitModalActive, setIsTaskSubmitModalActive] = useState<boolean>(false);
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
-  const { agents, loading: agentsLoading, error: agentsError } = useAgents(backendUrl);
 
   useEffect(() => {
-    if (backendUrl) {
-      setIsBackendUrlLoaded(true);
-    }
-  }, [backendUrl]);
-
-  useEffect(() => {
-    if (isBackendUrlLoaded && agent_id) {
+    if (agent_id) {
       setSelectedAgentId(agent_id as string);
       fetchTasks(agent_id as string);
     }
-  }, [isBackendUrlLoaded, agent_id]);
-  
+  }, [agent_id]);
+
   const fetchTasks = async (agentId: string) => {
-    if (!isBackendUrlLoaded) return;
-  
     setLoading(true);
     setError(null);
     try {
@@ -80,17 +71,16 @@ const AgentTasksPage = () => {
       setLoading(false);
     }
   };
-  
+
   const handleAgentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedAgentId(e.target.value);
   };
 
   const handleFetchTasks = () => {
-    if (isBackendUrlLoaded && selectedAgentId) {
+    if (selectedAgentId) {
       fetchTasks(selectedAgentId);
     }
   };
-  
 
   const handleApprove = async (task_id: string) => {
     try {

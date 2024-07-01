@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Agent } from '../interfaces'; 
+import { Agent } from '../interfaces'; // 에이전트 타입 정의 파일
 
 const useAgents = (url: string) => {
   const [agents, setAgents] = useState<Agent[]>([]);
