@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { ReactElement } from 'react';
 import Head from 'next/head';
 import Button from '../components/Button';
 import CardBox from '../components/CardBox';
 import SectionFullScreen from '../components/Section/FullScreen';
 import LayoutGuest from '../layouts/Guest';
-import { Field, Form, Formik } from 'formik';
+import { Field, Form, Formik, FormikHelpers } from 'formik';
 import FormField from '../components/Form/Field';
 import FormCheckRadio from '../components/Form/CheckRadio';
 import Divider from '../components/Divider';
@@ -16,20 +16,27 @@ import { useRouter } from 'next/router';
 import Cookies from 'js-cookie';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../stores/mainSlice';
+import { useBackendUrl } from '../contexts/BackendUrlContext';
 
-type LoginForm = {
+interface LoginForm {
+  backendUrl: string;
   login: string;
   password: string;
   remember: boolean;
-};
+}
 
 const LoginPage = () => {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { backendUrl, setBackendUrl } = useBackendUrl();
 
-  const handleSubmit = async (formValues: LoginForm) => {
+  const handleSubmit = async (formValues: LoginForm, { setSubmitting }: FormikHelpers<LoginForm>) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/login`, {
+      // Save the backend URL in localStorage
+      setBackendUrl(formValues.backendUrl);
+      localStorage.setItem('backendUrl', formValues.backendUrl);
+
+      const response = await axios.post(`${formValues.backendUrl}/login`, {
         username: formValues.login,
         password: formValues.password,
       });
@@ -47,14 +54,24 @@ const LoginPage = () => {
     } catch (err) {
       console.error('Login failed:', err);
       alert('Login failed. Please check your credentials and try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const initialValues: LoginForm = {
+    backendUrl: backendUrl || '',
     login: '',
     password: '',
     remember: false,
   };
+
+  useEffect(() => {
+    const storedBackendUrl = localStorage.getItem('backendUrl');
+    if (storedBackendUrl) {
+      initialValues.backendUrl = storedBackendUrl;
+    }
+  }, []);
 
   return (
     <>
@@ -65,26 +82,32 @@ const LoginPage = () => {
       <SectionFullScreen bg="purplePink">
         <CardBox className="w-11/12 md:w-7/12 lg:w-6/12 xl:w-4/12 shadow-2xl">
           <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-            <Form>
-              <FormField label="Login" help="Please enter your login">
-                <Field name="login" />
-              </FormField>
+            {({ isSubmitting }) => (
+              <Form>
+                <FormField label="Backend URL" help="Please enter your backend URL">
+                  <Field name="backendUrl" />
+                </FormField>
 
-              <FormField label="Password" help="Please enter your password">
-                <Field name="password" type="password" />
-              </FormField>
+                <FormField label="Login" help="Please enter your login">
+                  <Field name="login" />
+                </FormField>
 
-              <FormCheckRadio type="checkbox" label="Remember">
-                <Field type="checkbox" name="remember" />
-              </FormCheckRadio>
+                <FormField label="Password" help="Please enter your password">
+                  <Field name="password" type="password" />
+                </FormField>
 
-              <Divider />
+                <FormCheckRadio type="checkbox" label="Remember">
+                  <Field type="checkbox" name="remember" />
+                </FormCheckRadio>
 
-              <Buttons>
-                <Button type="submit" label="Login" color="info" />
-                <Button href="/" label="Home" color="info" outline />
-              </Buttons>
-            </Form>
+                <Divider />
+
+                <Buttons>
+                  <Button type="submit" label="Login" color="info" disabled={isSubmitting} />
+                  <Button href="/" label="Home" color="info" outline />
+                </Buttons>
+              </Form>
+            )}
           </Formik>
         </CardBox>
       </SectionFullScreen>

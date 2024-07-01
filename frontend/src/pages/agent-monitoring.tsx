@@ -15,6 +15,7 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from 'react-datepicker';
 import ko from 'date-fns/locale/ko';
+import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 registerLocale('ko', ko);
 
@@ -36,7 +37,6 @@ interface ResourceUsage {
 }
 
 const AgentMonitoringPage: React.FC = () => {
-  const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [resourceUsage, setResourceUsage] = useState<ResourceUsage[]>([]);
@@ -49,9 +49,10 @@ const AgentMonitoringPage: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const { backendUrl } = useBackendUrl();
 
   useEffect(() => {
-    axios.get(`${centralServerUrl}/get-agents`)
+    axios.get(`${backendUrl}/get-agents`)
       .then(response => {
         setAgents(response.data);
       })
@@ -59,17 +60,17 @@ const AgentMonitoringPage: React.FC = () => {
         console.error('Error fetching agents:', error);
         setError('Failed to load agents');
       });
-  }, [centralServerUrl]);
+  }, [backendUrl]);
 
   useEffect(() => {
     if (selectedAgent) {
       fetchResourceUsage(selectedAgent.agent_id);
     }
-  }, [selectedAgent, centralServerUrl]);
+  }, [selectedAgent, backendUrl]);
 
   const fetchResourceUsage = (agentId: string) => {
     setLoading(true);
-    axios.get(`${centralServerUrl}/get-resource-usage?agent_id=${agentId}`)
+    axios.get(`${backendUrl}/get-resource-usage?agent_id=${agentId}`)
       .then(response => {
         const data = response.data;
         setResourceUsage(data);
@@ -257,7 +258,7 @@ const AgentMonitoringPage: React.FC = () => {
           isOpen={isSettingsModalOpen}
           onClose={handleSettingsModalClose}
           agentId={selectedAgent.agent_id}
-          centralServerUrl={centralServerUrl}
+          backendUrl={backendUrl}
         />
       )}
     </>

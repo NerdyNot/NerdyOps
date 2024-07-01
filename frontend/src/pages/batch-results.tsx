@@ -10,10 +10,11 @@ import Modal from '../components/Modal';
 import ReactMarkdown from 'react-markdown';
 import { Task } from '../interfaces';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
+import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { useBackendUrl } from '../contexts/BackendUrlContext';
+
 
 const BatchResultsPage = () => {
-  const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -21,12 +22,13 @@ const BatchResultsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Task; direction: 'ascending' | 'descending' } | null>(null);
   const [filter, setFilter] = useState<string>('');
+  const { backendUrl } = useBackendUrl();
 
   const fetchAllCompletedTasks = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${centralServerUrl}/get-all-completed-tasks`);
+      const response = await axios.get(`${backendUrl}/get-all-completed-tasks`);
       setTasks(response.data);
       setFilteredTasks(response.data);
     } catch (err) {

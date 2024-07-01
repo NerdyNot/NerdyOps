@@ -13,6 +13,7 @@ import ReactMarkdown from 'react-markdown';
 import TaskSubmitModal from '../components/TaskSubmitModal';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
+import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 interface Task {
   task_id: string;
@@ -29,8 +30,8 @@ interface Task {
 const AgentTasksPage = () => {
   const router = useRouter();
   const { agent_id } = router.query;
-  const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
-  const { agents, loading: agentsLoading, error: agentsError } = useAgents(centralServerUrl);
+  const { backendUrl } = useBackendUrl();
+  const { agents, loading: agentsLoading, error: agentsError } = useAgents(backendUrl);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(agent_id as string || '');
   const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
@@ -52,10 +53,10 @@ const AgentTasksPage = () => {
     setError(null);
     try {
       const [pendingResponse, completedResponse] = await Promise.all([
-        axios.get(`${centralServerUrl}/get-pending-tasks`, {
+        axios.get(`${backendUrl}/get-pending-tasks`, {
           params: { agent_id: agentId },
         }),
-        axios.get(`${centralServerUrl}/get-agent-tasks`, {
+        axios.get(`${backendUrl}/get-agent-tasks`, {
           params: { agent_id: agentId },
         }),
       ]);
@@ -83,7 +84,7 @@ const AgentTasksPage = () => {
 
   const handleApprove = async (task_id: string) => {
     try {
-      await axios.post(`${centralServerUrl}/approve-task`, { task_id });
+      await axios.post(`${backendUrl}/approve-task`, { task_id });
       fetchTasks(selectedAgentId); // Refresh tasks after approval
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred');
@@ -92,7 +93,7 @@ const AgentTasksPage = () => {
 
   const handleReject = async (task_id: string) => {
     try {
-      await axios.post(`${centralServerUrl}/reject-task`, { task_id });
+      await axios.post(`${backendUrl}/reject-task`, { task_id });
       fetchTasks(selectedAgentId); // Refresh tasks after rejection
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred');

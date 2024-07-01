@@ -25,6 +25,7 @@ import {
   import { initializeUser } from '../stores/mainSlice';
   import DatePicker from 'react-datepicker';
   import 'react-datepicker/dist/react-datepicker.css';
+  import { useBackendUrl } from '../contexts/BackendUrlContext';
   
   const PatManagementPage = () => {
     const dispatch = useAppDispatch();
@@ -32,7 +33,8 @@ import {
     const [pats, setPats] = useState([]);
     const [expiryDate, setExpiryDate] = useState<Date | null>(null);
     const [isUnlimited, setIsUnlimited] = useState(false);
-  
+    const { backendUrl } = useBackendUrl();
+
     useEffect(() => {
       dispatch(initializeUser());
       fetchPats();
@@ -41,7 +43,7 @@ import {
     const fetchPats = async () => {
       try {
         const token = Cookies.get('token');
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/get-pat`, {
+        const response = await axios.get(`${backendUrl}/get-pat`, {
           params: { user_id: userId },
           headers: {
             Authorization: `Bearer ${token}`,
@@ -57,7 +59,7 @@ import {
       try {
         const token = Cookies.get('token');
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/generate_pat`,
+          `${backendUrl}/generate_pat`,
           {
             user_id: userId,
             expiry_days: isUnlimited ? null : (expiryDate ? Math.ceil((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null),
@@ -80,7 +82,7 @@ import {
       try {
         const token = Cookies.get('token');
         await axios.post(
-          `${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/delete_pat`,
+          `${backendUrl}/delete_pat`,
           { pat_id },
           {
             headers: {
@@ -101,28 +103,11 @@ import {
     };
   
     const copyToClipboard = (text: string) => {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-          alert('Token copied to clipboard');
-        }).catch((err) => {
-          console.error('Could not copy text: ', err);
-          alert('Failed to copy token to clipboard');
-        });
-      } else {
-        // Fallback for browsers that do not support navigator.clipboard
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand('copy');
-          alert('Token copied to clipboard');
-        } catch (err) {
-          console.error('Could not copy text: ', err);
-          alert('Failed to copy token to clipboard');
-        }
-        document.body.removeChild(textArea);
-      }
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Token copied to clipboard');
+      }).catch((err) => {
+        console.error('Could not copy text: ', err);
+      });
     };
   
     const utcToLocal = (utcString: string) => {

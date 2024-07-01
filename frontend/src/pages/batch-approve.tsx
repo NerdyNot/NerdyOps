@@ -9,19 +9,21 @@ import { getPageTitle } from '../config';
 import { Task } from '../interfaces'; // Task 타입 정의 파일
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
+import { useBackendUrl } from '../contexts/BackendUrlContext';
+
 
 const BatchApprovePage = () => {
-  const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { backendUrl } = useBackendUrl();
 
   const fetchAllPendingTasks = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${centralServerUrl}/get-all-pending-tasks`);
+      const response = await axios.get(`${backendUrl}/get-all-pending-tasks`);
       setTasks(response.data);
     } catch (err) {
       console.error('Error fetching tasks:', err);
@@ -38,7 +40,7 @@ const BatchApprovePage = () => {
   const handleApprove = async () => {
     try {
       await Promise.all(
-        selectedTasks.map(task_id => axios.post(`${centralServerUrl}/approve-task`, { task_id }))
+        selectedTasks.map(task_id => axios.post(`${backendUrl}/approve-task`, { task_id }))
       );
       fetchAllPendingTasks(); // Refresh tasks after approval
     } catch (err) {
@@ -49,7 +51,7 @@ const BatchApprovePage = () => {
   const handleReject = async () => {
     try {
       await Promise.all(
-        selectedTasks.map(task_id => axios.post(`${centralServerUrl}/reject-task`, { task_id }))
+        selectedTasks.map(task_id => axios.post(`${backendUrl}/reject-task`, { task_id }))
       );
       fetchAllPendingTasks(); // Refresh tasks after rejection
     } catch (err) {

@@ -27,6 +27,7 @@ import { useRouter } from 'next/router';
 import Cookies from 'js-cookie';
 import { initializeUser } from '../stores/mainSlice';
 import { useEffect } from 'react';
+import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 const ProfilePage = () => {
   const dispatch = useAppDispatch();
@@ -34,6 +35,7 @@ const ProfilePage = () => {
   const userEmail = useAppSelector((state) => state.main.userEmail);
   const userRole = useAppSelector((state) => state.main.userRole);
   const router = useRouter();
+  const { backendUrl } = useBackendUrl();
 
   useEffect(() => {
     dispatch(initializeUser());
@@ -57,7 +59,7 @@ const ProfilePage = () => {
     try {
       const token = Cookies.get('token');
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/change-password`,
+        `${backendUrl}/change-password`,
         {
           current_password: values.currentPassword,
           new_password: values.newPassword,

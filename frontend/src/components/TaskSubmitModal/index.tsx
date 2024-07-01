@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Modal from '../Modal';
 import { Agent } from '../../interfaces';
+import { useBackendUrl } from '../../contexts/BackendUrlContext';
 
 interface Props {
   agent: Agent | null;
@@ -14,6 +15,7 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
   const [taskResult, setTaskResult] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { backendUrl } = useBackendUrl();
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -21,7 +23,7 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
     try {
       if (agent) {
         // 단일 에이전트에 대한 작업 제출
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/submit-task`, {
+        const response = await axios.post(`${backendUrl}/submit-task`, {
           command,
           agent_id: agent.agent_id,
         });
@@ -29,7 +31,7 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
       } else if (agents && agents.length > 0) {
         // 여러 에이전트에 대한 작업 제출
         const responses = await Promise.all(
-          agents.map(a => axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/submit-task`, {
+          agents.map(a => axios.post(`${backendUrl}/submit-task`, {
             command,
             agent_id: a.agent_id,
           }))

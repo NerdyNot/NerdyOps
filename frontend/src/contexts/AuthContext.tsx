@@ -1,57 +1,77 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import axios from 'axios'
-import { useRouter } from 'next/router'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
+import { useRouter } from 'next/router';
+import { useBackendUrl } from '../contexts/BackendUrlContext';
 
-const AuthContext = createContext(null)
+interface AuthContextProps {
+  user: { user_id: string; role: string } | null;
+  error: string | null;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+  verifyToken: (token: string) => Promise<void>;
+}
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [error, setError] = useState(null)
-  const router = useRouter()
+const AuthContext = createContext<AuthContextProps | null>(null);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<{ user_id: string; role: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { backendUrl } = useBackendUrl();
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('token');
     if (token) {
-      verifyToken(token)
+      verifyToken(token);
     }
-  }, [])
+  }, [backendUrl]);
 
-  const login = async (username, password) => {
+  const login = async (username: string, password: string) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/login`, {
+      const response = await axios.post(`${backendUrl}/login`, {
         username,
         password,
-      })
+      });
 
-      const { token, user_id, role } = response.data
-      localStorage.setItem('token', token)
-      setUser({ user_id, role })
-      router.push('/')
-    } catch (err) {
-      setError(err.response.data.error || 'An error occurred')
+      const { token, user_id, role } = response.data;
+      localStorage.setItem('token', token);
+      setUser({ user_id, role });
+      router.push('/');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'An error occurred');
     }
-  }
+  };
 
   const logout = () => {
-    localStorage.removeItem('token')
-    setUser(null)
-    router.push('/login')
-  }
+    localStorage.removeItem('token');
+    setUser(null);
+    router.push('/login');
+  };
 
-  const verifyToken = async (token) => {
+  const verifyToken = async (token: string) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/verify-token`, { token })
-      setUser({ user_id: response.data.user_id, role: response.data.role })
-    } catch (err) {
-      setError(err.response.data.error || 'An error occurred')
+      const response = await axios.post(`${backendUrl}/verify-token`, { token });
+      setUser({ user_id: response.data.user_id, role: response.data.role });
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'An error occurred');
     }
-  }
+  };
 
   return (
     <AuthContext.Provider value={{ user, error, login, logout, verifyToken }}>
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

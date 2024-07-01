@@ -18,6 +18,8 @@ import { getPageTitle } from '../config';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../stores/mainSlice';
 import { useRouter } from 'next/router';
+import { useBackendUrl } from '../contexts/BackendUrlContext';
+
 
 const IndexPage = () => {
   const [user, setUserState] = useState<{ name: string; email: string; role: string } | null>(null);
@@ -26,6 +28,8 @@ const IndexPage = () => {
   const [failureTaskCount, setFailureTaskCount] = useState(0);
   const dispatch = useDispatch();
   const router = useRouter();
+  const { backendUrl } = useBackendUrl();
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,21 +41,21 @@ const IndexPage = () => {
 
       try {
         const tokenValue = token.split('=')[1];
-        const verifyResponse = await axios.post(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/verify-token`, { token: tokenValue });
+        const verifyResponse = await axios.post(`${backendUrl}/verify-token`, { token: tokenValue });
 
         if (verifyResponse.status !== 200) {
           router.push('/login');
           return;
         }
 
-        const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/user-info`, {
+        const userResponse = await axios.get(`${backendUrl}/user-info`, {
           headers: {
             Authorization: `Bearer ${tokenValue}`,
           },
         });
 
-        const agentResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/get-agents`);
-        const tasksResponse = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/get-tasks-summary`);
+        const agentResponse = await axios.get(`${backendUrl}/get-agents`);
+        const tasksResponse = await axios.get(`${backendUrl}/get-tasks-summary`);
         const { successCount, failureCount } = tasksResponse.data;
 
         setUserState(userResponse.data);
