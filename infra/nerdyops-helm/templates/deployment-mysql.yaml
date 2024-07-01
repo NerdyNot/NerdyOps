@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mysql
+  name: nerdyops-mysql
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: mysql
+      app: nerdyops-mysql
   template:
     metadata:
       labels:
-        app: mysql
+        app: nerdyops-mysql
     spec:
       containers:
       - name: mysql

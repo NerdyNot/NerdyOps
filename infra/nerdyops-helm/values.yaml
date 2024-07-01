@@ -1,11 +1,11 @@
 replicaCount: 1
 
 image:
-  backend: nerdyops-backend:latest
-  frontend: nerdyops-frontend:latest
+  backend: nerdyops-backend:1.0
+  frontend: nerdyops-frontend:1.0
   mysql: mysql:8.0
   redis: redis:latest
-  scheduler: nerdyops-scheduler:latest
+  scheduler: nerdyops-backend:1.0
 
 service:
   type: LoadBalancer

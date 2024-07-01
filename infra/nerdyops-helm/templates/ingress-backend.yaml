@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: backend
+  name: ing-nerdyops-backend
   annotations:
     {{- range $key, $value := .Values.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
@@ -18,7 +18,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: backend
+                name: svc-nerdyops-backend
                 port:
                   number: 5001
           {{- end }}

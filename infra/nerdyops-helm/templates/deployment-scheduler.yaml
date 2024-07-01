@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scheduler
+  name: nerdyops-scheduler
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: scheduler
+      app: nerdyops-scheduler
   template:
     metadata:
       labels:
-        app: scheduler
+        app: nerdyops-scheduler
     spec:
       containers:
       - name: scheduler

@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend
+  name: nerdyops-backend
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: backend
+      app: nerdyops-backend
   template:
     metadata:
       labels:
-        app: backend
+        app: nerdyops-backend
     spec:
       containers:
       - name: backend

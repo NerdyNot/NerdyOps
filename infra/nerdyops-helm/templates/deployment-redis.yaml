@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis
+  name: nerdyops-redis
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: redis
+      app: nerdyops-redis
   template:
     metadata:
       labels:
-        app: redis
+        app: nerdyops-redis
     spec:
       containers:
       - name: redis
