@@ -16,7 +16,6 @@ DB_PORT = os.getenv('DB_PORT', 3306)
 DB_USER = os.getenv('DB_USER', 'root')
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 
-
 # Initialize the database and create the necessary tables if they don't exist
 def init_db():
     conn = get_db_connection()
@@ -77,7 +76,10 @@ def init_db():
                     completed_at TIMESTAMP,
                     output TEXT,
                     error TEXT,
-                    interpretation TEXT
+                    interpretation TEXT,
+                    submitted_by TEXT,
+                    approved_by TEXT,
+                    rejected_by TEXT
                 )
             ''')
 
@@ -153,7 +155,10 @@ def init_db():
                     completed_at TIMESTAMP,
                     output TEXT,
                     error TEXT,
-                    interpretation TEXT
+                    interpretation TEXT,
+                    submitted_by VARCHAR(255),
+                    approved_by VARCHAR(255),
+                    rejected_by VARCHAR(255)
                 )
             ''')
 
