@@ -17,7 +17,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-      - REDIS_URL=${REDIS_URL} # 환경 변수로 REDIS_URL 설정
+      - REDIS_URL=${REDIS_URL}
     depends_on:
       - mysql
       - redis

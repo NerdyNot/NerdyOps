@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from utils.slack_integration import process_redis_notifications
 import json
 
-redis = get_redis_connection
+redis = get_redis_connection()
 
 logging.basicConfig(level=logging.INFO)
 
