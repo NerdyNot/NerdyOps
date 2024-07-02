@@ -13,7 +13,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useBackendUrl } from '../contexts/BackendUrlContext';
 
-
 const BatchResultsPage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
@@ -86,7 +85,9 @@ const BatchResultsPage = () => {
       task.agent_id.includes(value) ||
       task.task_id.includes(value) ||
       task.input.includes(value) ||
-      (task.hostname && task.hostname.includes(value))
+      (task.hostname && task.hostname.includes(value)) ||
+      (task.submitted_by && task.submitted_by.includes(value)) || // 필터에 submitted_by 추가
+      (task.approved_by && task.approved_by.includes(value)) // 필터에 approved_by 추가
     ));
   };
 
@@ -127,6 +128,12 @@ const BatchResultsPage = () => {
                   <th className="py-2 px-4 cursor-pointer" onClick={() => handleSort('approved_at')}>
                     Approved At {sortConfig?.key === 'approved_at' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
                   </th>
+                  <th className="py-2 px-4 cursor-pointer" onClick={() => handleSort('submitted_by')}>
+                    Submitted By {sortConfig?.key === 'submitted_by' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
+                  </th>
+                  <th className="py-2 px-4 cursor-pointer" onClick={() => handleSort('approved_by')}>
+                    Approved By {sortConfig?.key === 'approved_by' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
+                  </th>
                   <th className="py-2 px-4">Input</th>
                   <th className="py-2 px-4">Details</th>
                 </tr>
@@ -138,6 +145,8 @@ const BatchResultsPage = () => {
                     <td className="py-2 px-4 border">{task.task_id}</td>
                     <td className="py-2 px-4 border">{new Date(task.submitted_at).toLocaleString()}</td>
                     <td className="py-2 px-4 border">{task.approved_at ? new Date(task.approved_at).toLocaleString() : 'N/A'}</td>
+                    <td className="py-2 px-4 border">{task.submitted_by}</td>
+                    <td className="py-2 px-4 border">{task.approved_by || 'N/A'}</td>
                     <td className="py-2 px-4 border">{task.input}</td>
                     <td className="py-2 px-4 border">
                       <button
@@ -171,6 +180,16 @@ const BatchResultsPage = () => {
               <div className="mb-2">
                 <strong>Approved At:</strong>
                 <p className="p-2 bg-gray-100 rounded">{new Date(selectedTask.approved_at).toLocaleString()}</p>
+              </div>
+            )}
+            <div className="mb-2">
+              <strong>Submitted By:</strong>
+              <p className="p-2 bg-gray-100 rounded">{selectedTask.submitted_by}</p>
+            </div>
+            {selectedTask.approved_by && (
+              <div className="mb-2">
+                <strong>Approved By:</strong>
+                <p className="p-2 bg-gray-100 rounded">{selectedTask.approved_by}</p>
               </div>
             )}
             <div className="mb-2">

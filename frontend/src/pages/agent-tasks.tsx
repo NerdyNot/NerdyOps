@@ -27,8 +27,8 @@ interface Task {
   approved_at?: string;
   rejected_at?: string;
   submitted_by: string;
+  approved_by?: string;
 }
-
 
 const AgentTasksPage = () => {
   const router = useRouter();
@@ -210,50 +210,56 @@ const AgentTasksPage = () => {
             </div>
           </>
         )}
-      {completedTasks.length > 0 && (
-        <>
-          <h2 className="text-xl font-semibold mb-4">Completed Tasks</h2>
-          <div>
-            {completedTasks.map((task) => (
-              <div key={task.task_id} className="mb-4 p-4 bg-gray-100 rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">Task ID: {task.task_id}</h3>
-                <div className="mb-2">
-                  <strong>Submitted By:</strong>
-                  <p className="p-2 bg-white rounded">{task.submitted_by}</p> {/* Submitted By 표시 */}
-                </div>
-                <div className="mb-2">
-                  <strong>Submitted At:</strong>
-                  <p className="p-2 bg-white rounded">{new Date(task.submitted_at).toLocaleString()}</p>
-                </div>
-                <div className="mb-2">
-                  <strong>Approved At:</strong>
-                  <p className="p-2 bg-white rounded">{new Date(task.approved_at).toLocaleString()}</p>
-                </div>
-                <div className="mb-2">
-                  <strong>Input:</strong>
-                  <p className="p-2 bg-white rounded">{task.input}</p>
-                </div>
-                <div className="mb-2">
-                  <strong>Script Code:</strong>
-                  <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>
-                    <SyntaxHighlighter language="bash" style={atomDark}>
-                      {task.script_code}
-                    </SyntaxHighlighter>
+        {completedTasks.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Completed Tasks</h2>
+            <div>
+              {completedTasks.map((task) => (
+                <div key={task.task_id} className="mb-4 p-4 bg-gray-100 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-2">Task ID: {task.task_id}</h3>
+                  <div className="mb-2">
+                    <strong>Submitted By:</strong>
+                    <p className="p-2 bg-white rounded">{task.submitted_by}</p> {/* Submitted By 표시 */}
+                  </div>
+                  <div className="mb-2">
+                    <strong>Submitted At:</strong>
+                    <p className="p-2 bg-white rounded">{new Date(task.submitted_at).toLocaleString()}</p>
+                  </div>
+                  {task.approved_by && (
+                    <div className="mb-2">
+                      <strong>Approved By:</strong>
+                      <p className="p-2 bg-white rounded">{task.approved_by}</p> {/* Approved By 표시 */}
+                    </div>
+                  )}
+                  <div className="mb-2">
+                    <strong>Approved At:</strong>
+                    <p className="p-2 bg-white rounded">{task.approved_at ? new Date(task.approved_at).toLocaleString() : 'N/A'}</p>
+                  </div>
+                  <div className="mb-2">
+                    <strong>Input:</strong>
+                    <p className="p-2 bg-white rounded">{task.input}</p>
+                  </div>
+                  <div className="mb-2">
+                    <strong>Script Code:</strong>
+                    <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>
+                      <SyntaxHighlighter language="bash" style={atomDark}>
+                        {task.script_code}
+                      </SyntaxHighlighter>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => handleViewDetails(task)}
+                      className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
+                    >
+                      View Details
+                    </button>
                   </div>
                 </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => handleViewDetails(task)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
-                  >
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+              ))}
+            </div>
+          </>
+        )}
       </SectionMain>
 
       {isModalActive && (

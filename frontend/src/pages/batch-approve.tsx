@@ -10,7 +10,7 @@ import { Task } from '../interfaces'; // Task 타입 정의 파일
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
 import { useBackendUrl } from '../contexts/BackendUrlContext';
-
+import { useAppSelector } from '../stores/hooks';
 
 const BatchApprovePage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -19,7 +19,8 @@ const BatchApprovePage = () => {
   const [error, setError] = useState<string | null>(null);
   const { backendUrl } = useBackendUrl();
   const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
-  
+  const userName = useAppSelector((state) => state.main.userName);
+
   useEffect(() => {
     if (backendUrl) {
       setIsBackendUrlLoaded(true);
@@ -47,16 +48,13 @@ const BatchApprovePage = () => {
       fetchAllPendingTasks();
     }
   }, [isBackendUrlLoaded]);
-  
-
-  useEffect(() => {
-    fetchAllPendingTasks();
-  }, []);
 
   const handleApprove = async () => {
     try {
       await Promise.all(
-        selectedTasks.map(task_id => axios.post(`${backendUrl}/approve-task`, { task_id }))
+        selectedTasks.map(task_id =>
+          axios.post(`${backendUrl}/approve-task`, { task_id, username: userName })
+        )
       );
       fetchAllPendingTasks(); // Refresh tasks after approval
     } catch (err) {
@@ -67,7 +65,9 @@ const BatchApprovePage = () => {
   const handleReject = async () => {
     try {
       await Promise.all(
-        selectedTasks.map(task_id => axios.post(`${backendUrl}/reject-task`, { task_id }))
+        selectedTasks.map(task_id =>
+          axios.post(`${backendUrl}/reject-task`, { task_id, username: userName })
+        )
       );
       fetchAllPendingTasks(); // Refresh tasks after rejection
     } catch (err) {
@@ -134,6 +134,7 @@ const BatchApprovePage = () => {
                   <th className="py-2 px-4">Hostname</th>
                   <th className="py-2 px-4">Input</th>
                   <th className="py-2 px-4">Script Code</th>
+                  <th className="py-2 px-4">Submitted By</th>
                 </tr>
               </thead>
               <tbody className="text-gray-700">
@@ -154,6 +155,7 @@ const BatchApprovePage = () => {
                         {task.script_code}
                       </SyntaxHighlighter>
                     </td>
+                    <td className="py-2 px-4 border">{task.submitted_by}</td>
                   </tr>
                 ))}
               </tbody>
