@@ -11,6 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import VertexAIModelGarden
+from langchain_anthropic import ChatAnthropic
 from utils.db import get_api_key, get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
 
@@ -82,6 +83,9 @@ def get_llm():
     elif provider == 'vertexai':
         os.environ["GOOGLE_API_KEY"] = api_key
         return VertexAIModelGarden(model=model, temperature=temperature)
+    elif provider == 'anthropic':
+        os.environ["ANTHROPIC_API_KEY"] = api_key
+        
     else:
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None

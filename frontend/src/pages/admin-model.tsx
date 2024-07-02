@@ -178,6 +178,7 @@ const RedisLlmPage: React.FC = () => {
               <option value="azure">Azure OpenAI</option>
               <option value="gemini">Google Gemini</option>
               <option value="vertexai">Vertex AI</option>
+              <option value="anthropic">ANTHROPIC AI</option>
             </select>
           </div>
           <div className="mb-4">

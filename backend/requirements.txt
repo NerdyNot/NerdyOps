@@ -2,6 +2,7 @@ langchain
 langchain-openai
 langchain-google-genai
 langchain-google-vertexai
+langchain-anthropic
 langchain-experimental
 flask
 redis

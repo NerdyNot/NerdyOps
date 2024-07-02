@@ -205,7 +205,7 @@ def handle_monitoring_notification():
     # Add Slack notification
     notification_data = {
         "type": "monitoring_verify",
-        "message": f"*Alert Message Verify Result*\n - Agent ID: {agent_id}\n - Message: {message}\n - Executed Script: {script_code}\n - Executed Output: {result['output']}\n- Result: {result['interpretation']}"
+        "message": f"*Alert Message Verify Result*\n - *Agent ID*: {agent_id}\n - *Message*: {message}\n\n - *Executed Script*: {script_code}\n - *Executed Output*: {result['output']}\n- *Interpretation*: {result['interpretation']}"
     }
     redis.rpush('slack_notifications', json.dumps(notification_data))
     return jsonify({"agent_id": agent_id, "result": result})
