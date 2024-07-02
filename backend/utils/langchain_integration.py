@@ -21,12 +21,12 @@ redis_conn = get_redis_connection()
 
 # Define the prompt templates for different types of scripts
 bash_template = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful assistant that converts natural language commands into Bash scripts. Make sure to provide a complete and executable Bash script. Scripts Must Generated in English"),
+    ("system", "You are a helpful assistant that converts natural language commands into Bash scripts. Make sure to provide a complete and executable Bash script. The script should only run on the local computer and must not include any remote commands or SSH instructions. Scripts Must Generated in English"),
     ("user", "OS: {os_type}\nCommand: {command}")
 ])
 
 powershell_template = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful assistant that converts natural language commands into PowerShell scripts. Make sure to provide a complete and executable PowerShell script. Scripts Must Generated in English"),
+    ("system", "You are a helpful assistant that converts natural language commands into PowerShell scripts. Make sure to provide a complete and executable PowerShell script. The script should only run on the local computer and must not include any remote commands or SSH instructions. Scripts Must Generated in English"),
     ("user", "OS: {os_type}\nCommand: {command}")
 ])
 
