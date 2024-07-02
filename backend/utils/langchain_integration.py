@@ -85,7 +85,7 @@ def get_llm():
         return VertexAIModelGarden(model=model, temperature=temperature)
     elif provider == 'anthropic':
         os.environ["ANTHROPIC_API_KEY"] = api_key
-        
+        return ChatAnthropic(model=model, temperature=temperature)
     else:
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
