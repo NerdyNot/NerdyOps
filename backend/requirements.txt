@@ -1,5 +1,7 @@
 langchain
 langchain-openai
+langchain-google-genai
+langchain-google-vertexai
 langchain-experimental
 flask
 redis

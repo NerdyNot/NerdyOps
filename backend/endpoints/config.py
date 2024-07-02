@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, json
 from utils.db import get_db_connection, init_db, DB_TYPE
 from utils.slack_integration import save_slack_service_hook
 
@@ -176,3 +176,67 @@ def get_redis_config():
 
     config = {row['config_key']: row['config_value'] for row in rows}
     return jsonify(config), 200
+
+@config_bp.route('/set-llm-config', methods=['POST'])
+def set_llm_config():
+    data = request.json
+    provider = data.get('provider')
+    api_key = data.get('apiKey')
+    model = data.get('model')
+    temperature = data.get('temperature')
+    azure_api_version = data.get('azureApiVersion')
+    azure_endpoint = data.get('azureEndpoint')
+    azure_api_key = data.get('azureApiKey')
+
+    if not provider or not api_key:
+        return jsonify({"message": "Provider and API key are required"}), 400
+
+    llm_config = {
+        'provider': provider,
+        'api_key': api_key,
+        'model': model,
+        'temperature': temperature,
+        'azure': {
+            'api_version': azure_api_version,
+            'endpoint': azure_endpoint,
+            'api_key': azure_api_key
+        } if provider == 'azure' else None
+    }
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = '''
+        INSERT INTO api_keys (key_name, key_value)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)
+    ''' if DB_TYPE == 'mysql' else '''
+        INSERT INTO api_keys (key_name, key_value)
+        VALUES (?, ?)
+        ON CONFLICT(key_name)
+        DO UPDATE SET key_value = excluded.key_value
+    '''
+    cursor.execute(query, ('llm', json.dumps(llm_config)))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "LLM configuration saved successfully!"}), 200
+
+@config_bp.route('/get-llm-config', methods=['GET'])
+def get_llm_config():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = 'SELECT key_value FROM api_keys WHERE key_name = %s' if DB_TYPE == 'mysql' else 'SELECT key_value FROM api_keys WHERE key_name = ?'
+    cursor.execute(query, ('llm',))
+    row = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if row:
+        return jsonify({"llmConfig": json.loads(row['key_value'])}), 200
+    else:
+        return jsonify({"message": "LLM configuration not found"}), 404

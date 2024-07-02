@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import pymysql
+import json
 from werkzeug.security import generate_password_hash
 import uuid
 from dotenv import load_dotenv
@@ -198,6 +199,24 @@ def init_db():
             '''
             cursor.execute(query, (str(uuid.uuid4()), 'admin', 'admin@admin.com', hashed_password, 'admin'))
             conn.commit()  # Save changes
+
+        # Insert or update the LLM configuration
+        llm_config = {
+            'provider': 'openai',  # Default provider
+            'api_key': 'your_openai_api_key',
+            'model': 'gpt-4o',  # Default model
+            'temperature': 0.7,  # Default temperature
+            'azure': {
+                'api_version': '2023-12-01-preview',
+                'endpoint': 'https://your-resource-name.openai.azure.com',
+                'api_key': 'your_azure_openai_api_key'
+            }
+        }
+        cursor.execute('''
+            INSERT INTO api_keys (key_name, key_value) VALUES (%s, %s)
+            ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)
+        ''', ('llm', json.dumps(llm_config)))
+        conn.commit()
 
     finally:
         conn.close()  # Close the connection
