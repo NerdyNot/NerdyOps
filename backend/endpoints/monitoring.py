@@ -12,6 +12,18 @@ def add_notification_to_queue(message):
     redis_conn = get_redis_connection()
     redis_conn.lpush('slack_notifications', json.dumps({'message': message}))
 
+def verify_pat(jwt_token: str) -> bool:
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = "SELECT token FROM user_pats WHERE token = %s" if DB_TYPE == 'mysql' else "SELECT token FROM user_pats WHERE token = ?"
+        cursor.execute(query, (jwt_token,))
+        row = cursor.fetchone()
+    finally:
+        conn.close()
+
+    return bool(row)
+
 @monitoring_bp.route('/report-resource-usage', methods=['POST'])
 def report_resource_usage():
     data = request.get_json()
@@ -152,6 +164,14 @@ def process_monitoring_message():
 
 @monitoring_bp.route('/handle-monitoring-notification', methods=['POST'])
 def handle_monitoring_notification():
+    auth_header = request.headers.get('Authorization', None)
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({"error": "Missing or invalid Authorization header"}), 401
+    
+    pat_token = auth_header.split(' ')[1]
+    if not verify_pat(pat_token):
+        return jsonify({"error": "Invalid PAT"}), 401
+
     data = request.get_json()
     message = data.get('message')
     
