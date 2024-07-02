@@ -37,6 +37,7 @@ interpret_template = ChatPromptTemplate.from_messages([
 # Define the output parser
 parser = StrOutputParser()
 
+
 def get_llm():
     llm_config = get_api_key('llm')
     if not llm_config:
@@ -57,7 +58,12 @@ def get_llm():
         os.environ["OPENAI_API_VERSION"] = azure_config.get('api_version', '2023-12-01-preview')
         os.environ["AZURE_OPENAI_ENDPOINT"] = azure_config.get('endpoint', '')
         os.environ["AZURE_OPENAI_API_KEY"] = azure_config.get('api_key', '')
-        return AzureOpenAI(model=model, temperature=temperature)
+        logging.warning(os.environ["OPENAI_API_VERSION"], os.environ["AZURE_OPENAI_ENDPOINT"], os.environ["AZURE_OPENAI_API_KEY"])
+        if not os.environ["AZURE_OPENAI_ENDPOINT"]:
+            logging.error("AZURE_OPENAI_ENDPOINT is not set")
+        if not os.environ["AZURE_OPENAI_API_KEY"]:
+            logging.error("AZURE_OPENAI_API_KEY is not set")
+        return AzureOpenAI(model=model, temperature=temperature, azure_deployment=azure_config.get('deployment', ''))
     elif provider == 'gemini':
         os.environ["GOOGLE_API_KEY"] = api_key
         return ChatGoogleGenerativeAI(model=model, temperature=temperature)
