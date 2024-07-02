@@ -205,4 +205,9 @@ def handle_monitoring_notification():
 
     # Execute the script and get the result
     result = execute_script_and_get_result(agent_id, script_code)
+
+    # Add Slack notification
+    slack_message = f"*Alert Message Verify Result*\n - Agent ID: {agent_id}\n - Message: {message}\n - Executed Script: {script_code}\n - Executed Output: {result['output']}\n- Result: {result['interpretation']}"
+    add_notification_to_queue(slack_message)
+
     return jsonify({"agent_id": agent_id, "result": result})
