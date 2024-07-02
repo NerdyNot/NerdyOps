@@ -101,9 +101,10 @@ def submit_task():
     data = request.get_json()
     input_text = data.get('command')
     target_agent_id = data.get('agent_id')
+    submitted_by = data.get('username')
     
-    if not input_text or not target_agent_id:
-        return jsonify({"error": "Command and Agent ID are required"}), 400
+    if not input_text or not target_agent_id or not submitted_by:
+        return jsonify({"error": "Command, Agent ID, and Username are required"}), 400
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -135,7 +136,8 @@ def submit_task():
         "agent_id": target_agent_id,
         "timestamp": datetime.now().isoformat(),
         "status": "pending",
-        "submitted_at": datetime.now().isoformat()
+        "submitted_at": datetime.now().isoformat(),
+        "submitted_by": submitted_by  # username 저장
     }
     
     redis.set(f'task:{task_id}', json.dumps(task_data))
@@ -144,11 +146,12 @@ def submit_task():
     # Send notification to Slack
     notification_data = {
         "type": "submit_task",
-        "message": f"*Submit Task Alert* \n - Task {task_id} has been submitted and is pending review."
+        "message": f"*Submit Task Alert*\n - Task {task_id} has been submitted by {submitted_by} and is pending review."
     }
     redis.rpush('slack_notifications', json.dumps(notification_data))
     
     return jsonify({"task_id": task_id, "status": "Task created and pending review"})
+
 
 @tasks_bp.route('/get-pending-tasks', methods=['GET'])
 def get_pending_tasks():
@@ -206,9 +209,10 @@ def get_all_pending_tasks():
 def approve_task():
     data = request.get_json()
     task_id = data.get('task_id')
+    approved_by = data.get('username')
     
-    if not task_id:
-        return jsonify({"error": "Task ID is required"}), 400
+    if not task_id or not approved_by:
+        return jsonify({"error": "Task ID and Username are required"}), 400
     
     task_data = redis.get(f'task:{task_id}')
     if not task_data:
@@ -220,6 +224,7 @@ def approve_task():
     
     task_data['status'] = 'approved'
     task_data['approved_at'] = datetime.now().isoformat()
+    task_data['approved_by'] = approved_by  # username 저장
     redis.set(f'task:{task_id}', json.dumps(task_data))
     target_agent_id = task_data['agent_id']
     redis.lpush(f'task_queue:{target_agent_id}', json.dumps(task_data))
@@ -228,19 +233,21 @@ def approve_task():
     # Send notification to Slack
     notification_data = {
         "type": "approve_task",
-        "message": f"*Approve Task Alert*\n - Task {task_id} has been approved."
+        "message": f"*Approve Task Alert*\n - Task {task_id} has been approved by {approved_by}."
     }
     redis.rpush('slack_notifications', json.dumps(notification_data))
     
     return jsonify({"status": "Task approved", "task_id": task_id})
 
+
 @tasks_bp.route('/reject-task', methods=['POST'])
 def reject_task():
     data = request.get_json()
     task_id = data.get('task_id')
+    rejected_by = data.get('username')
     
-    if not task_id:
-        return jsonify({"error": "Task ID is required"}), 400
+    if not task_id or not rejected_by:
+        return jsonify({"error": "Task ID and Username are required"}), 400
     
     task_data = redis.get(f'task:{task_id}')
     if not task_data:
@@ -252,17 +259,19 @@ def reject_task():
     
     task_data['status'] = 'rejected'
     task_data['rejected_at'] = datetime.now().isoformat()
+    task_data['rejected_by'] = rejected_by  # username 저장
     redis.set(f'task:{task_id}', json.dumps(task_data))
     redis.lrem('pending_tasks', 0, task_id)
     
     # Send notification to Slack
     notification_data = {
         "type": "reject_task",
-        "message": f"*Reject Task Alert*\n - Task {task_id} has been rejected."
+        "message": f"*Reject Task Alert*\n - Task {task_id} has been rejected by {rejected_by}."
     }
     redis.rpush('slack_notifications', json.dumps(notification_data))
     
     return jsonify({"status": "Task rejected", "task_id": task_id})
+
 
 @tasks_bp.route('/get-task', methods=['GET'])
 def get_task():
