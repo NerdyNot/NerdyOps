@@ -47,7 +47,7 @@ def get_llm():
     config = json.loads(llm_config)
     provider = config.get('provider')
     api_key = config.get('api_key')
-    model = config.get('model', 'gpt-4o')
+    model = config.get('model', 'gpt-4o')  # 기본 모델
     temperature = config.get('temperature', 0)
     
     if provider == 'openai':
@@ -58,12 +58,16 @@ def get_llm():
         os.environ["OPENAI_API_VERSION"] = azure_config.get('api_version', '2023-12-01-preview')
         os.environ["AZURE_OPENAI_ENDPOINT"] = azure_config.get('endpoint', '')
         os.environ["AZURE_OPENAI_API_KEY"] = azure_config.get('api_key', '')
-        logging.warning(os.environ["OPENAI_API_VERSION"], os.environ["AZURE_OPENAI_ENDPOINT"], os.environ["AZURE_OPENAI_API_KEY"])
+        azure_deployment = azure_config.get('deployment', '')
         if not os.environ["AZURE_OPENAI_ENDPOINT"]:
             logging.error("AZURE_OPENAI_ENDPOINT is not set")
         if not os.environ["AZURE_OPENAI_API_KEY"]:
             logging.error("AZURE_OPENAI_API_KEY is not set")
-        return AzureOpenAI(model=model, temperature=temperature, azure_deployment=azure_config.get('deployment', ''))
+        if not azure_deployment:
+            logging.error("Azure deployment name is not set")
+        logging.warning("Azure OpenAI configuration - API Version: %s, Endpoint: %s, API Key: %s",
+                        os.environ["OPENAI_API_VERSION"], os.environ["AZURE_OPENAI_ENDPOINT"], os.environ["AZURE_OPENAI_API_KEY"])
+        return AzureOpenAI(azure_deployment=azure_deployment, openai_api_version=os.environ["OPENAI_API_VERSION"], temperature=temperature)
     elif provider == 'gemini':
         os.environ["GOOGLE_API_KEY"] = api_key
         return ChatGoogleGenerativeAI(model=model, temperature=temperature)
