@@ -155,11 +155,25 @@ const AdminPage: React.FC = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setLlmConfig(response.data.llmConfig);
+      const data = response.data.llmConfig;
+      setLlmConfig({
+        provider: data.provider || '',
+        apiKey: data.api_key || '',
+        model: data.model || '',
+        temperature: data.temperature !== undefined ? data.temperature : 0.5,
+        azureApiVersion: data.azure?.api_version || '',
+        azureEndpoint: data.azure?.endpoint || '',
+        azureApiKey: data.azure?.api_key || '',
+      });
     } catch (error) {
       console.error('Error fetching LLM configuration:', error);
     }
   };
+  
+
+  useEffect(() => {
+    console.log('LLM Configuration:', llmConfig);
+  }, [llmConfig]);
 
   const handleSaveLlmConfig = async () => {
     try {
