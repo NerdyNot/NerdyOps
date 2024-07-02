@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../Button';
 import axios from 'axios';
+import { useBackendUrl } from '../../contexts/BackendUrlContext';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   agentId: string;
-  centralServerUrl: string;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, agentId, centralServerUrl }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, agentId }) => {
+  const { backendUrl } = useBackendUrl();
+  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
   const [checkSchedule, setCheckSchedule] = useState(false);
   const [checkPing, setCheckPing] = useState('');
   const [runningProcess, setRunningProcess] = useState('');
   const [listenPort, setListenPort] = useState('');
 
   useEffect(() => {
-    if (isOpen && agentId) {
-      axios.get(`${centralServerUrl}/get-monitoring-settings?agent_id=${agentId}`)
+    if (backendUrl) {
+      setIsBackendUrlLoaded(true);
+    }
+  }, [backendUrl]);
+
+  useEffect(() => {
+    if (isOpen && agentId && isBackendUrlLoaded) {
+      axios.get(`${backendUrl}/get-monitoring-settings?agent_id=${agentId}`)
         .then(response => {
           const data = response.data;
           setCheckSchedule(data.check_schedule);
@@ -35,18 +43,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, agentId,
       setRunningProcess('');
       setListenPort('');
     }
-  }, [isOpen, agentId, centralServerUrl]);
+  }, [isOpen, agentId, backendUrl, isBackendUrlLoaded]);
 
   const handleSaveSettings = () => {
+    if (!isBackendUrlLoaded) return;
+
     const settings = {
       agent_id: agentId,
       check_schedule: checkSchedule,
       check_ping: checkPing,
-      running_process: runningProcess,
+      running_process: setRunningProcess,
       listen_port: listenPort,
     };
 
-    axios.post(`${centralServerUrl}/set-monitoring-settings`, settings)
+    axios.post(`${backendUrl}/set-monitoring-settings`, settings)
       .then(() => {
         alert('Settings saved successfully!');
         onClose();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from '../Modal';
 import { Agent } from '../../interfaces';
@@ -16,8 +16,17 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { backendUrl } = useBackendUrl();
-
+  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+  
+  useEffect(() => {
+    if (backendUrl) {
+      setIsBackendUrlLoaded(true);
+    }
+  }, [backendUrl]);
+  
   const handleSubmit = async () => {
+    if (!isBackendUrlLoaded) return;
+  
     setLoading(true);
     setError(null);
     try {
@@ -44,6 +53,7 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
       setLoading(false);
     }
   };
+  
 
   return (
     <Modal onClose={onClose}>

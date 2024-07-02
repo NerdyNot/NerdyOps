@@ -20,7 +20,6 @@ import { setUser } from '../stores/mainSlice';
 import { useRouter } from 'next/router';
 import { useBackendUrl } from '../contexts/BackendUrlContext';
 
-
 const IndexPage = () => {
   const [user, setUserState] = useState<{ name: string; email: string; role: string } | null>(null);
   const [agentCount, setAgentCount] = useState(0);
@@ -29,7 +28,13 @@ const IndexPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { backendUrl } = useBackendUrl();
+  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
 
+  useEffect(() => {
+    if (backendUrl) {
+      setIsBackendUrlLoaded(true);
+    }
+  }, [backendUrl]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,8 +74,10 @@ const IndexPage = () => {
       }
     };
 
-    fetchData();
-  }, [dispatch, router]);
+    if (isBackendUrlLoaded) {
+      fetchData();
+    }
+  }, [isBackendUrlLoaded, dispatch, router]);
 
   return (
     <>
@@ -79,15 +86,6 @@ const IndexPage = () => {
       </Head>
       <SectionMain>
         <SectionTitleLineWithButton icon={mdiChartTimelineVariant} title="Overview" main>
-          <Button
-            href="https://github.com/NerdyNot/NerdyOps"
-            target="_blank"
-            icon={mdiGithub}
-            label="Star on GitHub"
-            color="contrast"
-            roundedFull
-            small
-          />
         </SectionTitleLineWithButton>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
@@ -122,7 +120,7 @@ const IndexPage = () => {
       </SectionMain>
     </>
   );
-}
+};
 
 IndexPage.getLayout = function getLayout(page: ReactElement) {
   return <LayoutAuthenticated>{page}</LayoutAuthenticated>;

@@ -12,7 +12,7 @@ const SectionBannerStarOnGitHub = () => {
       </h1>
       <div>
         <Button
-          href="https://github.com/justboil/admin-one-react-tailwind"
+          href="https://github.com/NerdyNot/NerdyOps"
           target="_blank"
           icon={mdiGithub}
           label="GitHub"

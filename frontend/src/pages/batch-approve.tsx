@@ -18,8 +18,17 @@ const BatchApprovePage = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { backendUrl } = useBackendUrl();
-
+  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+  
+  useEffect(() => {
+    if (backendUrl) {
+      setIsBackendUrlLoaded(true);
+    }
+  }, [backendUrl]);
+  
   const fetchAllPendingTasks = async () => {
+    if (!isBackendUrlLoaded) return;
+  
     setLoading(true);
     setError(null);
     try {
@@ -32,6 +41,13 @@ const BatchApprovePage = () => {
       setLoading(false);
     }
   };
+  
+  useEffect(() => {
+    if (isBackendUrlLoaded) {
+      fetchAllPendingTasks();
+    }
+  }, [isBackendUrlLoaded]);
+  
 
   useEffect(() => {
     fetchAllPendingTasks();

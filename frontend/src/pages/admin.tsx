@@ -12,7 +12,6 @@ import Button from '../components/Button';
 import Cookies from 'js-cookie';
 
 const AdminPage: React.FC = () => {
-  const centralServerUrl = process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL;
   const [users, setUsers] = useState([]);
   const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: 'user' });
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -33,14 +32,23 @@ const AdminPage: React.FC = () => {
   const [redisMessage, setRedisMessage] = useState('');
   const token = Cookies.get('token');
   const { backendUrl } = useBackendUrl();
+  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
-    fetchApiKey();
-    fetchSlackWebhook();
-    fetchNotificationSettings();
-    fetchRedisConfig();
-  }, []);
+    if (backendUrl) {
+      setIsBackendUrlLoaded(true);
+    }
+  }, [backendUrl]);
+
+  useEffect(() => {
+    if (isBackendUrlLoaded) {
+      fetchUsers();
+      fetchApiKey();
+      fetchSlackWebhook();
+      fetchNotificationSettings();
+      fetchRedisConfig();
+    }
+  }, [isBackendUrlLoaded]);
 
   const fetchUsers = async () => {
     try {

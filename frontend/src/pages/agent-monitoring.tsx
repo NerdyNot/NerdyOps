@@ -50,25 +50,37 @@ const AgentMonitoringPage: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const { backendUrl } = useBackendUrl();
-
+  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+  
   useEffect(() => {
-    axios.get(`${backendUrl}/get-agents`)
-      .then(response => {
-        setAgents(response.data);
-      })
-      .catch(error => {
-        console.error('Error fetching agents:', error);
-        setError('Failed to load agents');
-      });
+    if (backendUrl) {
+      setIsBackendUrlLoaded(true);
+    }
   }, [backendUrl]);
+  
 
   useEffect(() => {
-    if (selectedAgent) {
+    if (isBackendUrlLoaded) {
+      axios.get(`${backendUrl}/get-agents`)
+        .then(response => {
+          setAgents(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching agents:', error);
+          setError('Failed to load agents');
+        });
+    }
+  }, [isBackendUrlLoaded, backendUrl]);
+  
+  useEffect(() => {
+    if (isBackendUrlLoaded && selectedAgent) {
       fetchResourceUsage(selectedAgent.agent_id);
     }
-  }, [selectedAgent, backendUrl]);
-
+  }, [isBackendUrlLoaded, selectedAgent, backendUrl]);
+  
   const fetchResourceUsage = (agentId: string) => {
+    if (!isBackendUrlLoaded) return;
+  
     setLoading(true);
     axios.get(`${backendUrl}/get-resource-usage?agent_id=${agentId}`)
       .then(response => {
@@ -83,7 +95,7 @@ const AgentMonitoringPage: React.FC = () => {
         setLoading(false);
       });
   };
-
+  
   const updateChartData = (data: ResourceUsage[]) => {
     const filteredData = data.filter((item: ResourceUsage) => {
       const itemDate = new Date(item.timestamp * 1000);
