@@ -5,6 +5,9 @@ import {
   mdiLock,
   mdiAlertCircle,
   mdiSquareEditOutline,
+  mdiBellOutline,
+  mdiCogOutline,
+  mdiDatabaseCogOutline,
   mdiViewListOutline,
   mdiCheckboxMarkedCircleAutoOutline,
   mdiServer,
@@ -72,10 +75,29 @@ const menuAside: MenuAsideItem[] = [
     roles: ['user', 'admin'], // 모든 사용자 접근 가능
   },
   {
-    href: '/admin',
     label: 'Admin',
-    icon: mdiAccountCog,
-    roles: ['admin'], // 관리자만 접근 가능
+    icon: mdiCogOutline,
+    menu: [
+      {
+        href: '/admin-user',
+        label: 'User Management',
+        icon: mdiAccountCog,
+        roles: ['admin'],
+      },
+      {
+        href: '/admin-model',
+        label: 'Model Management',
+        icon: mdiDatabaseCogOutline,
+        roles: ['admin'],
+      },
+      {
+        href: '/admin-noti',
+        label: 'Notification Management',
+        icon: mdiBellOutline,
+        roles: ['admin'],
+      },
+    ],
+    roles: ['admin'], // 관리자 전용
   },
 ];
 
