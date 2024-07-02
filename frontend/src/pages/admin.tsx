@@ -10,6 +10,7 @@ import { mdiAccountCog, mdiPlus } from '@mdi/js';
 import Head from 'next/head';
 import Button from '../components/Button';
 import Cookies from 'js-cookie';
+import { Stack, Slider, Typography } from '@mui/material';
 
 const AdminPage: React.FC = () => {
   const [users, setUsers] = useState([]);
@@ -33,6 +34,17 @@ const AdminPage: React.FC = () => {
   const token = Cookies.get('token');
   const { backendUrl } = useBackendUrl();
   const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+  const [llmConfig, setLlmConfig] = useState({
+    provider: '',
+    apiKey: '',
+    model: '',
+    temperature: 0.5,
+    azureApiVersion: '',
+    azureEndpoint: '',
+    azureApiKey: ''
+  });
+  const [message, setMessage] = useState('');
+  
 
   useEffect(() => {
     if (backendUrl) {
@@ -47,9 +59,10 @@ const AdminPage: React.FC = () => {
       fetchSlackWebhook();
       fetchNotificationSettings();
       fetchRedisConfig();
+      fetchLlmConfig();
     }
   }, [isBackendUrlLoaded]);
-
+  
   const fetchUsers = async () => {
     try {
       const response = await axios.get(`${backendUrl}/users`, {
@@ -133,6 +146,42 @@ const AdminPage: React.FC = () => {
     } catch (error) {
       console.error('Error fetching Redis config:', error);
     }
+  };
+
+  const fetchLlmConfig = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/get-llm-config`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setLlmConfig(response.data.llmConfig);
+    } catch (error) {
+      console.error('Error fetching LLM configuration:', error);
+    }
+  };
+
+  const handleSaveLlmConfig = async () => {
+    try {
+      await axios.post(`${backendUrl}/set-llm-config`, llmConfig, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setMessage('LLM configuration saved successfully!');
+    } catch (error) {
+      console.error('Error saving LLM configuration:', error);
+      setMessage('Failed to save LLM configuration.');
+    }
+  };
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setLlmConfig(prevConfig => ({ ...prevConfig, [name]: value }));
+  };
+  
+  const handleSliderChange = (event: any, newValue: number | number[]) => {
+    setLlmConfig(prevConfig => ({ ...prevConfig, temperature: newValue as number }));
   };
 
   const handleRegister = async () => {
@@ -411,23 +460,94 @@ const AdminPage: React.FC = () => {
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h2 className="text-2xl font-semibold mb-4">OpenAI API Key</h2>
-          {apiKey ? (
-            <p>Current API Key: {apiKey}</p>
-          ) : (
-            <p>No API key set</p>
-          )}
+          <h2 className="text-2xl font-semibold mb-4">LLM Configuration</h2>
           <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">Provider</label>
+            <select name="provider" value={llmConfig.provider} onChange={handleChange} className="border p-2 w-full rounded-md">
+              <option value="">Select Provider</option>
+              <option value="openai">OpenAI</option>
+              <option value="azure">Azure OpenAI</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="vertexai">Vertex AI</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">API Key</label>
             <input
               type="password"
-              placeholder="Enter new OpenAI API Key"
-              value={newApiKey}
-              onChange={(e) => setNewApiKey(e.target.value)}
+              name="apiKey"
+              placeholder="Enter API Key"
+              value={llmConfig.apiKey}
+              onChange={handleChange}
               className="border p-2 w-full rounded-md"
             />
           </div>
-          <Button label="Save API Key" onClick={handleSaveApiKey} color="primary" />
-          {apiKeyMessage && <p>{apiKeyMessage}</p>}
+          {llmConfig.provider === 'azure' && (
+            <>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-semibold mb-2">Azure API Version</label>
+                <input
+                  type="text"
+                  name="azureApiVersion"
+                  placeholder="Enter Azure API Version"
+                  value={llmConfig.azureApiVersion}
+                  onChange={handleChange}
+                  className="border p-2 w-full rounded-md"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-semibold mb-2">Azure Endpoint</label>
+                <input
+                  type="text"
+                  name="azureEndpoint"
+                  placeholder="Enter Azure Endpoint"
+                  value={llmConfig.azureEndpoint}
+                  onChange={handleChange}
+                  className="border p-2 w-full rounded-md"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-semibold mb-2">Azure API Key</label>
+                <input
+                  type="password"
+                  name="azureApiKey"
+                  placeholder="Enter Azure API Key"
+                  value={llmConfig.azureApiKey}
+                  onChange={handleChange}
+                  className="border p-2 w-full rounded-md"
+                />
+              </div>
+            </>
+          )}
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">Model</label>
+            <input
+              type="text"
+              name="model"
+              placeholder="Enter Model Name"
+              value={llmConfig.model}
+              onChange={handleChange}
+              className="border p-2 w-full rounded-md"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">Temperature</label>
+            <Stack spacing={2} direction="row" sx={{ mb: 1 }} alignItems="center">
+              <Typography variant="body2">0</Typography>
+              <Slider
+                aria-label="Temperature"
+                value={llmConfig.temperature}
+                onChange={handleSliderChange}
+                step={0.1}
+                min={0}
+                max={1}
+                valueLabelDisplay="auto"
+              />
+              <Typography variant="body2">1</Typography>
+            </Stack>
+          </div>
+          <Button label="Save LLM Configuration" onClick={handleSaveLlmConfig} color="primary" />
+          {message && <p>{message}</p>}
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
