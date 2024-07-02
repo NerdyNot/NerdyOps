@@ -3,7 +3,7 @@ import logging
 import re
 import os
 import uuid
-import datetime
+from datetime import datetime
 import time
 from langchain_openai import ChatOpenAI
 from langchain.chat_models import AzureChatOpenAI
