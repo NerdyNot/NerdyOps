@@ -179,7 +179,7 @@ def generate_verification_script_tool(message: str) -> str:
         return "Agent not found in the database."
 
     os_type = row['os_type']
-    verification_command = f"Alert Message : {message}. \n Please generate a script to verify message on this Computer."
+    verification_command = f"Alert Message: {message}. Please generate a script to verify this message on the local computer."
     return convert_natural_language_to_script(verification_command, os_type)
 
 def execute_script_and_get_result(agent_id: str, script: str) -> str:
