@@ -8,10 +8,6 @@ import logging
 monitoring_bp = Blueprint('monitoring', __name__)
 redis = get_redis_connection()
 
-def add_notification_to_queue(message):
-    redis_conn = get_redis_connection()
-    redis_conn.lpush('slack_notifications', json.dumps({'message': message}))
-
 def verify_pat(jwt_token: str) -> bool:
     conn = get_db_connection()
     try:
@@ -211,6 +207,5 @@ def handle_monitoring_notification():
         "type": "monitoring_verify",
         "message": f"*Alert Message Verify Result*\n - Agent ID: {agent_id}\n - Message: {message}\n - Executed Script: {script_code}\n - Executed Output: {result['output']}\n- Result: {result['interpretation']}"
     }
-    add_notification_to_queue(notification_data)
-
+    redis.rpush('slack_notifications', json.dumps(notification_data))
     return jsonify({"agent_id": agent_id, "result": result})
