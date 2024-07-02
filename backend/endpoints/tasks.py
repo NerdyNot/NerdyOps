@@ -409,10 +409,13 @@ def get_agent_tasks():
             "status": status,
             "output": output,
             "error": error,
-            "interpretation": interpretation
+            "interpretation": interpretation,
+            "submitted_by": task_data.get('submitted_by'),
+            "approved_by": task_data.get('approved_by')
         })
     
     return jsonify(task_list)
+
 
 @tasks_bp.route('/get-all-completed-tasks', methods=['GET'])
 def get_all_completed_tasks():
@@ -448,7 +451,9 @@ def get_all_completed_tasks():
                 "completed_at": row['completed_at'].isoformat() if row['completed_at'] else None,
                 "output": row['output'],
                 "error": row['error'],
-                "interpretation": row['interpretation']
+                "interpretation": row['interpretation'],
+                "submitted_by": row['submitted_by'],
+                "approved_by": row['approved_by']
             }
             completed_tasks.append(task)
         conn.close()
@@ -456,6 +461,7 @@ def get_all_completed_tasks():
     completed_tasks.sort(key=lambda x: x.get('approved_at', ''), reverse=True)
 
     return jsonify(completed_tasks)
+
 
 # Endpoint to summary the tasks
 @tasks_bp.route('/get-tasks-summary', methods=['GET'])
