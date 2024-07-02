@@ -141,6 +141,13 @@ def submit_task():
     redis.set(f'task:{task_id}', json.dumps(task_data))
     redis.lpush('pending_tasks', task_id)
     
+    # Send notification to Slack
+    notification_data = {
+        "type": "submit_task",
+        "message": f"*Submit Task Alert* \n - Task {task_id} has been submitted and is pending review."
+    }
+    redis.rpush('slack_notifications', json.dumps(notification_data))
+    
     return jsonify({"task_id": task_id, "status": "Task created and pending review"})
 
 @tasks_bp.route('/get-pending-tasks', methods=['GET'])
@@ -218,6 +225,13 @@ def approve_task():
     redis.lpush(f'task_queue:{target_agent_id}', json.dumps(task_data))
     redis.lrem('pending_tasks', 0, task_id)
     
+    # Send notification to Slack
+    notification_data = {
+        "type": "approve_task",
+        "message": f"*Approve Task Alert*\n - Task {task_id} has been approved."
+    }
+    redis.rpush('slack_notifications', json.dumps(notification_data))
+    
     return jsonify({"status": "Task approved", "task_id": task_id})
 
 @tasks_bp.route('/reject-task', methods=['POST'])
@@ -240,6 +254,13 @@ def reject_task():
     task_data['rejected_at'] = datetime.now().isoformat()
     redis.set(f'task:{task_id}', json.dumps(task_data))
     redis.lrem('pending_tasks', 0, task_id)
+    
+    # Send notification to Slack
+    notification_data = {
+        "type": "reject_task",
+        "message": f"*Reject Task Alert*\n - Task {task_id} has been rejected."
+    }
+    redis.rpush('slack_notifications', json.dumps(notification_data))
     
     return jsonify({"status": "Task rejected", "task_id": task_id})
 
