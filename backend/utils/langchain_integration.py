@@ -13,8 +13,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import VertexAIModelGarden
 from utils.db import get_api_key, get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
-from langchain.agents import initialize_agent, Tool
-from langchain.agents.agent_types import AgentType
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -181,7 +179,7 @@ def generate_verification_script_tool(message: str) -> str:
         return "Agent not found in the database."
 
     os_type = row['os_type']
-    verification_command = f"The following monitoring notification message was received: {message}. Please generate a script to verify this message."
+    verification_command = f"Alert Message : {message}. \n Please generate a script to verify message on this Computer."
     return convert_natural_language_to_script(verification_command, os_type)
 
 def execute_script_and_get_result(agent_id: str, script: str) -> str:
