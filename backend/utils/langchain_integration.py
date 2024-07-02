@@ -2,16 +2,24 @@ import json
 import logging
 import re
 import os
+import uuid
+import datetime
+import time
 from langchain_openai import ChatOpenAI
 from langchain.chat_models import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import VertexAIModelGarden
-from utils.db import get_api_key
+from utils.db import get_api_key, get_db_connection, DB_TYPE
+from utils.redis_connection import get_redis_connection
+from langchain.agents import initialize_agent, Tool
+from langchain.agents.agent_types import AgentType
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
+
+redis_conn = get_redis_connection()
 
 # Define the prompt templates for different types of scripts
 bash_template = ChatPromptTemplate.from_messages([
@@ -37,7 +45,6 @@ interpret_template = ChatPromptTemplate.from_messages([
 
 # Define the output parser
 parser = StrOutputParser()
-
 
 def get_llm():
     llm_config = get_api_key('llm')
@@ -134,3 +141,93 @@ def interpret_result(command_text: str, output: str, error: str) -> str:
     
     return summary
 
+# Tool to find agent_id from message
+def find_agent_id(message: str) -> str:
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = """
+        SELECT agent_id FROM agents WHERE computer_name LIKE %s OR private_ip LIKE %s
+        """ if DB_TYPE == 'mysql' else """
+        SELECT agent_id FROM agents WHERE computer_name LIKE ? OR private_ip LIKE ?
+        """
+        cursor.execute(query, (f"%{message}%", f"%{message}%"))
+        row = cursor.fetchone()
+    finally:
+        conn.close()
+
+    if row:
+        return row['agent_id']
+    else:
+        logging.warning("No matching agent found for the message.")
+        return "No matching agent found"
+
+# Tool to generate verification script
+def generate_verification_script_tool(message: str) -> str:
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = """
+        SELECT os_type FROM agents WHERE agent_id = %s
+        """ if DB_TYPE == 'mysql' else """
+        SELECT os_type FROM agents WHERE agent_id = ?
+        """
+        cursor.execute(query, (message,))
+        row = cursor.fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        return "Agent not found in the database."
+
+    os_type = row['os_type']
+    verification_command = f"The following monitoring notification message was received: {message}. Please generate a script to verify this message."
+    return convert_natural_language_to_script(verification_command, os_type)
+
+def execute_script_and_get_result(agent_id: str, script: str) -> str:
+    task_id = str(uuid.uuid4())
+    task_data = {
+        "task_id": task_id,
+        "input": script,
+        "script_code": script,
+        "agent_id": agent_id,
+        "timestamp": datetime.now().isoformat(),
+        "status": "approved",
+        "approved_at": datetime.now().isoformat(),
+    }
+
+    # Add the task to the agent's task queue in Redis
+    redis_conn.set(f'task:{task_id}', json.dumps(task_data))
+    redis_conn.lpush(f'task_queue:{agent_id}', json.dumps(task_data))
+
+    # Wait for the agent to execute the task and return the result
+    result_key = f"result:{task_id}"
+    for _ in range(10):  # Retry 10 times with a delay
+        result = redis_conn.hgetall(result_key)
+        if result:
+            output = result.get(b'output', b'').decode()
+            error = result.get(b'error', b'').decode()
+            interpretation = result.get(b'interpretation', b'').decode()
+            return {
+                "output": output,
+                "error": error,
+                "interpretation": interpretation,
+            }
+        time.sleep(5)  # Wait for 5 seconds before retrying
+
+    return "No response from agent"
+
+def interpret_result(command_text: str, output: str, error: str) -> str:
+    llm = get_llm()
+    if not llm:
+        raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
+    
+    prompt = interpret_template.invoke({"command_text": command_text, "output": output, "error": error})
+
+    response = llm.invoke(prompt.to_messages())
+    logging.info(f"LLM Interpretation Response: {response}")
+    
+    summary = parser.invoke(response).strip()
+    logging.info(f"LLM Summary: {summary}")
+    
+    return summary

@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
 from utils.redis_connection import get_redis_connection
 from utils.db import get_db_connection, DB_TYPE
+from utils.langchain_integration import convert_natural_language_to_script, execute_script_and_get_result
 import json
+import logging
 
 monitoring_bp = Blueprint('monitoring', __name__)
 redis = get_redis_connection()
@@ -131,3 +133,56 @@ def get_monitoring_settings():
         return jsonify(settings)
     else:
         return jsonify({"error": "Settings not found for this agent"}), 404
+
+@monitoring_bp.route('/process-monitoring-message', methods=['POST'])
+def process_monitoring_message():
+    data = request.get_json()
+    message = data.get('message')
+    
+    if not message:
+        return jsonify({"error": "Message is required"}), 400
+
+    try:
+        result = handle_monitoring_notification(message)
+        return jsonify({"result": result})
+    except Exception as e:
+        logging.error(f"Error processing monitoring message: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@monitoring_bp.route('/handle-monitoring-notification', methods=['POST'])
+def handle_monitoring_notification():
+    data = request.get_json()
+    message = data.get('message')
+    
+    if not message:
+        return jsonify({"error": "Message is required"}), 400
+
+    # Find agent_id based on the message
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = 'SELECT agent_id, os_type FROM agents WHERE INSTR(%s, computer_name) > 0 OR INSTR(%s, private_ip) > 0' if DB_TYPE == 'mysql' else 'SELECT agent_id, os_type FROM agents WHERE INSTR(?, computer_name) > 0 OR INSTR(?, private_ip) > 0'
+    cursor.execute(query, (message, message))
+    agent_info = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if not agent_info:
+        return jsonify({"error": "Agent not found based on the provided message"}), 404
+
+    agent_id = agent_info['agent_id']
+    os_type = agent_info['os_type']
+
+    # Generate script based on the message
+    try:
+        script_code = convert_natural_language_to_script(message, os_type)
+        logging.info(f"Generated Script: {script_code}")
+    except Exception as e:
+        logging.error(f"Error in converting message to script: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    # Execute the script and get the result
+    result = execute_script_and_get_result(agent_id, script_code)
+    return jsonify({"agent_id": agent_id, "result": result})
