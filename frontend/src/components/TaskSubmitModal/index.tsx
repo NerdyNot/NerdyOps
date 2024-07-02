@@ -3,6 +3,7 @@ import axios from 'axios';
 import Modal from '../Modal';
 import { Agent } from '../../interfaces';
 import { useBackendUrl } from '../../contexts/BackendUrlContext';
+import { useAppSelector } from '../../stores/hooks';
 
 interface Props {
   agent: Agent | null;
@@ -12,12 +13,12 @@ interface Props {
 
 const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
   const [command, setCommand] = useState<string>('');
-  const [username, setUsername] = useState<string>(''); // username 상태 추가
   const [taskResult, setTaskResult] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { backendUrl } = useBackendUrl();
   const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+  const userName = useAppSelector((state) => state.main.userName); // userName 가져오기
   
   useEffect(() => {
     if (backendUrl) {
@@ -26,7 +27,7 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
   }, [backendUrl]);
   
   const handleSubmit = async () => {
-    if (!isBackendUrlLoaded) return;
+    if (!isBackendUrlLoaded || !userName) return;
   
     setLoading(true);
     setError(null);
@@ -36,7 +37,7 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
         const response = await axios.post(`${backendUrl}/submit-task`, {
           command,
           agent_id: agent.agent_id,
-          username, // username 추가
+          username: userName, // username 추가
         });
         setTaskResult(response.data);
       } else if (agents && agents.length > 0) {
@@ -45,7 +46,7 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
           agents.map(a => axios.post(`${backendUrl}/submit-task`, {
             command,
             agent_id: a.agent_id,
-            username, // username 추가
+            username: userName, // username 추가
           }))
         );
         setTaskResult(responses.map(res => res.data));
@@ -64,13 +65,6 @@ const TaskSubmitModal: React.FC<Props> = ({ agent, agents, onClose }) => {
         <h2 className="text-2xl font-semibold mb-2">
           Submit Task {agent ? `for ${agent.agent_id}` : 'for Selected Agents'}
         </h2>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Enter your username"
-          className="border p-3 w-full rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
         <textarea
           value={command}
           onChange={(e) => setCommand(e.target.value)}

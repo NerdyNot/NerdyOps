@@ -14,6 +14,7 @@ import TaskSubmitModal from '../components/TaskSubmitModal';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
 import { useBackendUrl } from '../contexts/BackendUrlContext';
+import { useAppSelector } from '../stores/hooks';
 
 interface Task {
   task_id: string;
@@ -25,7 +26,9 @@ interface Task {
   submitted_at: string;
   approved_at?: string;
   rejected_at?: string;
+  submitted_by: string;
 }
+
 
 const AgentTasksPage = () => {
   const router = useRouter();
@@ -40,6 +43,7 @@ const AgentTasksPage = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalActive, setIsModalActive] = useState<boolean>(false);
   const [isTaskSubmitModalActive, setIsTaskSubmitModalActive] = useState<boolean>(false);
+  const userName = useAppSelector((state) => state.main.userName);
 
   useEffect(() => {
     if (agent_id) {
@@ -84,7 +88,7 @@ const AgentTasksPage = () => {
 
   const handleApprove = async (task_id: string) => {
     try {
-      await axios.post(`${backendUrl}/approve-task`, { task_id });
+      await axios.post(`${backendUrl}/approve-task`, { task_id, username: userName });
       fetchTasks(selectedAgentId); // Refresh tasks after approval
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred');
@@ -93,7 +97,7 @@ const AgentTasksPage = () => {
 
   const handleReject = async (task_id: string) => {
     try {
-      await axios.post(`${backendUrl}/reject-task`, { task_id });
+      await axios.post(`${backendUrl}/reject-task`, { task_id, username: userName });
       fetchTasks(selectedAgentId); // Refresh tasks after rejection
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred');
@@ -168,6 +172,10 @@ const AgentTasksPage = () => {
                 <div key={task.task_id} className="mb-4 p-4 bg-gray-100 rounded-lg">
                   <h3 className="font-semibold text-lg mb-2">Task ID: {task.task_id}</h3>
                   <div className="mb-2">
+                    <strong>Submitted By:</strong>
+                    <p className="p-2 bg-white rounded">{task.submitted_by}</p> {/* Submitted By 표시 */}
+                  </div>
+                  <div className="mb-2">
                     <strong>Submitted At:</strong>
                     <p className="p-2 bg-white rounded">{new Date(task.submitted_at).toLocaleString()}</p>
                   </div>
@@ -202,46 +210,50 @@ const AgentTasksPage = () => {
             </div>
           </>
         )}
-        {completedTasks.length > 0 && (
-          <>
-            <h2 className="text-xl font-semibold mb-4">Completed Tasks</h2>
-            <div>
-              {completedTasks.map((task) => (
-                <div key={task.task_id} className="mb-4 p-4 bg-gray-100 rounded-lg">
-                  <h3 className="font-semibold text-lg mb-2">Task ID: {task.task_id}</h3>
-                  <div className="mb-2">
-                    <strong>Submitted At:</strong>
-                    <p className="p-2 bg-white rounded">{new Date(task.submitted_at).toLocaleString()}</p>
-                  </div>
-                  <div className="mb-2">
-                    <strong>Approved At:</strong>
-                    <p className="p-2 bg-white rounded">{new Date(task.approved_at).toLocaleString()}</p>
-                  </div>
-                  <div className="mb-2">
-                    <strong>Input:</strong>
-                    <p className="p-2 bg-white rounded">{task.input}</p>
-                  </div>
-                  <div className="mb-2">
-                    <strong>Script Code:</strong>
-                    <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>
-                      <SyntaxHighlighter language="bash" style={atomDark}>
-                        {task.script_code}
-                      </SyntaxHighlighter>
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => handleViewDetails(task)}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
-                    >
-                      View Details
-                    </button>
+      {completedTasks.length > 0 && (
+        <>
+          <h2 className="text-xl font-semibold mb-4">Completed Tasks</h2>
+          <div>
+            {completedTasks.map((task) => (
+              <div key={task.task_id} className="mb-4 p-4 bg-gray-100 rounded-lg">
+                <h3 className="font-semibold text-lg mb-2">Task ID: {task.task_id}</h3>
+                <div className="mb-2">
+                  <strong>Submitted By:</strong>
+                  <p className="p-2 bg-white rounded">{task.submitted_by}</p> {/* Submitted By 표시 */}
+                </div>
+                <div className="mb-2">
+                  <strong>Submitted At:</strong>
+                  <p className="p-2 bg-white rounded">{new Date(task.submitted_at).toLocaleString()}</p>
+                </div>
+                <div className="mb-2">
+                  <strong>Approved At:</strong>
+                  <p className="p-2 bg-white rounded">{new Date(task.approved_at).toLocaleString()}</p>
+                </div>
+                <div className="mb-2">
+                  <strong>Input:</strong>
+                  <p className="p-2 bg-white rounded">{task.input}</p>
+                </div>
+                <div className="mb-2">
+                  <strong>Script Code:</strong>
+                  <div className="p-2 bg-white rounded" style={{ whiteSpace: 'pre-wrap' }}>
+                    <SyntaxHighlighter language="bash" style={atomDark}>
+                      {task.script_code}
+                    </SyntaxHighlighter>
                   </div>
                 </div>
-              ))}
-            </div>
-          </>
-        )}
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => handleViewDetails(task)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       </SectionMain>
 
       {isModalActive && (
