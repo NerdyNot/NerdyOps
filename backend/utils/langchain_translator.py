@@ -76,23 +76,13 @@ def get_llm():
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
 
-def translate_text(text: str, target_language: str, purpose: str) -> str:
+def translate_text_stream(text: str, target_language: str, purpose: str):
     llm = get_llm()
     if not llm:
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
     
     prompt = translate_template.invoke({"text": text, "target_language": target_language, "purpose": purpose})
-    response = llm.invoke(prompt.to_messages())
-    logging.info(f"LLM Translation Response: {response}")
+    stream = llm.stream(prompt.to_messages())
     
-    translated_text = parser.invoke(response).strip()
-    logging.info(f"Translated Text: {translated_text}")
-    
-    # Extract the translated text
-    translated_text_start = translated_text.find("Translated Text:") + len("Translated Text:")
-    translated_text_end = translated_text.find("...", translated_text_start)
-    actual_translated_text = translated_text[translated_text_start:translated_text_end].strip()
-    
-    logging.info(f"Actual Translated Text: {actual_translated_text}")
-    
-    return actual_translated_text
+    for chunk in stream:
+        yield chunk['choices'][0]['text']
