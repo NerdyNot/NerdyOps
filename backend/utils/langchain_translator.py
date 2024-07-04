@@ -45,7 +45,7 @@ def get_llm():
     
     if provider == 'openai':
         os.environ["OPENAI_API_KEY"] = api_key
-        return ChatOpenAI(model=model, temperature=temperature)
+        return ChatOpenAI(model=model, temperature=temperature, max_tokens=4096)
     elif provider == 'azure':
         azure_config = config.get('azure', {})
         endpoint = azure_config.get('endpoint', '')
@@ -61,11 +61,11 @@ def get_llm():
             azure_deployment=deployment_name,
             openai_api_version=api_version,
             temperature=temperature,
-            azure_endpoint=endpoint
+            azure_endpoint=endpoint,
         )
     elif provider == 'gemini':
         os.environ["GOOGLE_API_KEY"] = api_key
-        return ChatGoogleGenerativeAI(model=model, temperature=temperature)
+        return ChatGoogleGenerativeAI(model=model, temperature=temperature, max_output_tokens=4096)
     elif provider == 'vertexai':
         os.environ["GOOGLE_API_KEY"] = api_key
         return VertexAIModelGarden(model=model, temperature=temperature)
