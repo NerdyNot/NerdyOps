@@ -5,6 +5,7 @@ langchain-google-vertexai
 langchain-anthropic
 langchain-experimental
 flask
+flask-sock
 redis
 flask-cors
 pyjwt

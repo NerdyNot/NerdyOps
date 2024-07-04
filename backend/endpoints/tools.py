@@ -1,25 +1,29 @@
 import os
 from flask import Blueprint, request, jsonify
-from utils.langchain_translator import translate_text
+from flask_sock import Sock
+from utils.langchain_translator import translate_text_stream
 import logging
 
 tools_bp = Blueprint('tools', __name__)
+sock = Sock()
 logging.basicConfig(level=logging.INFO)
 
-@tools_bp.route('/translate', methods=['POST'])
-def translate():
-    data = request.get_json()
+@sock.route('/ws/translate')
+def translate_socket(ws):
+    data = ws.receive()
+    data = json.loads(data)
     text = data.get('text')
-    target_language = data.get('targetLanguage')
+    target_language = data.get('target_language')
     purpose = data.get('purpose')
     
     # Validate input
     if not text or not target_language or not purpose:
-        return jsonify({"error": "Text, target language, and purpose are required"}), 400
+        ws.send(json.dumps({"error": "Text, target language, and purpose are required"}))
+        return
     
     try:
-        translated_text = translate_text(text, target_language, purpose)
-        return jsonify({"translated_text": translated_text})
+        for chunk in translate_text_stream(text, target_language, purpose):
+            ws.send(json.dumps({"translated_text": chunk}))
     except Exception as e:
         logging.error(f"Error during translation: {e}")
-        return jsonify({"error": str(e)}), 500
+        ws.send(json.dumps({"error": str(e)}))

@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_sock import Sock
 from utils.db import init_db
 from utils.logo import print_logo
 import logging
@@ -8,6 +9,7 @@ import os
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
+sock = Sock(app)
 CORS(app)
 
 db_initialized = False
@@ -41,7 +43,7 @@ def register_blueprints(app):
     from endpoints.pat import pat_bp
     from endpoints.agent import agent_bp
     from endpoints.config import config_bp
-    from endpoints.tools import tools_bp
+    from endpoints.tools import tools_bp, sock
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(tasks_bp)
@@ -50,6 +52,7 @@ def register_blueprints(app):
     app.register_blueprint(agent_bp)
     app.register_blueprint(config_bp)
     app.register_blueprint(tools_bp)
+    sock.init_app(app)
 
 register_blueprints(app)
 
