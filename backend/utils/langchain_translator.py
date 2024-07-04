@@ -20,12 +20,12 @@ translate_template = ChatPromptTemplate.from_messages([
     The translation should be natural and complete, preserving the context and meaning of the original text. Avoid literal translations.
     Ensure that programming code or special characters in the text are not altered or corrupted.
     Document Purpose: {purpose}
-    """),
-    ("user", "Original Text: {text}\nTarget Language: {target_language}"),
-    ("system", """
+     
+    ## Response Example
     Here is the translation result:
-    Translated Text: ...
-    """)
+    Translated Text: ...     
+    """),
+    ("user", "Original Text: {text}\nTarget Language: {target_language}")
 ])
 
 # Define the output parser
