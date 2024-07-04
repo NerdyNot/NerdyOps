@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 def translate():
     data = request.get_json()
     text = data.get('text')
-    target_language = data.get('target_language')
+    target_language = data.get('targetLanguage')
     purpose = data.get('purpose')
     
     # Validate input
