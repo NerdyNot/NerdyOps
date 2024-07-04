@@ -11,6 +11,8 @@ import {
   mdiViewList,
   mdiMonitorDashboard,
   mdiAccountCog,
+  mdiTools,
+  mdiTranslate,
 } from '@mdi/js';
 import { MenuAsideItem } from './interfaces';
 
@@ -66,6 +68,19 @@ const menuAside: MenuAsideItem[] = [
         href: '/agent-download',
         label: 'Agent Download',
         icon: mdiDownload,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
+    ],
+    roles: ['user', 'admin'], // 모든 사용자 접근 가능
+  },
+  {
+    label: 'Tools',
+    icon: mdiTools,
+    menu: [
+      {
+        href: '/tools-translate',
+        label: 'Translator',
+        icon: mdiTranslate,
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
       },
     ],

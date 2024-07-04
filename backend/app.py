@@ -41,6 +41,7 @@ def register_blueprints(app):
     from endpoints.pat import pat_bp
     from endpoints.agent import agent_bp
     from endpoints.config import config_bp
+    from endpoints.tools import tools_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(tasks_bp)
@@ -48,6 +49,7 @@ def register_blueprints(app):
     app.register_blueprint(pat_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(config_bp)
+    app.register_blueprint(tools_bp)
 
 register_blueprints(app)
 
