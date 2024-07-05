@@ -81,7 +81,7 @@ def get_llm():
 
 def split_text_into_chunks_with_newlines(text, chunk_size=500):
     """
-    Split the input text into chunks of a specified size, preserving newlines.
+    Split the input text into chunks of a specified size, preserving newlines and avoiding word splits.
 
     :param text: The input text to split.
     :param chunk_size: The maximum size of each chunk.
@@ -93,16 +93,20 @@ def split_text_into_chunks_with_newlines(text, chunk_size=500):
 
     lines = text.split('\n')
     for line in lines:
-        if current_length + len(line) + 1 <= chunk_size:
-            current_chunk.append(line)
-            current_length += len(line) + 1
-        else:
-            chunks.append('\n'.join(current_chunk))
-            current_chunk = [line]
-            current_length = len(line) + 1
+        words = line.split(' ')
+        for word in words:
+            if current_length + len(word) + 1 <= chunk_size:
+                current_chunk.append(word)
+                current_length += len(word) + 1
+            else:
+                chunks.append(' '.join(current_chunk))
+                current_chunk = [word]
+                current_length = len(word) + 1
+        current_chunk.append('\n')
+        current_length += 1
 
     if current_chunk:
-        chunks.append('\n'.join(current_chunk))
+        chunks.append(' '.join(current_chunk).strip())
 
     return chunks
 
