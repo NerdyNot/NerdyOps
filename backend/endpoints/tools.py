@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, request, jsonify
 from flask_sock import Sock
-from utils.langchain_translator import translate_text_stream
+from utils.langchain_translator import translate_text_stream_chunked
 import logging
 import json
 
@@ -26,7 +26,7 @@ def translate_socket(ws):
         return
     
     try:
-        for chunk in translate_text_stream(text, target_language, purpose):
+        for chunk in translate_text_stream_chunked(text, target_language, purpose):
             #logging.info(f"Sending chunk: {chunk}")
             ws.send(json.dumps({"translated_text": chunk}))
     except Exception as e:

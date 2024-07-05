@@ -4,6 +4,7 @@ langchain-google-genai
 langchain-google-vertexai
 langchain-anthropic
 langchain-experimental
+langchain-community
 flask
 flask-sock
 redis

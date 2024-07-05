@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import time
+import random
 from langchain_openai import ChatOpenAI
 from langchain_community.chat_models import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -77,16 +79,92 @@ def get_llm():
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
 
-def translate_text_stream(text: str, target_language: str, purpose: str):
+def split_text_into_chunks_with_newlines(text, chunk_size=1000):
+    """
+    Split the input text into chunks of a specified size, preserving newlines.
+
+    :param text: The input text to split.
+    :param chunk_size: The maximum size of each chunk.
+    :return: A list of text chunks.
+    """
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    lines = text.split('\n')
+    for line in lines:
+        if current_length + len(line) + 1 <= chunk_size:
+            current_chunk.append(line)
+            current_length += len(line) + 1
+        else:
+            chunks.append('\n'.join(current_chunk))
+            current_chunk = [line]
+            current_length = len(line) + 1
+
+    if current_chunk:
+        chunks.append('\n'.join(current_chunk))
+
+    return chunks
+
+def translate_text_chunked(text: str, target_language: str, purpose: str):
     llm = get_llm()
     if not llm:
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
-    
-    prompt = translate_template.invoke({"text": text, "target_language": target_language, "purpose": purpose})
-    stream = llm.stream(prompt.to_messages())
-    
-    for chunk in stream:
-        if hasattr(chunk, 'content'):
-            yield chunk.content
-        else:
-            logging.error("Chunk does not have content attribute: {}".format(chunk))
+
+    # Split text into manageable chunks
+    chunks = split_text_into_chunks_with_newlines(text)
+    translated_chunks = []
+
+    for chunk in chunks:
+        prompt = translate_template.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
+        response = llm.invoke(prompt.to_messages())
+        logging.info(f"LLM Translation Response: {response}")
+
+        translated_text = parser.invoke(response).strip()
+        logging.info(f"Translated Text: {translated_text}")
+
+        # Extract the translated text
+        translated_text_start = translated_text.find("Translated Text:") + len("Translated Text:")
+        translated_text_end = translated_text.find("...", translated_text_start)
+        actual_translated_text = translated_text[translated_text_start:translated_text_end].strip()
+
+        translated_chunks.append(actual_translated_text)
+
+    # Join translated chunks
+    full_translated_text = ' '.join(translated_chunks)
+    logging.info(f"Full Translated Text: {full_translated_text}")
+
+    return full_translated_text
+
+
+def translate_text_stream_chunked(text: str, target_language: str, purpose: str):
+    llm = get_llm()
+    if not llm:
+        raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
+
+    chunks = split_text_into_chunks_with_newlines(text)
+
+    for chunk in chunks:
+        prompt = translate_template.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
+
+        success = False
+        retries = 3
+        while not success and retries > 0:
+            try:
+                stream = llm.stream(prompt.to_messages())
+
+                for stream_chunk in stream:
+                    if hasattr(stream_chunk, 'content'):
+                        yield stream_chunk.content
+                    else:
+                        logging.error("Chunk does not have content attribute: {}".format(stream_chunk))
+                success = True
+            except Exception as e:
+                logging.error(f"Error during translation chunk: {e}")
+                retries -= 1
+                if retries > 0:
+                    sleep_time = random.uniform(1, 3)  # 1~3초 사이 랜덤 지연
+                    logging.info(f"Retrying in {sleep_time:.2f} seconds...")
+                    time.sleep(sleep_time)
+                else:
+                    logging.error("Max retries reached. Skipping this chunk.")
