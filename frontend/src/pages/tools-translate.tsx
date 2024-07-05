@@ -19,18 +19,11 @@ import FormField from '../components/Form/Field';
 const TranslatePage = () => {
   const { backendUrl } = useBackendUrl();
   const [translationResult, setTranslationResult] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const ws = useRef<WebSocket | null>(null);
+  const translationResultRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    if (ws.current) {
-      ws.current.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.translated_text) {
-          setTranslationResult((prev) => prev + data.translated_text);
-        }
-      };
-    }
-
     return () => {
       if (ws.current) {
         ws.current.close();
@@ -38,31 +31,62 @@ const TranslatePage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (translationResultRef.current) {
+      translationResultRef.current.style.height = 'auto';
+      translationResultRef.current.style.height = `${translationResultRef.current.scrollHeight}px`;
+      translationResultRef.current.scrollTop = translationResultRef.current.scrollHeight;
+    }
+  }, [translationResult]);
+
   const handleTranslation = async (values: {
     text: string;
     targetLanguage: string;
     purpose: string;
   }) => {
     setTranslationResult('');
-    ws.current = new WebSocket(`${backendUrl.replace(/^http/, 'ws')}/ws/translate`);
+    setLoading(true);
+    const wsUrl = backendUrl.replace(/^http/, 'ws') + '/ws/translate';
+    ws.current = new WebSocket(wsUrl);
     
     ws.current.onopen = () => {
+      console.log('WebSocket connection opened');
       ws.current?.send(JSON.stringify(values));
     };
 
     ws.current.onerror = (error) => {
       console.error('WebSocket error:', error);
+      setLoading(false);
     };
+
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.translated_text) {
+        setTranslationResult((prev) => prev + data.translated_text);
+      } else if (data.error) {
+        console.error('Translation error:', data.error);
+      }
+    };
+
+    ws.current.onclose = () => {
+      console.log('WebSocket connection closed');
+      setLoading(false);
+    };
+  };
+
+  const autoResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
   };
 
   return (
     <>
       <Head>
-        <title>{getPageTitle('Translate')}</title>
+        <title>{getPageTitle('Translator')}</title>
       </Head>
 
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiTranslate} title="Translate" main />
+        <SectionTitleLineWithButton icon={mdiTranslate} title="Translator" main />
         <div className="grid gap-6">
           <CardBox>
             <Formik
@@ -126,9 +150,19 @@ const TranslatePage = () => {
                       placeholder="Enter text here..."
                       rows={6}
                       className="w-full p-2 border rounded"
+                      onInput={autoResize}
+                      style={{ maxHeight: '300px', overflow: 'auto' }}
                     />
                   </FormField>
-
+                  <div className="p-4 border-t">
+                  <Button 
+                    color="info" 
+                    type="submit" 
+                    label={loading ? "Translating..." : "Translate"} 
+                    icon={loading ? "spinner-border spinner-border-sm" : mdiSend} 
+                    disabled={loading}
+                  />
+                </div>
                   <FormField
                     label="Translated Text"
                     help="The translated text will appear here."
@@ -141,12 +175,10 @@ const TranslatePage = () => {
                       readOnly
                       rows={6}
                       className="w-full p-2 border rounded bg-gray-100"
+                      ref={translationResultRef}
+                      style={{ maxHeight: '300px', overflow: 'auto' }}
                     />
                   </FormField>
-                </div>
-
-                <div className="p-4 border-t">
-                  <Button color="info" type="submit" label="Translate" icon={mdiSend} />
                 </div>
               </Form>
             </Formik>

@@ -20,10 +20,11 @@ translate_template = ChatPromptTemplate.from_messages([
     The translation should be natural and complete, preserving the context and meaning of the original text. Avoid literal translations.
     Ensure that programming code or special characters in the text are not altered or corrupted.
     Document Purpose: {purpose}
+    
+    * You Must Respond Only With The Translated Text *
      
     ## Response Example
-    Here is the translation result:
-    Translated Text: ...     
+    ...Translated Text.. 
     """),
     ("user", "Original Text: {text}\nTarget Language: {target_language}")
 ])
@@ -85,4 +86,7 @@ def translate_text_stream(text: str, target_language: str, purpose: str):
     stream = llm.stream(prompt.to_messages())
     
     for chunk in stream:
-        yield chunk['choices'][0]['text']
+        if hasattr(chunk, 'content'):
+            yield chunk.content
+        else:
+            logging.error("Chunk does not have content attribute: {}".format(chunk))
