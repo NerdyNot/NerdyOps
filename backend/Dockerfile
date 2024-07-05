@@ -17,4 +17,4 @@ ENV FLASK_RUN_HOST=0.0.0.0
 
 # Gunicorn 실행
 #CMD ["python", "app.py"]
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5001", "wsgi:app"]
+CMD ["gunicorn", "--timeout", "300", "-w", "4", "-b", "0.0.0.0:5001", "wsgi:app"]
