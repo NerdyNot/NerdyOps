@@ -1,21 +1,21 @@
-import React from 'react'
-import { mdiLogout, mdiClose } from '@mdi/js'
-import Icon from '../Icon'
-import AsideMenuItem from './Item'
-import AsideMenuList from './List'
-import { MenuAsideItem } from '../../interfaces'
-import { useAppSelector } from '../../stores/hooks'
-import { useAuth } from '../../contexts/AuthContext'
+import React from 'react';
+import { mdiLogout, mdiClose } from '@mdi/js';
+import Icon from '../Icon';
+import AsideMenuItem from './Item';
+import AsideMenuList from './List';
+import { MenuAsideItem } from '../../interfaces';
+import { useAppSelector } from '../../stores/hooks';
+import { useAuth } from '../../contexts/AuthContext';
 
 type Props = {
-  menu: MenuAsideItem[]
-  className?: string
-  onAsideLgCloseClick: () => void
-}
+  menu: MenuAsideItem[];
+  className?: string;
+  onAsideLgCloseClick: () => void;
+};
 
 export default function AsideMenuLayer({ menu, className = '', ...props }: Props) {
-  const darkMode = useAppSelector((state) => state.darkMode.isEnabled)
-  const { logout } = useAuth()
+  const darkMode = useAppSelector((state) => state.darkMode.isEnabled);
+  const { logout } = useAuth();
 
   const logoutItem: MenuAsideItem = {
     label: 'Logout',
@@ -23,12 +23,12 @@ export default function AsideMenuLayer({ menu, className = '', ...props }: Props
     color: 'info',
     isLogout: true,
     onClick: logout,
-  }
+  };
 
   const handleAsideLgCloseClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    props.onAsideLgCloseClick()
-  }
+    e.preventDefault();
+    props.onAsideLgCloseClick();
+  };
 
   return (
     <aside
@@ -62,5 +62,5 @@ export default function AsideMenuLayer({ menu, className = '', ...props }: Props
         </ul>
       </div>
     </aside>
-  )
+  );
 }

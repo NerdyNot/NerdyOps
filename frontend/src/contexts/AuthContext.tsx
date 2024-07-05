@@ -50,6 +50,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       const { token, user_id, role } = response.data;
       localStorage.setItem('token', token);
+      document.cookie = `token=${token}; path=/;`;
       setUser({ user_id, role });
       setError(null); // 로그인 성공 시 에러 초기화
       router.push('/');
@@ -60,6 +61,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     setUser(null);
     router.push('/login');
   };

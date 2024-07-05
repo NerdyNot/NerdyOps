@@ -104,7 +104,6 @@ const LoginPage = () => {
 
                 <Buttons>
                   <Button type="submit" label="Login" color="info" disabled={isSubmitting} />
-                  <Button href="/" label="Home" color="info" outline />
                 </Buttons>
               </Form>
             )}
