@@ -79,7 +79,7 @@ def get_llm():
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
 
-def split_text_into_chunks_with_newlines(text, chunk_size=1000):
+def split_text_into_chunks_with_newlines(text, chunk_size=500):
     """
     Split the input text into chunks of a specified size, preserving newlines.
 
