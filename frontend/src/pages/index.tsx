@@ -4,12 +4,10 @@ import {
   mdiServer,
   mdiAlertCircle,
   mdiCheckBold,
-  mdiGithub,
 } from '@mdi/js';
 import Head from 'next/head';
 import React, { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import Button from '../components/Button';
 import LayoutAuthenticated from '../layouts/Authenticated';
 import SectionMain from '../components/Section/Main';
 import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
@@ -31,31 +29,34 @@ const IndexPage = () => {
   const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
 
   useEffect(() => {
-    if (backendUrl) {
+    const storedBackendUrl = localStorage.getItem('backendUrl');
+    if (storedBackendUrl) {
       setIsBackendUrlLoaded(true);
+    } else {
+      router.push('/login');
     }
-  }, [backendUrl]);
+  }, [router]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = document.cookie.split(';').find(cookie => cookie.trim().startsWith('token='));
-      if (!token) {
+      const tokenCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('token='));
+      if (!tokenCookie) {
         router.push('/login');
         return;
       }
 
+      const token = tokenCookie.split('=')[1];
+
       try {
-        const tokenValue = token.split('=')[1];
-        const verifyResponse = await axios.post(`${backendUrl}/verify-token`, { token: tokenValue });
+        const verifyResponse = await axios.post(`${backendUrl}/verify-token`, { token });
 
         if (verifyResponse.status !== 200) {
-          router.push('/login');
-          return;
+          throw new Error('Token verification failed');
         }
 
         const userResponse = await axios.get(`${backendUrl}/user-info`, {
           headers: {
-            Authorization: `Bearer ${tokenValue}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -70,14 +71,15 @@ const IndexPage = () => {
 
         dispatch(setUser(userResponse.data));
       } catch (error) {
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         router.push('/login');
       }
     };
 
-    if (isBackendUrlLoaded) {
+    if (isBackendUrlLoaded && backendUrl) {
       fetchData();
     }
-  }, [isBackendUrlLoaded, dispatch, router]);
+  }, [isBackendUrlLoaded, backendUrl, dispatch, router]);
 
   return (
     <>
