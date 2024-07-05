@@ -10,6 +10,7 @@ import { mdiBellOutline } from '@mdi/js';
 import Head from 'next/head';
 import Button from '../components/Button';
 import Cookies from 'js-cookie';
+import { useRouter } from 'next/router';
 
 const NotificationSettingsPage: React.FC = () => {
   const [slackWebhookUrl, setSlackWebhookUrl] = useState('');
@@ -20,12 +21,16 @@ const NotificationSettingsPage: React.FC = () => {
   const token = Cookies.get('token');
   const { backendUrl } = useBackendUrl();
   const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    if (backendUrl) {
+    const storedBackendUrl = localStorage.getItem('backendUrl');
+    if (storedBackendUrl) {
       setIsBackendUrlLoaded(true);
+    } else {
+      router.push('/login');
     }
-  }, [backendUrl]);
+  }, [router]);
 
   useEffect(() => {
     if (isBackendUrlLoaded) {
