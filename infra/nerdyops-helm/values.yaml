@@ -1,11 +1,9 @@
 replicaCount: 1
 
 image:
-  backend: nerdynot/nerdyops-backend:1.0.1
-  frontend: nerdynot/nerdyops-frontend:1.0.2
+  app: nerdynot/nerdyops-app:latest
   mysql: mysql:8.0
   redis: redis:latest
-  scheduler: nerdynot/nerdyops-backend:1.0.1
 
 service:
   type: LoadBalancer
@@ -28,16 +26,9 @@ persistence:
 ingress:
   enabled: true
   annotations: {}
-  frontend:
-    hosts:
-      - host: frontend.local
-        paths:
-          - path: /
-            pathType: ImplementationSpecific
-  backend:
-    hosts:
-      - host: backend.local
-        paths:
-          - path: /
-            pathType: ImplementationSpecific
+  hosts:
+    - host: nerdyops.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
   tls: []

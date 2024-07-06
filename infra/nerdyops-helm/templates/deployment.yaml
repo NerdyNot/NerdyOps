@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nerdyops-app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: nerdyops-app
+  template:
+    metadata:
+      labels:
+        app: nerdyops-app
+    spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox
+        command: ['sh', '-c', 'until nc -z -v -w30 {{ .Values.env.DB_HOST }} {{ .Values.env.DB_PORT }}; do echo waiting for mysql; sleep 5; done']
+      - name: wait-for-redis
+        image: busybox
+        env:
+        - name: REDIS_URL
+          value: {{ .Values.env.REDIS_URL }}
+        command: ['sh', '-c', 'host=$(echo $REDIS_URL | sed "s/redis:\\/\\///" | cut -d ":" -f 1); port=$(echo $REDIS_URL | sed "s/redis:\\/\\///" | cut -d ":" -f 2); until nc -z -v -w30 $host $port; do echo waiting for redis; sleep 5; done']
+      containers:
+      - name: app
+        image: {{ .Values.image.app }}
+        ports:
+        - containerPort: 80
+        env:
+        - name: DB_TYPE
+          value: {{ .Values.env.DB_TYPE }}
+        - name: DB_HOST
+          value: {{ .Values.env.DB_HOST }}
+        - name: DB_PORT
+          value: "{{ .Values.env.DB_PORT }}"
+        - name: DB_USER
+          value: {{ .Values.env.DB_USER }}
+        - name: DB_PASSWORD
+          value: {{ .Values.env.DB_PASSWORD }}
+        - name: DB_NAME
+          value: {{ .Values.env.DB_NAME }}
+        - name: REDIS_URL
+          value: {{ .Values.env.REDIS_URL }}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nerdyops-mysql
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: nerdyops-mysql
+  template:
+    metadata:
+      labels:
+        app: nerdyops-mysql
+    spec:
+      containers:
+      - name: mysql
+        image: {{ .Values.image.mysql }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: {{ .Values.env.DB_PASSWORD }}
+        - name: MYSQL_DATABASE
+          value: {{ .Values.env.DB_NAME }}
+        - name: MYSQL_USER
+          value: {{ .Values.env.DB_USER }}
+        - name: MYSQL_PASSWORD
+          value: {{ .Values.env.DB_PASSWORD }}
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: pvc-nerdyops-mysql
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nerdyops-redis
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: nerdyops-redis
+  template:
+    metadata:
+      labels:
+        app: nerdyops-redis
+    spec:
+      containers:
+      - name: redis
+        image: {{ .Values.image.redis }}
+        ports:
+        - containerPort: 6379
