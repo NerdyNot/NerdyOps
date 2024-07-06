@@ -1,17 +1,17 @@
 ## 개요
 
----
+
 
 `NerdyOps`는 Agent가 설치 된 원격지 시스템을 웹 기반 서버를 통해 모니터링 및 제어하는 운영 플랫폼입니다.
 일반적인 모니터링 및 자동화 도구화 달리 LLM과 LangChain을 활용하여 AI에 기반한 자동화를 구현합니다.
 
 ## 아키텍처
 
----
+
 
 ## 기능
 
----
+
 
 1. 원격 시스템 제어
     - 사용자의 작업 요청을 자연어로 입력받아 Agent가 설치 된 원격지 시스템에서 실행할 스크립트를 LLM과 LangChain을 통해 생성합니다.
@@ -34,7 +34,7 @@
 
 ## 프로젝트 구조
 
----
+
 
 ### /(root)
 
@@ -142,7 +142,7 @@
 
 ## 빠른 시작
 
----
+
 
 `NerdyOps`를 빠르게 시작하려면 아래의 단계를 따라주세요. 이 가이드에서는 기본적인 설치 및 설정 절차를 설명합니다.
 
@@ -215,25 +215,25 @@ go run main.go
 
 ## 기여
 
----
+
 
 개선 사항이나 버그 수정을 위한 이슈를 열거나 풀 리퀘스트를 제출해 주세요.
 
 ## 라이센스
 
----
+
 
 이 프로젝트는 MIT 라이센스를 따릅니다. 자세한 내용은 [LICENSE](LICENSE.md) 파일을 참조하십시오.
 
 ## 의존성 라이브러리 리스트
 
----
+
 
 의존성 파일에 대한 정보는 [DEPENDENCIES](DEPENDENCIES.md) 파일을 참조하십시오.
 
 ## Overview
 
----
+
 
 `NerdyOps` is an operations platform for monitoring and controlling remote systems with an installed agent through a web-based server.
 
@@ -241,11 +241,11 @@ Unlike general monitoring and automation tools, it implements AI-based automatio
 
 ## Architecture
 
----
+
 
 ## Features
 
----
+
 
 1. Remote System Control
     - Accepts user task requests in natural language and generates scripts to be executed on remote systems with installed agents using LLM and LangChain.
@@ -268,7 +268,7 @@ Unlike general monitoring and automation tools, it implements AI-based automatio
 
 ## Project Structure
 
----
+
 
 ### /(root)
 
@@ -376,7 +376,7 @@ The `infra` directory contains files for building and deployment.
 
 ## Quick Start
 
----
+
 
 Follow these steps for a quick start with `NerdyOps`. This guide covers the basic installation and setup process.
 
@@ -448,18 +448,18 @@ You can now utilize the main features of `NerdyOps`.
 
 ## Contribution
 
----
+
 
 Please open an issue or submit a pull request for any improvements or bug fixes.
 
 ## License
 
----
+
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
 
 ## Dependency Library List
 
----
+
 
 For information about dependency files, refer to the [DEPENDENCIES](DEPENDENCIES.md) file.
