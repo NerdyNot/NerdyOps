@@ -12,18 +12,18 @@ This document includes all the libraries used in the project, along with their v
 | github.com/fsnotify/fsnotify| v1.7.0   | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                     |
 | github.com/go-ole/go-ole    | v1.3.0   | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/hashicorp/hcl    | v1.0.0   | MPL 2.0          | [Mozilla Public License 2.0](https://opensource.org/licenses/MPL-2.0)                           |
-| github.com/magiconair/properties| v1.8.7 | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
+| github.com/magiconair/properties| v1.8.7 | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                                  |
 | github.com/mitchellh/mapstructure| v1.5.0 | MIT            | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/pelletier/go-toml/v2| v2.2.2 | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/sagikazarmark/locafero| v0.6.0 | MIT             | [MIT License](https://opensource.org/licenses/MIT)                                              |
-| github.com/sagikazarmark/slog-shim| v0.1.0 | MIT            | [MIT License](https://opensource.org/licenses/MIT)                                              |
+| github.com/sagikazarmark/slog-shim| v0.1.0 | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                              |
 | github.com/sourcegraph/conc | v0.3.0   | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
-| github.com/spf13/afero      | v1.11.0  | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
+| github.com/spf13/afero      | v1.11.0  | Apache 2.0       | [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)                                              |
 | github.com/spf13/cast       | v1.6.0   | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/spf13/pflag      | v1.0.5   | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                     |
 | github.com/subosito/gotenv  | v1.6.0   | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
-| github.com/tklauser/go-sysconf| v0.3.14 | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
-| github.com/tklauser/numcpus | v0.8.0   | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
+| github.com/tklauser/go-sysconf| v0.3.14 | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                              |
+| github.com/tklauser/numcpus | v0.8.0   | Apache 2.0       | [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)                                              |
 | github.com/yusufpapurcu/wmi | v1.2.4   | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | go.uber.org/multierr        | v1.11.0  | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | golang.org/x/exp            | v0.0.0-20240613232115-7f521ea00fb8 | BSD | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                     |
@@ -46,10 +46,10 @@ This document includes all the libraries used in the project, along with their v
 | langchain-community    | 0.2.5    | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | flask                  | 3.0.3    | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                     |
 | flask-sock             | 0.7.0    | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
-| redis                  | 5.0.6    | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                     |
+| redis                  | 5.0.6    | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                     |
 | flask-cors             | 4.0.1    | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | pyjwt                  | 2.8.0    | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
-| schedule               | 1.2.2    | Apache 2.0       | [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)                                |
+| schedule               | 1.2.2    | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                |
 | pymysql                | 1.1.1    | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | python-dotenv          | 1.0.1    | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                     |
 | cryptography           | 42.0.8   | Apache 2.0 or BSD| [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)                                |
