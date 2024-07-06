@@ -17,9 +17,7 @@ This document includes all the libraries used in the project, along with their v
 | github.com/pelletier/go-toml/v2| v2.2.2 | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/sagikazarmark/locafero| v0.6.0 | MIT             | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/sagikazarmark/slog-shim| v0.1.0 | MIT            | [MIT License](https://opensource.org/licenses/MIT)                                              |
-| github.com/sourcegraph/conc | v0.3.0   | MIT              | [MIT License](https://opensource.org/licenses/MIT
-
-)                                              |
+| github.com/sourcegraph/conc | v0.3.0   | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/spf13/afero      | v1.11.0  | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/spf13/cast       | v1.6.0   | MIT              | [MIT License](https://opensource.org/licenses/MIT)                                              |
 | github.com/spf13/pflag      | v1.0.5   | BSD              | [BSD License](https://opensource.org/licenses/BSD-3-Clause)                                     |
