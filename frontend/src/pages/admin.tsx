@@ -4,7 +4,6 @@ import withAuth from '../utils/withAuth';
 import LayoutAuthenticated from '../layouts/Authenticated';
 import SectionMain from '../components/Section/Main';
 import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 import { getPageTitle } from '../config';
 import { mdiAccountCog, mdiPlus } from '@mdi/js';
 import Head from 'next/head';
@@ -32,8 +31,6 @@ const AdminPage: React.FC = () => {
   const [newRedisConfig, setNewRedisConfig] = useState({ redis_host: '', redis_port: '', redis_password: '' });
   const [redisMessage, setRedisMessage] = useState('');
   const token = Cookies.get('token');
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
   const [llmConfig, setLlmConfig] = useState({
     provider: '',
     apiKey: '',
@@ -44,28 +41,19 @@ const AdminPage: React.FC = () => {
     azureApiKey: ''
   });
   const [message, setMessage] = useState('');
-  
 
   useEffect(() => {
-    if (backendUrl) {
-      setIsBackendUrlLoaded(true);
-    }
-  }, [backendUrl]);
+    fetchUsers();
+    fetchApiKey();
+    fetchSlackWebhook();
+    fetchNotificationSettings();
+    fetchRedisConfig();
+    fetchLlmConfig();
+  }, []);
 
-  useEffect(() => {
-    if (isBackendUrlLoaded) {
-      fetchUsers();
-      fetchApiKey();
-      fetchSlackWebhook();
-      fetchNotificationSettings();
-      fetchRedisConfig();
-      fetchLlmConfig();
-    }
-  }, [isBackendUrlLoaded]);
-  
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/users`, {
+      const response = await axios.get('/api/users', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -82,7 +70,7 @@ const AdminPage: React.FC = () => {
 
   const fetchApiKey = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-api-key`, {
+      const response = await axios.get('/api/get-api-key', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -95,7 +83,7 @@ const AdminPage: React.FC = () => {
 
   const fetchSlackWebhook = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-slack-webhook`, {
+      const response = await axios.get('/api/get-slack-webhook', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -108,7 +96,7 @@ const AdminPage: React.FC = () => {
 
   const fetchNotificationSettings = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-slack-notification-settings`, {
+      const response = await axios.get('/api/get-slack-notification-settings', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -127,7 +115,7 @@ const AdminPage: React.FC = () => {
 
   const fetchRedisConfig = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-redis-config`, {
+      const response = await axios.get('/api/get-redis-config', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -150,7 +138,7 @@ const AdminPage: React.FC = () => {
 
   const fetchLlmConfig = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-llm-config`, {
+      const response = await axios.get('/api/get-llm-config', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -169,7 +157,6 @@ const AdminPage: React.FC = () => {
       console.error('Error fetching LLM configuration:', error);
     }
   };
-  
 
   useEffect(() => {
     console.log('LLM Configuration:', llmConfig);
@@ -177,7 +164,7 @@ const AdminPage: React.FC = () => {
 
   const handleSaveLlmConfig = async () => {
     try {
-      await axios.post(`${backendUrl}/set-llm-config`, llmConfig, {
+      await axios.post('/api/set-llm-config', llmConfig, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -188,19 +175,19 @@ const AdminPage: React.FC = () => {
       setMessage('Failed to save LLM configuration.');
     }
   };
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setLlmConfig(prevConfig => ({ ...prevConfig, [name]: value }));
   };
-  
+
   const handleSliderChange = (event: any, newValue: number | number[]) => {
     setLlmConfig(prevConfig => ({ ...prevConfig, temperature: newValue as number }));
   };
 
   const handleRegister = async () => {
     try {
-      await axios.post(`${backendUrl}/register`, newUser, {
+      await axios.post('/api/register', newUser, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -215,7 +202,7 @@ const AdminPage: React.FC = () => {
 
   const handleRoleUpdate = async () => {
     try {
-      await axios.post(`${backendUrl}/update-role`, { user_id: selectedUserId, new_role: newRole }, {
+      await axios.post('/api/update-role', { user_id: selectedUserId, new_role: newRole }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -229,7 +216,7 @@ const AdminPage: React.FC = () => {
 
   const handlePasswordChange = async () => {
     try {
-      await axios.post(`${backendUrl}/change-password-admin`, { user_id: selectedUserId, new_password: newPassword }, {
+      await axios.post('/api/change-password-admin', { user_id: selectedUserId, new_password: newPassword }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -244,7 +231,7 @@ const AdminPage: React.FC = () => {
 
   const handleSaveApiKey = async () => {
     try {
-      await axios.post(`${backendUrl}/set-api-key`, { apiKey: newApiKey }, {
+      await axios.post('/api/set-api-key', { apiKey: newApiKey }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -260,7 +247,7 @@ const AdminPage: React.FC = () => {
 
   const handleSaveSlackWebhookUrl = async () => {
     try {
-      await axios.post(`${backendUrl}/set-slack-webhook`, { webhookUrl: newSlackWebhookUrl }, {
+      await axios.post('/api/set-slack-webhook', { webhookUrl: newSlackWebhookUrl }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -276,7 +263,7 @@ const AdminPage: React.FC = () => {
 
   const handleSaveNotificationSettings = async () => {
     try {
-      await axios.post(`${backendUrl}/set-slack-notification-settings`, notificationSettings, {
+      await axios.post('/api/set-slack-notification-settings', notificationSettings, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -290,7 +277,7 @@ const AdminPage: React.FC = () => {
 
   const handleSendTestMessage = async () => {
     try {
-      await axios.post(`${backendUrl}/add-slack-notification`, { message: slackMessage, type: 'test' }, {
+      await axios.post('/api/add-slack-notification', { message: slackMessage, type: 'test' }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -305,7 +292,7 @@ const AdminPage: React.FC = () => {
 
   const handleSaveRedisConfig = async () => {
     try {
-      await axios.post(`${backendUrl}/set-redis-config`, newRedisConfig, {
+      await axios.post('/api/set-redis-config', newRedisConfig, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

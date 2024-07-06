@@ -1,5 +1,5 @@
-import { mdiServer } from '@mdi/js';
 import Head from 'next/head';
+import { mdiServer } from '@mdi/js';
 import React, { ReactElement, useState, useEffect } from 'react';
 import axios from 'axios';
 import LayoutAuthenticated from '../layouts/Authenticated';
@@ -9,7 +9,6 @@ import { getPageTitle } from '../config';
 import { Task } from '../interfaces'; // Task 타입 정의 파일
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 import { useAppSelector } from '../stores/hooks';
 
 const BatchApprovePage = () => {
@@ -17,23 +16,13 @@ const BatchApprovePage = () => {
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
   const userName = useAppSelector((state) => state.main.userName);
 
-  useEffect(() => {
-    if (backendUrl) {
-      setIsBackendUrlLoaded(true);
-    }
-  }, [backendUrl]);
-  
   const fetchAllPendingTasks = async () => {
-    if (!isBackendUrlLoaded) return;
-  
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${backendUrl}/get-all-pending-tasks`);
+      const response = await axios.get('/api/get-all-pending-tasks');
       setTasks(response.data);
     } catch (err) {
       console.error('Error fetching tasks:', err);
@@ -42,18 +31,16 @@ const BatchApprovePage = () => {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
-    if (isBackendUrlLoaded) {
-      fetchAllPendingTasks();
-    }
-  }, [isBackendUrlLoaded]);
+    fetchAllPendingTasks();
+  }, []);
 
   const handleApprove = async () => {
     try {
       await Promise.all(
         selectedTasks.map(task_id =>
-          axios.post(`${backendUrl}/approve-task`, { task_id, username: userName })
+          axios.post('/api/approve-task', { task_id, username: userName })
         )
       );
       fetchAllPendingTasks(); // Refresh tasks after approval
@@ -66,7 +53,7 @@ const BatchApprovePage = () => {
     try {
       await Promise.all(
         selectedTasks.map(task_id =>
-          axios.post(`${backendUrl}/reject-task`, { task_id, username: userName })
+          axios.post('/api/reject-task', { task_id, username: userName })
         )
       );
       fetchAllPendingTasks(); // Refresh tasks after rejection

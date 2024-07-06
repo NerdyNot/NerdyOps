@@ -10,22 +10,13 @@ import axios from 'axios';
 import Button from '../components/Button';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'; // CommonJS 스타일로 import
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 const AgentDownloadPage: React.FC = () => {
   const [osType, setOsType] = useState<string>('linux');
   const [archType, setArchType] = useState<string>('amd64');
   const [availableArchs, setAvailableArchs] = useState<string[]>([]);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
   
-  useEffect(() => {
-    if (backendUrl) {
-      setIsBackendUrlLoaded(true);
-    }
-  }, [backendUrl]);
-
   useEffect(() => {
     const archsByOS: { [key: string]: string[] } = {
       linux: ['amd64', '386', 'arm', 'arm64'],
@@ -38,17 +29,12 @@ const AgentDownloadPage: React.FC = () => {
   }, [osType]);
 
   const handleDownloadClick = async () => {
-    if (!isBackendUrlLoaded) {
-      console.error('Backend URL is not loaded yet.');
-      return;
-    }
-  
     try {
-      const response = await axios.get(`${backendUrl}/install-agent`, {
+      const response = await axios.get('/api/install-agent', {
         params: { os_type: osType, arch_type: archType },
         responseType: 'blob', // 파일 다운로드를 위한 설정
       });
-  
+
       // 다운로드를 위한 링크 생성 및 클릭
       const url = window.URL.createObjectURL(new Blob([response.data]));
       setDownloadUrl(url);
@@ -173,7 +159,7 @@ WantedBy=multi-user.target
         return null;
     }
   };
-
+  
   return (
     <>
       <Head>

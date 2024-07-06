@@ -1,132 +1,117 @@
 import {
-    mdiAccount,
-    mdiGithub,
-    mdiPlus,
-    mdiDelete,
-    mdiContentCopy
-  } from '@mdi/js';
-  import { Formik, Form, Field } from 'formik';
-  import Head from 'next/head';
-  import type { ReactElement } from 'react';
-  import Button from '../components/Button';
-  import Buttons from '../components/Buttons';
-  import CardBox from '../components/CardBox';
-  import CardBoxComponentBody from '../components/CardBox/Component/Body';
-  import CardBoxComponentFooter from '../components/CardBox/Component/Footer';
-  import FormField from '../components/Form/Field';
-  import LayoutAuthenticated from '../layouts/Authenticated';
-  import SectionMain from '../components/Section/Main';
-  import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
-  import { getPageTitle } from '../config';
-  import { useAppSelector, useAppDispatch } from '../stores/hooks';
-  import axios from 'axios';
-  import { useEffect, useState } from 'react';
-  import Cookies from 'js-cookie';
-  import { initializeUser } from '../stores/mainSlice';
-  import DatePicker from 'react-datepicker';
-  import 'react-datepicker/dist/react-datepicker.css';
-  import { useBackendUrl } from '../contexts/BackendUrlContext';
-  
-  const PatManagementPage = () => {
-    const dispatch = useAppDispatch();
-    const userId = useAppSelector((state) => state.main.userName);
-    const [pats, setPats] = useState([]);
-    const [expiryDate, setExpiryDate] = useState<Date | null>(null);
-    const [isUnlimited, setIsUnlimited] = useState(false);
-    const { backendUrl } = useBackendUrl();
-    const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
-    
-    useEffect(() => {
-      if (backendUrl) {
-        setIsBackendUrlLoaded(true);
-      }
-    }, [backendUrl]);
-    
-    useEffect(() => {
-      if (isBackendUrlLoaded) {
-        dispatch(initializeUser());
-        fetchPats();
-      }
-    }, [dispatch, isBackendUrlLoaded]);
-    
-    const fetchPats = async () => {
-      if (!isBackendUrlLoaded) return;
-    
-      try {
-        const token = Cookies.get('token');
-        const response = await axios.get(`${backendUrl}/get-pat`, {
-          params: { user_id: userId },
+  mdiAccount,
+  mdiPlus,
+  mdiDelete,
+  mdiContentCopy,
+} from '@mdi/js';
+import { Formik, Form, Field } from 'formik';
+import Head from 'next/head';
+import type { ReactElement } from 'react';
+import Button from '../components/Button';
+import Buttons from '../components/Buttons';
+import CardBox from '../components/CardBox';
+import CardBoxComponentBody from '../components/CardBox/Component/Body';
+import CardBoxComponentFooter from '../components/CardBox/Component/Footer';
+import FormField from '../components/Form/Field';
+import LayoutAuthenticated from '../layouts/Authenticated';
+import SectionMain from '../components/Section/Main';
+import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
+import { getPageTitle } from '../config';
+import { useAppSelector, useAppDispatch } from '../stores/hooks';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+import Cookies from 'js-cookie';
+import { initializeUser } from '../stores/mainSlice';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
+const PatManagementPage = () => {
+  const dispatch = useAppDispatch();
+  const userId = useAppSelector((state) => state.main.userName);
+  const [pats, setPats] = useState([]);
+  const [expiryDate, setExpiryDate] = useState<Date | null>(null);
+  const [isUnlimited, setIsUnlimited] = useState(false);
+
+  useEffect(() => {
+    dispatch(initializeUser());
+    fetchPats();
+  }, [dispatch]);
+
+  const fetchPats = async () => {
+    try {
+      const token = Cookies.get('token');
+      const response = await axios.get(`/api/get-pat`, {
+        params: { user_id: userId },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setPats(response.data);
+    } catch (error) {
+      console.error('Error fetching PATs:', error);
+    }
+  };
+
+  const handleGeneratePat = async () => {
+    try {
+      const token = Cookies.get('token');
+      const response = await axios.post(
+        `/api/generate_pat`,
+        {
+          user_id: userId,
+          expiry_days: isUnlimited ? null : (expiryDate ? Math.ceil((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null),
+        },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-        setPats(response.data);
-      } catch (error) {
-        console.error('Error fetching PATs:', error);
-      }
-    };
-    
-    const handleGeneratePat = async () => {
-      if (!isBackendUrlLoaded) return;
-    
-      try {
-        const token = Cookies.get('token');
-        const response = await axios.post(
-          `${backendUrl}/generate_pat`,
-          {
-            user_id: userId,
-            expiry_days: isUnlimited ? null : (expiryDate ? Math.ceil((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null),
+        }
+      );
+      alert('PAT generated successfully');
+      fetchPats();  // Refresh the PAT list
+    } catch (error) {
+      console.error('Error generating PAT:', error);
+      alert('Failed to generate PAT');
+    }
+  };
+
+  const handleDeletePat = async (pat_id: string) => {
+    try {
+      const token = Cookies.get('token');
+      await axios.post(
+        `/api/delete_pat`,
+        { pat_id },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        alert('PAT generated successfully');
-        fetchPats();  // Refresh the PAT list
-      } catch (error) {
-        console.error('Error generating PAT:', error);
-        alert('Failed to generate PAT');
-      }
-    };
-    
-    const handleDeletePat = async (pat_id: string) => {
-      try {
-        const token = Cookies.get('token');
-        await axios.post(
-          `${backendUrl}/delete_pat`,
-          { pat_id },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        alert('PAT deleted successfully');
-        fetchPats();  // Refresh the PAT list
-      } catch (error) {
-        console.error('Error deleting PAT:', error);
-        alert('Failed to delete PAT');
-      }
-    };
-  
-    const maskToken = (token: string) => {
-      return token.slice(0, 4) + '****' + token.slice(-4);
-    };
-  
-    const copyToClipboard = (text: string) => {
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Token copied to clipboard');
-      }).catch((err) => {
-        console.error('Could not copy text: ', err);
-      });
-    };
-  
-    const utcToLocal = (utcString: string) => {
-      const utcDate = new Date(utcString);
-      return utcDate.toLocaleString();
-    };
+        }
+      );
+      alert('PAT deleted successfully');
+      fetchPats();  // Refresh the PAT list
+    } catch (error) {
+      console.error('Error deleting PAT:', error);
+      alert('Failed to delete PAT');
+    }
+  };
+
+  const maskToken = (token: string) => {
+    return token.slice(0, 4) + '****' + token.slice(-4);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Token copied to clipboard');
+    }).catch((err) => {
+      console.error('Could not copy text: ', err);
+    });
+  };
+
+  const utcToLocal = (utcString: string) => {
+    const utcDate = new Date(utcString);
+    return utcDate.toLocaleString();
+  };
+
   
     return (
       <>

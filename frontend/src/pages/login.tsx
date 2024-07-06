@@ -16,10 +16,8 @@ import { useRouter } from 'next/router';
 import Cookies from 'js-cookie';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../stores/mainSlice';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 interface LoginForm {
-  backendUrl: string;
   login: string;
   password: string;
   remember: boolean;
@@ -28,15 +26,10 @@ interface LoginForm {
 const LoginPage = () => {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { backendUrl, setBackendUrl } = useBackendUrl();
 
   const handleSubmit = async (formValues: LoginForm, { setSubmitting }: FormikHelpers<LoginForm>) => {
     try {
-      // Save the backend URL in localStorage
-      setBackendUrl(formValues.backendUrl);
-      localStorage.setItem('backendUrl', formValues.backendUrl);
-
-      const response = await axios.post(`${formValues.backendUrl}/login`, {
+      const response = await axios.post(`/api/login`, {
         username: formValues.login,
         password: formValues.password,
       });
@@ -60,18 +53,10 @@ const LoginPage = () => {
   };
 
   const initialValues: LoginForm = {
-    backendUrl: backendUrl || '',
     login: '',
     password: '',
     remember: false,
   };
-
-  useEffect(() => {
-    const storedBackendUrl = localStorage.getItem('backendUrl');
-    if (storedBackendUrl) {
-      initialValues.backendUrl = storedBackendUrl;
-    }
-  }, []);
 
   return (
     <>
@@ -84,10 +69,6 @@ const LoginPage = () => {
           <Formik initialValues={initialValues} onSubmit={handleSubmit}>
             {({ isSubmitting }) => (
               <Form>
-                <FormField label="NerdyOps Server URL" help="Please enter your NerdyOps Backend URL">
-                  <Field name="backendUrl" />
-                </FormField>
-
                 <FormField label="Login" help="Please enter your login">
                   <Field name="login" />
                 </FormField>

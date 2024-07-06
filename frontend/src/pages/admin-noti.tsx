@@ -4,7 +4,6 @@ import withAuth from '../utils/withAuth';
 import LayoutAuthenticated from '../layouts/Authenticated';
 import SectionMain from '../components/Section/Main';
 import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 import { getPageTitle } from '../config';
 import { mdiBellOutline } from '@mdi/js';
 import Head from 'next/head';
@@ -19,29 +18,16 @@ const NotificationSettingsPage: React.FC = () => {
   const [notificationSettings, setNotificationSettings] = useState({ notificationsEnabled: false, taskCreated: false, taskApproved: false, taskRejected: false });
   const [notificationMessage, setNotificationMessage] = useState('');
   const token = Cookies.get('token');
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const storedBackendUrl = localStorage.getItem('backendUrl');
-    if (storedBackendUrl) {
-      setIsBackendUrlLoaded(true);
-    } else {
-      router.push('/login');
-    }
-  }, [router]);
-
-  useEffect(() => {
-    if (isBackendUrlLoaded) {
-      fetchSlackWebhook();
-      fetchNotificationSettings();
-    }
-  }, [isBackendUrlLoaded]);
+    fetchSlackWebhook();
+    fetchNotificationSettings();
+  }, []);
 
   const fetchSlackWebhook = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-slack-webhook`, {
+      const response = await axios.get('/api/get-slack-webhook', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -54,7 +40,7 @@ const NotificationSettingsPage: React.FC = () => {
 
   const fetchNotificationSettings = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-slack-notification-settings`, {
+      const response = await axios.get('/api/get-slack-notification-settings', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -73,7 +59,7 @@ const NotificationSettingsPage: React.FC = () => {
 
   const handleSaveSlackWebhookUrl = async () => {
     try {
-      await axios.post(`${backendUrl}/set-slack-webhook`, { webhookUrl: newSlackWebhookUrl }, {
+      await axios.post('/api/set-slack-webhook', { webhookUrl: newSlackWebhookUrl }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -89,7 +75,7 @@ const NotificationSettingsPage: React.FC = () => {
 
   const handleSaveNotificationSettings = async () => {
     try {
-      await axios.post(`${backendUrl}/set-slack-notification-settings`, notificationSettings, {
+      await axios.post('/api/set-slack-notification-settings', notificationSettings, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -103,7 +89,7 @@ const NotificationSettingsPage: React.FC = () => {
 
   const handleSendTestMessage = async () => {
     try {
-      await axios.post(`${backendUrl}/add-slack-notification`, { message: slackMessage, type: 'test' }, {
+      await axios.post('/api/add-slack-notification', { message: slackMessage, type: 'test' }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

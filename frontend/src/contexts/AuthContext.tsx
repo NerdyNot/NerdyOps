@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import { useBackendUrl } from './BackendUrlContext';
 
 interface AuthContextProps {
   user: { user_id: string; role: string } | null;
@@ -20,30 +19,18 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<{ user_id: string; role: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
   const router = useRouter();
-  const { backendUrl, setBackendUrl } = useBackendUrl();
 
   useEffect(() => {
-    const storedBackendUrl = localStorage.getItem('backendUrl');
-    if (storedBackendUrl) {
-      setBackendUrl(storedBackendUrl);
+    const token = localStorage.getItem('token');
+    if (token) {
+      verifyToken();
     }
-    setIsBackendUrlLoaded(true);
-  }, [setBackendUrl]);
-
-  useEffect(() => {
-    if (isBackendUrlLoaded) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        verifyToken();
-      }
-    }
-  }, [isBackendUrlLoaded, backendUrl]);
+  }, []);
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await axios.post(`${backendUrl}/login`, {
+      const response = await axios.post('/api/login', {
         username,
         password,
       });
@@ -74,7 +61,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
 
     try {
-      const response = await axios.post(`${backendUrl}/verify-token`, { token });
+      const response = await axios.post('/api/verify-token', { token });
       setUser({ user_id: response.data.user_id, role: response.data.role });
       setError(null); // 토큰 검증 성공 시 에러 초기화
     } catch (err: any) {

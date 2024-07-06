@@ -13,17 +13,15 @@ import useAgents from '../hooks/useAgents';
 import { Agent } from '../interfaces'; // 에이전트 타입 정의 파일
 import { useDispatch } from 'react-redux';
 import { initializeUser } from '../stores/mainSlice';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 const AgentsPage = () => {
   const dispatch = useDispatch();
-  const { backendUrl } = useBackendUrl();
 
   useEffect(() => {
     dispatch(initializeUser());
   }, [dispatch]);
 
-  const { agents, loading, error, mutate } = useAgents(backendUrl); // mutate 함수 추가
+  const { agents, loading, error, mutate } = useAgents(); // mutate 함수 추가
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [selectedAgentsForBulkAction, setSelectedAgentsForBulkAction] = useState<Agent[]>([]); // 일괄 작업을 위한 상태 추가
 
@@ -41,7 +39,7 @@ const AgentsPage = () => {
 
   const handleDeleteClick = async (agent: Agent) => {
     try {
-      await axios.post(`${backendUrl}/delete-agent`, { agent_id: agent.agent_id });
+      await axios.post('/api/delete-agent', { agent_id: agent.agent_id });
       mutate(); // 데이터 갱신
     } catch (err) {
       console.error('Error deleting agent:', err);

@@ -3,13 +3,13 @@ version: '3.8'
 services:
   web:
     build:
-      context: ../backend
-      dockerfile: Dockerfile
-    image: nerdyops-backend:latest
-    container_name: NerdyOps-Backend
+      context: ..
+      dockerfile: infra/Dockerfile
+    image: nerdyops-app:latest
+    container_name: NerdyOps-App
     restart: always
     ports:
-      - "5001:5001"
+      - "80:80"
     environment:
       - DB_TYPE=mysql
       - DB_HOST=NerdyOps-MySQL
@@ -21,18 +21,6 @@ services:
     depends_on:
       - mysql
       - redis
-
-  frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
-    image: nerdyops-frontend:latest
-    container_name: NerdyOps-Frontend
-    restart: always
-    ports:
-      - "80:3000"
-    depends_on:
-      - web
 
   mysql:
     image: mysql:8.0
@@ -50,23 +38,6 @@ services:
     image: redis:latest
     container_name: NerdyOps-Redis
     restart: always
-
-  scheduler:
-    image: nerdyops-backend:latest
-    container_name: NerdyOps-Scheduler
-    restart: always
-    command: ["python", "scheduler.py"]
-    environment:
-      - DB_TYPE=mysql
-      - DB_HOST=NerdyOps-MySQL
-      - DB_PORT=3306
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=nerdyops
-      - REDIS_URL=redis://NerdyOps-Redis:6379
-    depends_on:
-      - mysql
-      - redis
 
 volumes:
   mysql-data:

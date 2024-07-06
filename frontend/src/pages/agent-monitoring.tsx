@@ -15,7 +15,6 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from 'react-datepicker';
 import ko from 'date-fns/locale/ko';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 registerLocale('ko', ko);
 
@@ -49,40 +48,27 @@ const AgentMonitoringPage: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
   
   useEffect(() => {
-    if (backendUrl) {
-      setIsBackendUrlLoaded(true);
-    }
-  }, [backendUrl]);
-  
-
-  useEffect(() => {
-    if (isBackendUrlLoaded) {
-      axios.get(`${backendUrl}/get-agents`)
-        .then(response => {
-          setAgents(response.data);
-        })
-        .catch(error => {
-          console.error('Error fetching agents:', error);
-          setError('Failed to load agents');
-        });
-    }
-  }, [isBackendUrlLoaded, backendUrl]);
+    axios.get('/api/get-agents')
+      .then(response => {
+        setAgents(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching agents:', error);
+        setError('Failed to load agents');
+      });
+  }, []);
   
   useEffect(() => {
-    if (isBackendUrlLoaded && selectedAgent) {
+    if (selectedAgent) {
       fetchResourceUsage(selectedAgent.agent_id);
     }
-  }, [isBackendUrlLoaded, selectedAgent, backendUrl]);
+  }, [selectedAgent]);
   
   const fetchResourceUsage = (agentId: string) => {
-    if (!isBackendUrlLoaded) return;
-  
     setLoading(true);
-    axios.get(`${backendUrl}/get-resource-usage?agent_id=${agentId}`)
+    axios.get(`/api/get-resource-usage?agent_id=${agentId}`)
       .then(response => {
         const data = response.data;
         setResourceUsage(data);
@@ -229,7 +215,7 @@ const AgentMonitoringPage: React.FC = () => {
               <p><strong>Private IP:</strong> {selectedAgent.private_ip}</p>
               <p><strong>Status:</strong> {getAgentStatus(selectedAgent)}</p>
               <p><strong>Running Time:</strong> {resourceUsage.length > 0 ? secondsToHMS(resourceUsage[resourceUsage.length - 1].running_time) : 'N/A'}</p>
-              <p><strong>CPU Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage.length - 1].cpu_usage : 'N/A'}%</p>
+              <p><strong>CPU Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage[resourceUsage.length - 1].cpu_usage] : 'N/A'}%</p>
               <p><strong>Memory Usage:</strong> {resourceUsage.length > 0 ? resourceUsage[resourceUsage.length - 1].mem_usage : 'N/A'}%</p>
             </CardBox>
 
@@ -270,7 +256,6 @@ const AgentMonitoringPage: React.FC = () => {
           isOpen={isSettingsModalOpen}
           onClose={handleSettingsModalClose}
           agentId={selectedAgent.agent_id}
-          backendUrl={backendUrl}
         />
       )}
     </>

@@ -7,7 +7,6 @@ import { Provider } from 'react-redux';
 import { useStore } from '../stores/store';
 import '../css/main.css';
 import { AuthProvider } from '../contexts/AuthContext';
-import { BackendUrlProvider } from '../contexts/BackendUrlContext';
 import requireAuth from '../utils/requireAuth';
 import { initializeUser } from '../stores/mainSlice';
 
@@ -32,19 +31,17 @@ const MyApp = ({ Component, pageProps }: AppPropsWithLayout) => {
 
   return (
     <Provider store={store}>
-      <BackendUrlProvider>
-        <AuthProvider>
-          {getLayout(
-            <>
-              <Head>
-                <link rel="icon" href="/images/favicon.ico" />
-                <title>NerdyOps</title>
-              </Head>
-              <AuthenticatedComponent {...pageProps} />
-            </>
-          )}
-        </AuthProvider>
-      </BackendUrlProvider>
+      <AuthProvider>
+        {getLayout(
+          <>
+            <Head>
+              <link rel="icon" href="/images/favicon.ico" />
+              <title>NerdyOps</title>
+            </Head>
+            <AuthenticatedComponent {...pageProps} />
+          </>
+        )}
+      </AuthProvider>
     </Provider>
   );
 };

@@ -15,3 +15,7 @@ pymysql
 python-dotenv
 cryptography
 gunicorn
+PyPDF2 
+python-docx 
+pypandoc 
+reportlab

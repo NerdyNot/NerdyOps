@@ -4,7 +4,6 @@ import withAuth from '../utils/withAuth';
 import LayoutAuthenticated from '../layouts/Authenticated';
 import SectionMain from '../components/Section/Main';
 import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 import { getPageTitle } from '../config';
 import { mdiAccountCog, mdiPlus } from '@mdi/js';
 import Head from 'next/head';
@@ -20,24 +19,14 @@ const UserManagementPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const token = Cookies.get('token');
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
 
   useEffect(() => {
-    if (backendUrl) {
-      setIsBackendUrlLoaded(true);
-    }
-  }, [backendUrl]);
-
-  useEffect(() => {
-    if (isBackendUrlLoaded) {
-      fetchUsers();
-    }
-  }, [isBackendUrlLoaded]);
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/users`, {
+      const response = await axios.get('/api/users', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -54,7 +43,7 @@ const UserManagementPage: React.FC = () => {
 
   const handleRegister = async () => {
     try {
-      await axios.post(`${backendUrl}/register`, newUser, {
+      await axios.post('/api/register', newUser, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -69,7 +58,7 @@ const UserManagementPage: React.FC = () => {
 
   const handleRoleUpdate = async () => {
     try {
-      await axios.post(`${backendUrl}/update-role`, { user_id: selectedUserId, new_role: newRole }, {
+      await axios.post('/api/update-role', { user_id: selectedUserId, new_role: newRole }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -83,7 +72,7 @@ const UserManagementPage: React.FC = () => {
 
   const handlePasswordChange = async () => {
     try {
-      await axios.post(`${backendUrl}/change-password-admin`, { user_id: selectedUserId, new_password: newPassword }, {
+      await axios.post('/api/change-password-admin', { user_id: selectedUserId, new_password: newPassword }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

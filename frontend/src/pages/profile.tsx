@@ -2,7 +2,6 @@ import {
   mdiAccount,
   mdiAsterisk,
   mdiFormTextboxPassword,
-  mdiGithub,
   mdiMail,
 } from '@mdi/js';
 import { Formik, Form, Field } from 'formik';
@@ -26,8 +25,7 @@ import axios from 'axios';
 import { useRouter } from 'next/router';
 import Cookies from 'js-cookie';
 import { initializeUser } from '../stores/mainSlice';
-import { useEffect, useState } from 'react';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
+import { useEffect } from 'react';
 
 const ProfilePage = () => {
   const dispatch = useAppDispatch();
@@ -35,20 +33,10 @@ const ProfilePage = () => {
   const userEmail = useAppSelector((state) => state.main.userEmail);
   const userRole = useAppSelector((state) => state.main.userRole);
   const router = useRouter();
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
-  
+
   useEffect(() => {
-    if (backendUrl) {
-      setIsBackendUrlLoaded(true);
-    }
-  }, [backendUrl]);
-  
-  useEffect(() => {
-    if (isBackendUrlLoaded) {
-      dispatch(initializeUser());
-    }
-  }, [dispatch, isBackendUrlLoaded]);
+    dispatch(initializeUser());
+  }, [dispatch]);
 
   const userForm: UserForm = {
     name: userName || '',
@@ -60,17 +48,15 @@ const ProfilePage = () => {
     newPassword: string;
     newPasswordConfirmation: string;
   }) => {
-    if (!isBackendUrlLoaded) return;
-  
     if (values.newPassword !== values.newPasswordConfirmation) {
       alert('New passwords do not match');
       return;
     }
-  
+
     try {
       const token = Cookies.get('token');
       const response = await axios.post(
-        `${backendUrl}/change-password`,
+        `/api/change-password`,
         {
           current_password: values.currentPassword,
           new_password: values.newPassword,
@@ -81,7 +67,7 @@ const ProfilePage = () => {
           },
         }
       );
-  
+
       if (response.status === 200) {
         alert('Password changed successfully');
         router.push('/');
@@ -93,7 +79,7 @@ const ProfilePage = () => {
       alert('An error occurred while changing the password');
     }
   };
-
+  
   return (
     <>
       <Head>

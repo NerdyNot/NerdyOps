@@ -1,4 +1,3 @@
-// pages/tabletasks/[task_id].tsx
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -18,9 +17,9 @@ const TaskDetailPage = () => {
         setLoading(true);
         setError(null);
         try {
-          const response = await axios.get(`${process.env.NEXT_PUBLIC_CENTRAL_SERVER_URL}/get-task/${task_id}`);
+          const response = await axios.get(`/api/get-task/${task_id}`);
           setTaskDetails(response.data);
-        } catch (err) {
+        } catch (err: any) {
           setError(err.response?.data?.error || 'An error occurred');
         } finally {
           setLoading(false);

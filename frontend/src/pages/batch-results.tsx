@@ -11,7 +11,6 @@ import ReactMarkdown from 'react-markdown';
 import { Task } from '../interfaces';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 const BatchResultsPage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -21,22 +20,12 @@ const BatchResultsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Task; direction: 'ascending' | 'descending' } | null>(null);
   const [filter, setFilter] = useState<string>('');
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
-  
-  useEffect(() => {
-    if (backendUrl) {
-      setIsBackendUrlLoaded(true);
-    }
-  }, [backendUrl]);
-  
+
   const fetchAllCompletedTasks = async () => {
-    if (!isBackendUrlLoaded) return;
-  
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${backendUrl}/get-all-completed-tasks`);
+      const response = await axios.get('/api/get-all-completed-tasks');
       setTasks(response.data);
       setFilteredTasks(response.data);
     } catch (err) {
@@ -46,13 +35,11 @@ const BatchResultsPage = () => {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
-    if (isBackendUrlLoaded) {
-      fetchAllCompletedTasks();
-    }
-  }, [isBackendUrlLoaded]);
-  
+    fetchAllCompletedTasks();
+  }, []);
+
   const handleViewDetails = (task: Task) => {
     setSelectedTask(task);
   };

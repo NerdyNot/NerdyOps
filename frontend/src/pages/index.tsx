@@ -16,7 +16,6 @@ import { getPageTitle } from '../config';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../stores/mainSlice';
 import { useRouter } from 'next/router';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 
 const IndexPage = () => {
   const [user, setUserState] = useState<{ name: string; email: string; role: string } | null>(null);
@@ -25,17 +24,6 @@ const IndexPage = () => {
   const [failureTaskCount, setFailureTaskCount] = useState(0);
   const dispatch = useDispatch();
   const router = useRouter();
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
-
-  useEffect(() => {
-    const storedBackendUrl = localStorage.getItem('backendUrl');
-    if (storedBackendUrl) {
-      setIsBackendUrlLoaded(true);
-    } else {
-      router.push('/login');
-    }
-  }, [router]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,20 +36,20 @@ const IndexPage = () => {
       const token = tokenCookie.split('=')[1];
 
       try {
-        const verifyResponse = await axios.post(`${backendUrl}/verify-token`, { token });
+        const verifyResponse = await axios.post('/api/verify-token', { token });
 
         if (verifyResponse.status !== 200) {
           throw new Error('Token verification failed');
         }
 
-        const userResponse = await axios.get(`${backendUrl}/user-info`, {
+        const userResponse = await axios.get('/api/user-info', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        const agentResponse = await axios.get(`${backendUrl}/get-agents`);
-        const tasksResponse = await axios.get(`${backendUrl}/get-tasks-summary`);
+        const agentResponse = await axios.get('/api/get-agents');
+        const tasksResponse = await axios.get('/api/get-tasks-summary');
         const { successCount, failureCount } = tasksResponse.data;
 
         setUserState(userResponse.data);
@@ -76,10 +64,8 @@ const IndexPage = () => {
       }
     };
 
-    if (isBackendUrlLoaded && backendUrl) {
-      fetchData();
-    }
-  }, [isBackendUrlLoaded, backendUrl, dispatch, router]);
+    fetchData();
+  }, [dispatch, router]);
 
   return (
     <>

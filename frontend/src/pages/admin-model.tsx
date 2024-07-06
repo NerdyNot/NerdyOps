@@ -4,7 +4,6 @@ import withAuth from '../utils/withAuth';
 import LayoutAuthenticated from '../layouts/Authenticated';
 import SectionMain from '../components/Section/Main';
 import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
-import { useBackendUrl } from '../contexts/BackendUrlContext';
 import { getPageTitle } from '../config';
 import { mdiDatabaseCogOutline, mdiCogOutline } from '@mdi/js';
 import Head from 'next/head';
@@ -12,7 +11,6 @@ import Button from '../components/Button';
 import Cookies from 'js-cookie';
 import { Stack, Slider, Typography } from '@mui/material';
 import { useRouter } from 'next/router';
-
 
 const RedisLlmPage: React.FC = () => {
   const [redisConfig, setRedisConfig] = useState({ redis_host: '', redis_port: '', redis_password: '' });
@@ -29,31 +27,16 @@ const RedisLlmPage: React.FC = () => {
   });
   const [message, setMessage] = useState('');
   const token = Cookies.get('token');
-  const { backendUrl } = useBackendUrl();
-  const [isBackendUrlLoaded, setIsBackendUrlLoaded] = useState(false);
   const router = useRouter();
 
-
   useEffect(() => {
-    const storedBackendUrl = localStorage.getItem('backendUrl');
-    if (storedBackendUrl) {
-      setIsBackendUrlLoaded(true);
-    } else {
-      router.push('/login');
-    }
-  }, [router]);
-
-
-  useEffect(() => {
-    if (isBackendUrlLoaded) {
-      fetchRedisConfig();
-      fetchLlmConfig();
-    }
-  }, [isBackendUrlLoaded]);
+    fetchRedisConfig();
+    fetchLlmConfig();
+  }, []);
 
   const fetchRedisConfig = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-redis-config`, {
+      const response = await axios.get('/api/get-redis-config', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -76,7 +59,7 @@ const RedisLlmPage: React.FC = () => {
 
   const fetchLlmConfig = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/get-llm-config`, {
+      const response = await axios.get('/api/get-llm-config', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -98,7 +81,7 @@ const RedisLlmPage: React.FC = () => {
 
   const handleSaveRedisConfig = async () => {
     try {
-      await axios.post(`${backendUrl}/set-redis-config`, newRedisConfig, {
+      await axios.post('/api/set-redis-config', newRedisConfig, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -114,7 +97,7 @@ const RedisLlmPage: React.FC = () => {
 
   const handleSaveLlmConfig = async () => {
     try {
-      await axios.post(`${backendUrl}/set-llm-config`, llmConfig, {
+      await axios.post('/api/set-llm-config', llmConfig, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
