@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NerdyNot/NerdyOps.git/agent/go_agent/logo"
-	"github.com/NerdyNot/NerdyOps.git/agent/go_agent/monitoring"
-	"github.com/NerdyNot/NerdyOps.git/agent/go_agent/pat"
+	"github.com/NerdyNot/NerdyOps.git/agent/logo"
+	"github.com/NerdyNot/NerdyOps.git/agent/monitoring"
+	"github.com/NerdyNot/NerdyOps.git/agent/pat"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
 )
