@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, send_file
 from flask_sock import Sock
 from werkzeug.utils import secure_filename
 from utils.langchain_translator import translate_text_stream_chunked
+from utils.langchain_search import run_agent_stream
 from utils.parser_file_text import (
     extract_text_from_pdf,
     extract_text_from_docx,
@@ -126,3 +127,24 @@ def translate_download(filename):
     except Exception as e:
         logging.error(f"Error during file download: {e}")
         return jsonify({"error": str(e)}), 500
+
+@sock.route('/ws/search')
+def search_socket(ws):
+    logging.info("WebSocket connection opened.")
+    data = ws.receive()
+
+    data = json.loads(data)
+    query = data.get('query')
+    
+    if not query:
+        ws.send(json.dumps({"error": "Query is required"}))
+        return
+    
+    try:
+        result = run_agent_stream(query)
+        ws.send(json.dumps({"search_result": result}))
+    except Exception as e:
+        logging.error(f"Error during search: {e}")
+        ws.send(json.dumps({"error": str(e)}))
+    finally:
+        logging.info("WebSocket connection closed.")

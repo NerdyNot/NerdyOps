@@ -26,12 +26,16 @@ const RedisLlmPage: React.FC = () => {
     azureApiKey: ''
   });
   const [message, setMessage] = useState('');
+  const [githubApiKey, setGithubApiKey] = useState('');
+  const [stackoverflowApiKey, setStackoverflowApiKey] = useState('');
+  const [apiMessage, setApiMessage] = useState('');
   const token = Cookies.get('token');
   const router = useRouter();
 
   useEffect(() => {
     fetchRedisConfig();
     fetchLlmConfig();
+    fetchApiKeys();
   }, []);
 
   const fetchRedisConfig = async () => {
@@ -79,6 +83,21 @@ const RedisLlmPage: React.FC = () => {
     }
   };
 
+  const fetchApiKeys = async () => {
+    try {
+      const response = await axios.get('/api/get-api-keys', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const keys = response.data;
+      setGithubApiKey(keys.github || '');
+      setStackoverflowApiKey(keys.stackoverflow || '');
+    } catch (error) {
+      console.error('Error fetching API keys:', error);
+    }
+  };
+
   const handleSaveRedisConfig = async () => {
     try {
       await axios.post('/api/set-redis-config', newRedisConfig, {
@@ -106,6 +125,20 @@ const RedisLlmPage: React.FC = () => {
     } catch (error) {
       console.error('Error saving LLM configuration:', error);
       setMessage('Failed to save LLM configuration.');
+    }
+  };
+
+  const handleSaveApiKeys = async () => {
+    try {
+      await axios.post('/api/set-api-keys', { github: githubApiKey, stackoverflow: stackoverflowApiKey }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setApiMessage('API keys saved successfully!');
+    } catch (error) {
+      console.error('Error saving API keys:', error);
+      setApiMessage('Failed to save API keys.');
     }
   };
 
@@ -250,12 +283,39 @@ const RedisLlmPage: React.FC = () => {
           <Button label="Save LLM Configuration" onClick={handleSaveLlmConfig} color="primary" />
           {message && <p>{message}</p>}
         </div>
+
+        <SectionTitleLineWithButton icon={mdiCogOutline} title="API Keys Configuration" main />
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-2xl font-semibold mb-4">API Keys Configuration</h2>
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">GitHub API Key</label>
+            <input
+              type="password"
+              placeholder="Enter GitHub API Key"
+              value={githubApiKey}
+              onChange={(e) => setGithubApiKey(e.target.value)}
+              className="border p-2 w-full rounded-md"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">Stack Overflow API Key</label>
+            <input
+              type="password"
+              placeholder="Enter Stack Overflow API Key"
+              value={stackoverflowApiKey}
+              onChange={(e) => setStackoverflowApiKey(e.target.value)}
+              className="border p-2 w-full rounded-md"
+            />
+          </div>
+          <Button label="Save API Keys" onClick={handleSaveApiKeys} color="primary" />
+          {apiMessage && <p>{apiMessage}</p>}
+        </div>
       </SectionMain>
     </>
   );
 };
 
-RedisLlmPage.getLayout = function getLayout(page: ReactElement) {
+RedisLlmPage.getLayout = function getLayout(page: React.ReactElement) {
   return <LayoutAuthenticated>{page}</LayoutAuthenticated>;
 };
 

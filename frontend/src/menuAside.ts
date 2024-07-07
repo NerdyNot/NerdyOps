@@ -13,6 +13,7 @@ import {
   mdiAccountCog,
   mdiTools,
   mdiTranslate,
+  mdiSearchWeb,
 } from '@mdi/js';
 import { MenuAsideItem } from './interfaces';
 
@@ -81,6 +82,12 @@ const menuAside: MenuAsideItem[] = [
         href: '/tools-translate',
         label: 'Translator',
         icon: mdiTranslate,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
+      {
+        href: '/tools-search',
+        label: 'Search',
+        icon: mdiSearchWeb,
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
       },
     ],
