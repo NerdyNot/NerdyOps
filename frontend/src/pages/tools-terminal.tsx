@@ -1,16 +1,13 @@
-// src/pages/tools-terminal.tsx
 import {
     mdiConsole,
     mdiSend,
     mdiFileUpload,
-    mdiDownload,
   } from '@mdi/js';
   import { Formik, Form, Field } from 'formik';
   import Head from 'next/head';
+  import dynamic from 'next/dynamic';
   import type { ReactElement } from 'react';
   import { useEffect, useState, useRef } from 'react';
-  import { Terminal } from 'xterm';
-  import { FitAddon } from 'xterm-addon-fit';
   import 'xterm/css/xterm.css';
   import Button from '../components/Button';
   import CardBox from '../components/CardBox';
@@ -21,20 +18,32 @@ import {
   import FormField from '../components/Form/Field';
   import axios from 'axios';
   
+  // Dynamically import xterm and xterm-addon-fit
+  const Terminal = dynamic(
+    () => import('xterm').then(mod => mod.Terminal),
+    { ssr: false }
+  );
+  const FitAddon = dynamic(
+    () => import('xterm-addon-fit').then(mod => mod.FitAddon),
+    { ssr: false }
+  );
+  
   const ToolsTerminalPage = () => {
     const terminalRef = useRef<HTMLDivElement>(null);
-    const terminal = useRef<Terminal | null>(null);
-    const fitAddon = useRef<FitAddon | null>(null);
+    const terminal = useRef<any>(null);
+    const fitAddon = useRef<any>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [sessionOutput, setSessionOutput] = useState<string>('');
   
     useEffect(() => {
-      terminal.current = new Terminal();
-      fitAddon.current = new FitAddon();
-      terminal.current.loadAddon(fitAddon.current);
-      terminal.current.open(terminalRef.current!);
-      fitAddon.current.fit();
+      if (typeof window !== 'undefined') {
+        terminal.current = new Terminal();
+        fitAddon.current = new FitAddon();
+        terminal.current.loadAddon(fitAddon.current);
+        terminal.current.open(terminalRef.current!);
+        fitAddon.current.fit();
+      }
     }, []);
   
     useEffect(() => {
@@ -130,11 +139,11 @@ import {
                     </FormField>
   
                     <div className="p-4 border-t">
-                      <Button 
-                        color="info" 
+                      <Button
+                        color="info"
                         type="submit"
-                        label={loading ? "Executing..." : "Execute"} 
-                        icon={mdiSend} 
+                        label={loading ? "Executing..." : "Execute"}
+                        icon={mdiSend}
                         disabled={loading}
                       />
                     </div>
