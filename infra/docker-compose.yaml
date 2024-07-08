@@ -46,8 +46,6 @@ services:
     image: nerdyops-webssh2:latest
     container_name: NerdyOps-WebSSH2
     restart: always
-    ports:
-      - "2222:2222"
 
 volumes:
   mysql-data:
