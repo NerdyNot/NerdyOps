@@ -147,7 +147,7 @@ import {
   export async function handler(req, res) {
     if (req.method === 'POST') {
       const { username, userpassword, host, port } = req.body;
-      const url = `http://${req.headers.host.split(':')[0]}:2222/ssh/host/${host}?username=${username}&password=${userpassword}&port=${port}`;
+      const url = `http://${req.headers.host.split(':')[0]}:2222/ssh/host/${host}?username=${username}&userpassword=${userpassword}&port=${port}`;
       res.status(200).json({ url });
     } else {
       res.status(405).json({ message: 'Method not allowed' });
