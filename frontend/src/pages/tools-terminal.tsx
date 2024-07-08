@@ -1,7 +1,6 @@
 import {
     mdiConsole,
     mdiSend,
-    mdiFileUpload,
   } from '@mdi/js';
   import { Formik, Form, Field } from 'formik';
   import Head from 'next/head';
@@ -33,8 +32,7 @@ import {
     const terminal = useRef<any>(null);
     const fitAddon = useRef<any>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-    const [sessionOutput, setSessionOutput] = useState<string>('');
+    const [session, setSession] = useState<WebSocket | null>(null);
   
     useEffect(() => {
       if (typeof window !== 'undefined') {
@@ -46,10 +44,16 @@ import {
           terminal.current.loadAddon(fitAddon.current);
           terminal.current.open(terminalRef.current!);
           fitAddon.current.fit();
+  
+          terminal.current.onData((data: string) => {
+            if (session) {
+              session.send(JSON.stringify({ type: 'input', data }));
+            }
+          });
         };
         initTerminal();
       }
-    }, []);
+    }, [session]);
   
     useEffect(() => {
       const handleResize = () => {
@@ -60,39 +64,37 @@ import {
       return () => window.removeEventListener('resize', handleResize);
     }, []);
   
-    const handleSendCommand = async (values: { command: string }) => {
-      if (uploadedFile) {
-        const formData = new FormData();
-        formData.append('file', uploadedFile);
-        formData.append('command', values.command);
+    const handleConnect = async (values: { server: string; username: string; password: string }) => {
+      setLoading(true);
+      try {
+        const response = await axios.post('/api/connect', values);
+        const { sessionId } = response.data;
+        const ws = new WebSocket(`ws://localhost:3000/api/terminal/${sessionId}`);
   
-        setLoading(true);
-        try {
-          const response = await axios.post('/api/webssh', formData);
-          setSessionOutput(response.data.output);
-          terminal.current?.writeln(response.data.output);
-          setLoading(false);
-        } catch (error) {
-          console.error('SSH command execution error:', error);
-          setLoading(false);
-        }
-      } else {
-        setLoading(true);
-        try {
-          const response = await axios.post('/api/webssh', values);
-          setSessionOutput(response.data.output);
-          terminal.current?.writeln(response.data.output);
-          setLoading(false);
-        } catch (error) {
-          console.error('SSH command execution error:', error);
-          setLoading(false);
-        }
-      }
-    };
+        ws.onopen = () => {
+          terminal.current?.writeln('Connected to server');
+          setSession(ws);
+        };
   
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.files && event.target.files[0]) {
-        setUploadedFile(event.target.files[0]);
+        ws.onmessage = (event) => {
+          const { data } = event;
+          terminal.current?.writeln(data);
+        };
+  
+        ws.onclose = () => {
+          terminal.current?.writeln('Connection closed');
+        };
+  
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          terminal.current?.writeln('WebSocket error');
+        };
+  
+        setLoading(false);
+      } catch (error) {
+        console.error('Connection error:', error);
+        terminal.current?.writeln('Connection error');
+        setLoading(false);
       }
     };
   
@@ -108,37 +110,53 @@ import {
             <CardBox>
               <Formik
                 initialValues={{
-                  command: '',
+                  server: '',
+                  username: '',
+                  password: '',
                 }}
-                onSubmit={handleSendCommand}
+                onSubmit={handleConnect}
               >
                 <Form className="flex flex-col">
                   <div className="p-4">
                     <FormField
-                      label="Upload File"
-                      help="Upload a file to execute commands on."
-                      labelFor="file"
-                      icons={[mdiFileUpload]}
+                      label="Server Address"
+                      help="Enter the address of the server."
+                      labelFor="server"
+                      icons={[mdiConsole]}
                     >
-                      <input
-                        type="file"
-                        name="file"
-                        id="file"
-                        onChange={handleFileUpload}
+                      <Field
+                        name="server"
+                        id="server"
+                        placeholder="Enter server address..."
                         className="w-full p-2 border rounded"
                       />
                     </FormField>
   
                     <FormField
-                      label="Command"
-                      help="Enter the command you want to execute."
-                      labelFor="command"
+                      label="Username"
+                      help="Enter your username for the server."
+                      labelFor="username"
                       icons={[mdiConsole]}
                     >
                       <Field
-                        name="command"
-                        id="command"
-                        placeholder="Enter command..."
+                        name="username"
+                        id="username"
+                        placeholder="Enter username..."
+                        className="w-full p-2 border rounded"
+                      />
+                    </FormField>
+  
+                    <FormField
+                      label="Password"
+                      help="Enter your password for the server."
+                      labelFor="password"
+                      icons={[mdiConsole]}
+                    >
+                      <Field
+                        type="password"
+                        name="password"
+                        id="password"
+                        placeholder="Enter password..."
                         className="w-full p-2 border rounded"
                       />
                     </FormField>
@@ -147,7 +165,7 @@ import {
                       <Button
                         color="info"
                         type="submit"
-                        label={loading ? "Executing..." : "Execute"}
+                        label={loading ? "Connecting..." : "Connect"}
                         icon={mdiSend}
                         disabled={loading}
                       />
