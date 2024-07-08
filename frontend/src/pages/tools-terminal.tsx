@@ -18,7 +18,7 @@ import {
   import FormField from '../components/Form/Field';
   import axios from 'axios';
   
-  // Dynamically import xterm and xterm-addon-fit
+  // 동적으로 xterm 및 xterm-addon-fit 불러오기
   const Terminal = dynamic(
     () => import('xterm').then(mod => mod.Terminal),
     { ssr: false }
@@ -38,11 +38,16 @@ import {
   
     useEffect(() => {
       if (typeof window !== 'undefined') {
-        terminal.current = new Terminal();
-        fitAddon.current = new FitAddon();
-        terminal.current.loadAddon(fitAddon.current);
-        terminal.current.open(terminalRef.current!);
-        fitAddon.current.fit();
+        const initTerminal = async () => {
+          const { Terminal } = await import('xterm');
+          const { FitAddon } = await import('xterm-addon-fit');
+          terminal.current = new Terminal();
+          fitAddon.current = new FitAddon();
+          terminal.current.loadAddon(fitAddon.current);
+          terminal.current.open(terminalRef.current!);
+          fitAddon.current.fit();
+        };
+        initTerminal();
       }
     }, []);
   
