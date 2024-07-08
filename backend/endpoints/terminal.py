@@ -6,8 +6,8 @@ import threading
 import time
 import logging
 
-webssh_bp = Blueprint('webssh', __name__)
-sock = Sock(webssh_bp)
+terminal_bp = Blueprint('terminal_bp', __name__)
+sock = Sock(terminal_bp)
 
 @sock.route('/webssh')
 def webssh(ws):

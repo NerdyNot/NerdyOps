@@ -44,6 +44,7 @@ def register_blueprints(app):
     from endpoints.agent import agent_bp
     from endpoints.config import config_bp
     from endpoints.tools import tools_bp, sock
+    from endpoints.terminal import terminal_bp, sock
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(tasks_bp)
@@ -52,6 +53,7 @@ def register_blueprints(app):
     app.register_blueprint(agent_bp)
     app.register_blueprint(config_bp)
     app.register_blueprint(tools_bp)
+    app.register_blueprint(terminal_bp)
     sock.init_app(app)
 
 register_blueprints(app)
