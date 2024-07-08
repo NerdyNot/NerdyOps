@@ -15,9 +15,7 @@ import {
   import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
   import { getPageTitle } from '../config';
   import FormField from '../components/Form/Field';
-  import axios from 'axios';
   
-  // 동적으로 xterm 및 xterm-addon-fit 불러오기
   const Terminal = dynamic(
     () => import('xterm').then(mod => mod.Terminal),
     { ssr: false }
@@ -47,7 +45,7 @@ import {
   
           terminal.current.onData((data: string) => {
             if (session) {
-              session.send(JSON.stringify({ type: 'input', data }));
+              session.send(data);
             }
           });
         };
@@ -64,12 +62,10 @@ import {
       return () => window.removeEventListener('resize', handleResize);
     }, []);
   
-    const handleConnect = async (values: { server: string; username: string; password: string }) => {
+    const handleConnect = async (values: { server: string; port: string; username: string; password: string }) => {
       setLoading(true);
       try {
-        const response = await axios.post('/api/connect', values);
-        const { sessionId } = response.data;
-        const ws = new WebSocket(`ws://localhost:3000/api/terminal/${sessionId}`);
+        const ws = new WebSocket(`ws://localhost:3000/webssh?host=${values.server}&port=${values.port}&username=${values.username}&password=${values.password}`);
   
         ws.onopen = () => {
           terminal.current?.writeln('Connected to server');
@@ -77,7 +73,7 @@ import {
         };
   
         ws.onmessage = (event) => {
-          const { data } = event;
+          const data = event.data;
           terminal.current?.writeln(data);
         };
   
@@ -111,6 +107,7 @@ import {
               <Formik
                 initialValues={{
                   server: '',
+                  port: '',
                   username: '',
                   password: '',
                 }}
@@ -128,6 +125,20 @@ import {
                         name="server"
                         id="server"
                         placeholder="Enter server address..."
+                        className="w-full p-2 border rounded"
+                      />
+                    </FormField>
+  
+                    <FormField
+                      label="Port"
+                      help="Enter the port number."
+                      labelFor="port"
+                      icons={[mdiConsole]}
+                    >
+                      <Field
+                        name="port"
+                        id="port"
+                        placeholder="Enter port..."
                         className="w-full p-2 border rounded"
                       />
                     </FormField>
