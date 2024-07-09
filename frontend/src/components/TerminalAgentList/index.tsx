@@ -9,34 +9,34 @@ interface TerminalAgentListProps {
 
 const TerminalAgentList: React.FC<TerminalAgentListProps> = ({ agents, onConnectClick }) => {
   return (
-    <table className="min-w-full leading-normal">
-      <thead>
-        <tr>
-          <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-            Name
-          </th>
-          <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-            Private IP
-          </th>
-          <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {agents.map(agent => (
-          <tr key={agent.agent_id}>
-            <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              {agent.name}
-            </td>
-            <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              {agent.private_ip}
-            </td>
-            <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              <Button onClick={() => onConnectClick(agent)} label="Connect" />
-            </td>
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white">
+        <thead className="bg-gray-800 text-white">
+          <tr>
+            <th className="py-2 px-4">ID</th>
+            <th className="py-2 px-4">Hostname</th>
+            <th className="py-2 px-4">OS</th>
+            <th className="py-2 px-4">Private IP</th>
+            <th className="py-2 px-4">Actions</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="text-gray-700">
+          {agents
+            .filter(agent => agent.os_type !== 'Windows')
+            .map(agent => (
+              <tr key={agent.agent_id}>
+                <td className="py-2 px-4 border">{agent.agent_id}</td>
+                <td className="py-2 px-4 border">{agent.computer_name}</td>
+                <td className="py-2 px-4 border">{agent.os_type}</td>
+                <td className="py-2 px-4 border">{agent.private_ip}</td>
+                <td className="py-2 px-4 border">
+                  <Button onClick={() => onConnectClick(agent)} label="Connect" />
+                </td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

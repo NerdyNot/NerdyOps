@@ -4,8 +4,9 @@ import {
   } from '@mdi/js';
   import Head from 'next/head';
   import type { ReactElement } from 'react';
-  import { useState, useRef } from 'react';
+  import { useState, useRef, useEffect } from 'react';
   import axios from 'axios';
+  import { useRouter } from 'next/router';
   import Button from '../components/Button';
   import CardBox from '../components/CardBox';
   import LayoutAuthenticated from '../layouts/Authenticated';
@@ -15,23 +16,56 @@ import {
   import useAgents from '../hooks/useAgents';
   import { Agent } from '../interfaces';
   import TerminalAgentList from '../components/TerminalAgentList';
-  import ConnectModal from '../components/Modal/ConnectModal';
+  import ConnectModal from '../components/modal/ConnectModal';
   
   const TerminalPage = () => {
     const [connectAgent, setConnectAgent] = useState<Agent | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
+    const router = useRouter();
   
     const { agents, loading, error } = useAgents();
+  
+    useEffect(() => {
+      const fetchData = async () => {
+        const tokenCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('token='));
+        if (!tokenCookie) {
+          router.push('/login');
+          return;
+        }
+  
+        const token = tokenCookie.split('=')[1];
+  
+        try {
+          const verifyResponse = await axios.post('/api/verify-token', { token });
+  
+          if (verifyResponse.status !== 200) {
+            throw new Error('Token verification failed');
+          }
+        } catch (error) {
+          console.error('Token verification failed:', error);
+          router.push('/login');
+        }
+      };
+  
+      fetchData();
+    }, [router]);
   
     const handleConnection = async (values: {
       host: string;
       username: string;
       userpassword: string;
       port: number;
-      token: string;
     }) => {
+      const tokenCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('token='));
+      if (!tokenCookie) {
+        alert('Token not found');
+        return;
+      }
+  
+      const token = tokenCookie.split('=')[1];
+  
       try {
-        const verifyResponse = await axios.post('/api/verify-token', { token: values.token });
+        const verifyResponse = await axios.post('/api/verify-token', { token });
   
         if (verifyResponse.status !== 200) {
           throw new Error('Token verification failed');
