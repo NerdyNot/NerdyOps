@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import time
 import random
 from langchain_openai import ChatOpenAI
@@ -109,6 +110,18 @@ def split_text_into_chunks_with_newlines(text, chunk_size=500):
 
     return chunks
 
+def extract_script_from_response(response_text: str, language: str) -> str:
+    pattern = f"```{language}\s(.*?)\s```"
+    match = re.search(pattern, response_text, re.DOTALL)
+    
+    if match:
+        script = match.group(1).strip()
+        logging.info(f"Extracted Script: {script}")
+        return script
+    
+    logging.warning("No code block found in the response. Returning the full response.")
+    return response_text.strip()
+
 def generate_code_stream_chunked(description: str, language: str):
     llm = get_llm()
     if not llm:
@@ -128,7 +141,8 @@ def generate_code_stream_chunked(description: str, language: str):
 
                 for stream_chunk in stream:
                     if hasattr(stream_chunk, 'content'):
-                        yield stream_chunk.content
+                        script = extract_script_from_response(stream_chunk.content, language)
+                        yield script
                     else:
                         logging.error("Chunk does not have content attribute: {}".format(stream_chunk))
                 success = True

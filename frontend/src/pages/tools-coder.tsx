@@ -37,6 +37,9 @@ import {
   
     useEffect(() => {
       if (codeResultRef.current) {
+        codeResultRef.current.style.height = 'auto';
+        codeResultRef.current.style.height = `${codeResultRef.current.scrollHeight}px`;
+        codeResultRef.current.scrollTop = codeResultRef.current.scrollHeight;
         hljs.highlightElement(codeResultRef.current);
       }
     }, [codeResult]);
@@ -189,7 +192,7 @@ import {
                       icons={[mdiCodeTags]}
                     >
                       <div className="w-full p-2 border rounded bg-gray-100" style={{ maxHeight: '300px', overflow: 'auto' }}>
-                        <SyntaxHighlighter language="javascript" style={atomDark}>
+                        <SyntaxHighlighter language="javascript" style={atomDark} ref={codeResultRef}>
                           {codeResult}
                         </SyntaxHighlighter>
                       </div>
