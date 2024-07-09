@@ -88,13 +88,13 @@ const menuAside: MenuAsideItem[] = [
       {
         href: '/tools-translate',
         label: 'Translator',
-        icon: mdiCodeGreaterThan,
+        icon: mdiTranslate,
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
       },
       {
         href: '/tools-coder',
         label: 'Coder',
-        icon: mdiTranslate,
+        icon: mdiCodeGreaterThan,
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
       },
     ],
