@@ -1,6 +1,7 @@
 import React from 'react';
 import { Agent } from '../../interfaces';
 import Button from '../Button';
+import { mdiConsole } from '@mdi/js';
 
 interface TerminalAgentListProps {
   agents: Agent[];
@@ -22,7 +23,7 @@ const TerminalAgentList: React.FC<TerminalAgentListProps> = ({ agents, onConnect
         </thead>
         <tbody className="text-gray-700">
           {agents
-            .filter(agent => agent.os_type !== 'Windows')
+            .filter(agent => !/windows/i.test(agent.os_type))
             .map(agent => (
               <tr key={agent.agent_id}>
                 <td className="py-2 px-4 border">{agent.agent_id}</td>
@@ -30,7 +31,7 @@ const TerminalAgentList: React.FC<TerminalAgentListProps> = ({ agents, onConnect
                 <td className="py-2 px-4 border">{agent.os_type}</td>
                 <td className="py-2 px-4 border">{agent.private_ip}</td>
                 <td className="py-2 px-4 border">
-                  <Button onClick={() => onConnectClick(agent)} label="Connect" />
+                  <Button color="info" onClick={() => onConnectClick(agent)} label="Connect" icon={mdiConsole} />
                 </td>
               </tr>
             ))}

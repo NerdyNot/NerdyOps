@@ -89,7 +89,6 @@ const ConnectModal: React.FC<ConnectModalProps> = ({ agent, onClose, onSubmit })
                   color="info" 
                   type="submit"
                   label="Connect" 
-                  icon={mdiSend} 
                 />
                 <Button 
                   color="secondary" 
