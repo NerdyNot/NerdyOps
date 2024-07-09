@@ -16,7 +16,7 @@ import {
   import useAgents from '../hooks/useAgents';
   import { Agent } from '../interfaces';
   import TerminalAgentList from '../components/TerminalAgentList';
-  import ConnectModal from '../components/modal/ConnectModal';
+  import ConnectModal from '../components/Modal/ConnectModal';
   
   const TerminalPage = () => {
     const [connectAgent, setConnectAgent] = useState<Agent | null>(null);
