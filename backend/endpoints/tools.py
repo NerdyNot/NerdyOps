@@ -16,7 +16,7 @@ from utils.parser_file_text import (
     create_translated_word,
     Document
 )
-from utils.langchain_coder import generate_code_stream_chunked, explain_code
+from utils.langchain_coder import generate_code_stream_chunked, generate_code_explanation_stream_chunked
 
 UPLOAD_FOLDER = 'uploads'
 TRANSLATED_FOLDER = 'translated'
@@ -54,8 +54,9 @@ def translate_socket(ws):
     finally:
         logging.info("WebSocket connection closed.")
 
-@sock.route('/ws/generate-code')
-def generate_code_socket(ws):
+
+@sock.route('/ws/generate-and-explain')
+def generate_and_explain_socket(ws):
     logging.info("WebSocket connection opened.")
     data = ws.receive()
 
@@ -66,31 +67,22 @@ def generate_code_socket(ws):
     if not description or not language:
         ws.send(json.dumps({"error": "Description and language are required"}))
         return
-    
+
     try:
+        code = ""
+        # Generate code
         for chunk in generate_code_stream_chunked(description, language):
-            ws.send(json.dumps({"code_chunk": chunk}))
+            code += chunk
+            ws.send(json.dumps({"type": "code", "content": chunk}))
+        
+        # Generate explanation
+        for chunk in generate_code_explanation_stream_chunked(description, code):
+            ws.send(json.dumps({"type": "explanation", "content": chunk}))
     except Exception as e:
-        logging.error(f"Error during code generation: {e}")
+        logging.error(f"Error during code generation and explanation: {e}")
         ws.send(json.dumps({"error": str(e)}))
     finally:
         logging.info("WebSocket connection closed.")
-
-@tools_bp.route('/explain-code', methods=['POST'])
-def explain_code_endpoint():
-    data = request.json
-    code = data.get('code')
-    language = data.get('language')
-
-    if not code or not language:
-        return jsonify({"error": "Code and language are required"}), 400
-
-    try:
-        explanation = explain_code(code, language)
-        return jsonify({"explanation": explanation}), 200
-    except Exception as e:
-        logging.error(f"Error during code explanation: {e}")
-        return jsonify({"error": str(e)}), 500
 
 @tools_bp.route('/translate-upload', methods=['POST'])
 def translate_upload():

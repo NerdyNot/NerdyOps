@@ -1,16 +1,9 @@
-import json
 import logging
-import os
 import time
 import random
-from langchain_openai import ChatOpenAI
-from langchain_community.chat_models import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_google_vertexai import VertexAIModelGarden
-from langchain_anthropic import ChatAnthropic
-from utils.db import get_api_key
+from utils.langchain_integration import get_llm
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -33,51 +26,6 @@ translate_template = ChatPromptTemplate.from_messages([
 
 # Define the output parser
 parser = StrOutputParser()
-
-def get_llm():
-    llm_config = get_api_key('llm')
-    if not llm_config:
-        logging.warning("LLM configuration not found. Please set the configuration using the admin settings page.")
-        return None
-    
-    config = json.loads(llm_config)
-    provider = config.get('provider')
-    api_key = config.get('api_key')
-    model = config.get('model', 'gpt-4o')
-    temperature = config.get('temperature', 0)
-    
-    if provider == 'openai':
-        os.environ["OPENAI_API_KEY"] = api_key
-        return ChatOpenAI(model=model, temperature=temperature, max_tokens=4096)
-    elif provider == 'azure':
-        azure_config = config.get('azure', {})
-        endpoint = azure_config.get('endpoint', '')
-        api_version = azure_config.get('api_version', '2024-05-01-preview')
-        deployment_name = azure_config.get('deployment', 'gpt-4o')
-        os.environ["AZURE_OPENAI_API_KEY"] = api_key
-        if not endpoint or not deployment_name:
-            logging.error("Azure endpoint or deployment name is not set")
-            return None
-        logging.warning("Azure OpenAI configuration - API Version: %s, Endpoint: %s, API Key: %s",
-                        api_version, endpoint, os.environ["AZURE_OPENAI_API_KEY"])
-        return AzureChatOpenAI(
-            azure_deployment=deployment_name,
-            openai_api_version=api_version,
-            temperature=temperature,
-            azure_endpoint=endpoint,
-        )
-    elif provider == 'gemini':
-        os.environ["GOOGLE_API_KEY"] = api_key
-        return ChatGoogleGenerativeAI(model=model, temperature=temperature, max_output_tokens=4096)
-    elif provider == 'vertexai':
-        os.environ["GOOGLE_API_KEY"] = api_key
-        return VertexAIModelGarden(model=model, temperature=temperature)
-    elif provider == 'anthropic':
-        os.environ["ANTHROPIC_API_KEY"] = api_key
-        return ChatAnthropic(model=model, temperature=temperature)
-    else:
-        logging.warning(f"Unsupported LLM provider: {provider}")
-        return None
 
 def split_text_into_chunks_with_newlines(text, chunk_size=500):
     """
