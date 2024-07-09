@@ -1,39 +1,59 @@
 import {
+    mdiSend,
     mdiServerNetwork,
   } from '@mdi/js';
   import Head from 'next/head';
   import type { ReactElement } from 'react';
-  import { useState } from 'react';
+  import { useState, useRef } from 'react';
+  import axios from 'axios';
+  import Button from '../components/Button';
   import CardBox from '../components/CardBox';
   import LayoutAuthenticated from '../layouts/Authenticated';
   import SectionMain from '../components/Section/Main';
   import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
   import { getPageTitle } from '../config';
-  import axios from 'axios';
   import useAgents from '../hooks/useAgents';
   import { Agent } from '../interfaces';
   import TerminalAgentList from '../components/TerminalAgentList';
   import ConnectModal from '../components/Modal/ConnectModal';
   
-  const SSHPage = () => {
-    const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const TerminalPage = () => {
     const [connectAgent, setConnectAgent] = useState<Agent | null>(null);
+    const formRef = useRef<HTMLFormElement>(null);
   
     const { agents, loading, error } = useAgents();
   
     const handleConnection = async (values: {
+      host: string;
       username: string;
       userpassword: string;
-      host: string;
-      port: string;
+      port: number;
+      token: string;
     }) => {
       try {
-        const response = await axios.post('/api/connect', values);
-        const { url } = response.data;
-        setIframeUrl(url);
-        setConnectAgent(null); // close the modal after connection
+        const verifyResponse = await axios.post('/api/verify-token', { token: values.token });
+  
+        if (verifyResponse.status !== 200) {
+          throw new Error('Token verification failed');
+        }
+  
+        if (formRef.current) {
+          const { host, username, userpassword, port } = values;
+  
+          const form = formRef.current;
+          form.action = `/ssh/host/${host}`;
+          form.method = 'POST';
+          form.target = '_blank';
+  
+          form.querySelector('input[name="username"]').value = username;
+          form.querySelector('input[name="userpassword"]').value = userpassword;
+          form.querySelector('input[name="port"]').value = port.toString();
+  
+          form.submit();
+        }
       } catch (error) {
         console.error('Connection error:', error);
+        alert('Token verification failed');
       }
     };
   
@@ -48,11 +68,11 @@ import {
     return (
       <>
         <Head>
-          <title>{getPageTitle('Terminal Connection')}</title>
+          <title>{getPageTitle('SSH Terminal')}</title>
         </Head>
   
         <SectionMain>
-          <SectionTitleLineWithButton icon={mdiServerNetwork} title="Terminal Connection" main />
+          <SectionTitleLineWithButton icon={mdiServerNetwork} title="SSH Terminal" main />
           <div className="grid gap-6">
             <CardBox>
               {loading && <p>Loading agents...</p>}
@@ -65,32 +85,21 @@ import {
             {connectAgent && (
               <ConnectModal agent={connectAgent} onClose={handleCloseModal} onSubmit={handleConnection} />
             )}
-  
-            {iframeUrl && (
-              <CardBox>
-                <iframe src={iframeUrl} width="100%" height="600px" />
-              </CardBox>
-            )}
           </div>
         </SectionMain>
+  
+        <form ref={formRef} style={{ display: 'none' }}>
+          <input type="hidden" name="username" />
+          <input type="hidden" name="userpassword" />
+          <input type="hidden" name="port" />
+        </form>
       </>
     );
   };
   
-  SSHPage.getLayout = function getLayout(page: ReactElement) {
+  TerminalPage.getLayout = function getLayout(page: ReactElement) {
     return <LayoutAuthenticated>{page}</LayoutAuthenticated>;
   };
   
-  export default SSHPage;
-  
-  // Next.js API route to handle the POST request
-  export async function handler(req, res) {
-    if (req.method === 'POST') {
-      const { username, userpassword, host, port } = req.body;
-      const url = `http://${req.headers.host.split(':')[0]}:2222/ssh/host/${host}?username=${username}&password=${userpassword}&port=${port}`;
-      res.status(200).json({ url });
-    } else {
-      res.status(405).json({ message: 'Method not allowed' });
-    }
-  }
+  export default TerminalPage;
   

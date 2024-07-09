@@ -1,4 +1,4 @@
-import { mdiSend, mdiAccount, mdiKey, mdiNetwork } from '@mdi/js';
+import { mdiSend, mdiAccount, mdiKey, mdiNetwork, mdiShieldKey } from '@mdi/js';
 import { Formik, Form, Field } from 'formik';
 import Button from '../Button';
 import CardBox from '../CardBox';
@@ -8,7 +8,7 @@ import { Agent } from '../../interfaces';
 interface ConnectModalProps {
   agent: Agent;
   onClose: () => void;
-  onSubmit: (values: { username: string; userpassword: string; host: string; port: string }) => void;
+  onSubmit: (values: { username: string; userpassword: string; host: string; port: number; token: string }) => void;
 }
 
 const ConnectModal: React.FC<ConnectModalProps> = ({ agent, onClose, onSubmit }) => {
@@ -20,7 +20,8 @@ const ConnectModal: React.FC<ConnectModalProps> = ({ agent, onClose, onSubmit })
             username: '',
             userpassword: '',
             host: agent.private_ip,
-            port: '',
+            port: 22,
+            token: '',
           }}
           onSubmit={onSubmit}
         >
@@ -78,7 +79,22 @@ const ConnectModal: React.FC<ConnectModalProps> = ({ agent, onClose, onSubmit })
                 <Field
                   name="port"
                   id="port"
-                  placeholder="Enter port..."
+                  type="number"
+                  placeholder="22"
+                  className="w-full p-2 border rounded"
+                />
+              </FormField>
+
+              <FormField
+                label="Token"
+                help="Enter the access token."
+                labelFor="token"
+                icons={[mdiShieldKey]}
+              >
+                <Field
+                  name="token"
+                  id="token"
+                  placeholder="Enter token..."
                   className="w-full p-2 border rounded"
                 />
               </FormField>
