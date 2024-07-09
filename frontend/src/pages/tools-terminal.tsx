@@ -1,146 +1,96 @@
-import { mdiServerNetwork, mdiSend } from '@mdi/js';
-import { Formik, Form, Field } from 'formik';
-import Head from 'next/head';
-import type { ReactElement } from 'react';
-import { useRef } from 'react';
-import Button from '../components/Button';
-import CardBox from '../components/CardBox';
-import LayoutAuthenticated from '../layouts/Authenticated';
-import SectionMain from '../components/Section/Main';
-import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
-import { getPageTitle } from '../config';
-import FormField from '../components/Form/Field';
-
-const TerminalPage = () => {
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const handleConnection = (values: {
-    host: string;
-    username: string;
-    userpassword: string;
-    port: number;
-  }) => {
-    if (formRef.current) {
-      const { host, username, userpassword, port } = values;
-
-      const form = formRef.current;
-      form.action = `/ssh/host/${host}`;
-      form.method = 'POST';
-      form.target = '_blank';
-
-      form.querySelector('input[name="username"]').value = username;
-      form.querySelector('input[name="userpassword"]').value = userpassword;
-      form.querySelector('input[name="port"]').value = port.toString();
-
-      form.submit();
-    }
+import {
+    mdiServerNetwork,
+  } from '@mdi/js';
+  import Head from 'next/head';
+  import type { ReactElement } from 'react';
+  import { useState } from 'react';
+  import CardBox from '../components/CardBox';
+  import LayoutAuthenticated from '../layouts/Authenticated';
+  import SectionMain from '../components/Section/Main';
+  import SectionTitleLineWithButton from '../components/Section/TitleLineWithButton';
+  import { getPageTitle } from '../config';
+  import axios from 'axios';
+  import useAgents from '../hooks/useAgents';
+  import { Agent } from '../interfaces';
+  import TerminalAgentList from '../components/TerminalAgentList';
+  import ConnectModal from '../components/Modal/ConnectModal';
+  
+  const SSHPage = () => {
+    const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+    const [connectAgent, setConnectAgent] = useState<Agent | null>(null);
+  
+    const { agents, loading, error } = useAgents();
+  
+    const handleConnection = async (values: {
+      username: string;
+      userpassword: string;
+      host: string;
+      port: string;
+    }) => {
+      try {
+        const response = await axios.post('/api/connect', values);
+        const { url } = response.data;
+        setIframeUrl(url);
+        setConnectAgent(null); // close the modal after connection
+      } catch (error) {
+        console.error('Connection error:', error);
+      }
+    };
+  
+    const handleConnectClick = (agent: Agent) => {
+      setConnectAgent(agent);
+    };
+  
+    const handleCloseModal = () => {
+      setConnectAgent(null);
+    };
+  
+    return (
+      <>
+        <Head>
+          <title>{getPageTitle('Terminal Connection')}</title>
+        </Head>
+  
+        <SectionMain>
+          <SectionTitleLineWithButton icon={mdiServerNetwork} title="Terminal Connection" main />
+          <div className="grid gap-6">
+            <CardBox>
+              {loading && <p>Loading agents...</p>}
+              {error && <p>Error loading agents: {error}</p>}
+              {!loading && !error && agents && (
+                <TerminalAgentList agents={agents} onConnectClick={handleConnectClick} />
+              )}
+            </CardBox>
+  
+            {connectAgent && (
+              <ConnectModal agent={connectAgent} onClose={handleCloseModal} onSubmit={handleConnection} />
+            )}
+  
+            {iframeUrl && (
+              <CardBox>
+                <iframe src={iframeUrl} width="100%" height="600px" />
+              </CardBox>
+            )}
+          </div>
+        </SectionMain>
+      </>
+    );
   };
-
-  return (
-    <>
-      <Head>
-        <title>{getPageTitle('SSH Terminal')}</title>
-      </Head>
-
-      <SectionMain>
-        <SectionTitleLineWithButton icon={mdiServerNetwork} title="SSH Terminal" main />
-        <div className="grid gap-6">
-          <CardBox>
-            <Formik
-              initialValues={{
-                host: '',
-                username: '',
-                userpassword: '',
-                port: 22,
-              }}
-              onSubmit={handleConnection}
-            >
-              <Form className="flex flex-col">
-                <div className="p-4">
-                  <FormField
-                    label="Host"
-                    help="Enter the host address."
-                    labelFor="host"
-                    icons={[mdiServerNetwork]}
-                  >
-                    <Field
-                      name="host"
-                      id="host"
-                      placeholder="Enter host address..."
-                      className="w-full p-2 border rounded"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Username"
-                    help="Enter the SSH username."
-                    labelFor="username"
-                    icons={[mdiServerNetwork]}
-                  >
-                    <Field
-                      name="username"
-                      id="username"
-                      placeholder="Enter username..."
-                      className="w-full p-2 border rounded"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Password"
-                    help="Enter the SSH password."
-                    labelFor="userpassword"
-                    icons={[mdiServerNetwork]}
-                  >
-                    <Field
-                      name="userpassword"
-                      id="userpassword"
-                      type="password"
-                      placeholder="Enter password..."
-                      className="w-full p-2 border rounded"
-                    />
-                  </FormField>
-
-                  <FormField
-                    label="Port"
-                    help="Enter the SSH port (default: 22)."
-                    labelFor="port"
-                    icons={[mdiServerNetwork]}
-                  >
-                    <Field
-                      name="port"
-                      id="port"
-                      type="number"
-                      placeholder="22"
-                      className="w-full p-2 border rounded"
-                    />
-                  </FormField>
-
-                  <div className="p-4 border-t">
-                    <Button 
-                      color="info" 
-                      type="submit"
-                      label="Connect" 
-                      icon={mdiSend}
-                    />
-                  </div>
-                </div>
-              </Form>
-            </Formik>
-          </CardBox>
-        </div>
-      </SectionMain>
-
-      <form ref={formRef} style={{ display: 'none' }}>
-        <input type="hidden" name="username" />
-        <input type="hidden" name="userpassword" />
-        <input type="hidden" name="port" />
-      </form>
-    </>
-  );
-};
-
-TerminalPage.getLayout = function getLayout(page: ReactElement) {
-  return <LayoutAuthenticated>{page}</LayoutAuthenticated>;
-};
-
-export default TerminalPage;
+  
+  SSHPage.getLayout = function getLayout(page: ReactElement) {
+    return <LayoutAuthenticated>{page}</LayoutAuthenticated>;
+  };
+  
+  export default SSHPage;
+  
+  // Next.js API route to handle the POST request
+  export async function handler(req, res) {
+    if (req.method === 'POST') {
+      const { username, userpassword, host, port } = req.body;
+      const url = `http://${req.headers.host.split(':')[0]}:2222/ssh/host/${host}?username=${username}&password=${userpassword}&port=${port}`;
+      res.status(200).json({ url });
+    } else {
+      res.status(405).json({ message: 'Method not allowed' });
+    }
+  }
+  
