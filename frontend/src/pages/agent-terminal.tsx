@@ -102,11 +102,11 @@ import {
     return (
       <>
         <Head>
-          <title>{getPageTitle('SSH Terminal')}</title>
+          <title>{getPageTitle('Agent Terminal')}</title>
         </Head>
   
         <SectionMain>
-          <SectionTitleLineWithButton icon={mdiServerNetwork} title="SSH Terminal" main />
+          <SectionTitleLineWithButton icon={mdiServerNetwork} title="Agent Terminal" main />
           <div className="grid gap-6">
             <CardBox>
               {loading && <p>Loading agents...</p>}

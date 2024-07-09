@@ -52,6 +52,12 @@ const menuAside: MenuAsideItem[] = [
         icon: mdiViewListOutline,
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
       },
+      {
+        href: '/agent-terminal',
+        label: 'Remote Terminal',
+        icon: mdiConsole,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
     ],
     roles: ['user', 'admin'], // 모든 사용자 접근 가능
   },
@@ -82,12 +88,6 @@ const menuAside: MenuAsideItem[] = [
         href: '/tools-translate',
         label: 'Translator',
         icon: mdiTranslate,
-        roles: ['user', 'admin'], // 모든 사용자 접근 가능
-      },
-      {
-        href: '/tools-terminal',
-        label: 'Remote Terminal',
-        icon: mdiConsole,
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
       },
     ],
