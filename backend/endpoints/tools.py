@@ -16,6 +16,7 @@ from utils.parser_file_text import (
     create_translated_word,
     Document
 )
+from utils.langchain_coder import generate_code_stream_chunked
 
 UPLOAD_FOLDER = 'uploads'
 TRANSLATED_FOLDER = 'translated'
@@ -49,6 +50,28 @@ def translate_socket(ws):
             ws.send(json.dumps({"translated_text": chunk}))
     except Exception as e:
         logging.error(f"Error during translation: {e}")
+        ws.send(json.dumps({"error": str(e)}))
+    finally:
+        logging.info("WebSocket connection closed.")
+
+@sock.route('/ws/generate-code')
+def generate_code_socket(ws):
+    logging.info("WebSocket connection opened.")
+    data = ws.receive()
+
+    data = json.loads(data)
+    description = data.get('description')
+    language = data.get('language')
+
+    if not description or not language:
+        ws.send(json.dumps({"error": "Description and language are required"}))
+        return
+    
+    try:
+        for chunk in generate_code_stream_chunked(description, language):
+            ws.send(json.dumps({"code_chunk": chunk}))
+    except Exception as e:
+        logging.error(f"Error during code generation: {e}")
         ws.send(json.dumps({"error": str(e)}))
     finally:
         logging.info("WebSocket connection closed.")
