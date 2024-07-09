@@ -31,6 +31,20 @@ code_template = ChatPromptTemplate.from_messages([
     ("user", "Description: {description}\nLanguage: {language}")
 ])
 
+# Define the prompt template for code explanation
+explanation_template = ChatPromptTemplate.from_messages([
+    ("system", """
+    You are a highly skilled software developer. Your task is to explain the provided code in detail.
+    The explanation should be clear and concise, providing insights into the code's functionality and structure.
+    
+    * You Must Respond Only With The Explanation *
+     
+    ## Response Example
+    ...Explanation Text.. 
+    """),
+    ("user", "Code: {code}\nLanguage: {language}")
+])
+
 # Define the output parser
 parser = StrOutputParser()
 
@@ -102,8 +116,9 @@ def split_text_into_chunks_with_newlines(text, chunk_size=500):
                 chunks.append(' '.join(current_chunk))
                 current_chunk = [word]
                 current_length = len(word) + 1
-        current_chunk.append('\n')
-        current_length += 1
+        chunks.append(' '.join(current_chunk))
+        current_chunk = []
+        current_length = 0
 
     if current_chunk:
         chunks.append(' '.join(current_chunk).strip())
@@ -111,7 +126,7 @@ def split_text_into_chunks_with_newlines(text, chunk_size=500):
     return chunks
 
 def extract_script_from_response(response_text: str, language: str) -> str:
-    pattern = f"```{language}\s(.*?)\s```"
+    pattern = f"```{language}\n(.*?)\n```"
     match = re.search(pattern, response_text, re.DOTALL)
     
     if match:
@@ -141,7 +156,7 @@ def generate_code_stream_chunked(description: str, language: str):
 
                 for stream_chunk in stream:
                     if hasattr(stream_chunk, 'content'):
-                        script = extract_script_from_response(stream_chunk.content, language)
+                        script = stream_chunk.content.strip().replace(f"```{language}\n", "").replace("\n```", "")
                         yield script
                     else:
                         logging.error("Chunk does not have content attribute: {}".format(stream_chunk))
@@ -155,3 +170,15 @@ def generate_code_stream_chunked(description: str, language: str):
                     time.sleep(sleep_time)
                 else:
                     logging.error("Max retries reached. Skipping this chunk.")
+
+def explain_code(code: str, language: str) -> str:
+    llm = get_llm()
+    if not llm:
+        raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
+
+    prompt = explanation_template.invoke({"code": code, "language": language})
+    response = llm.invoke(prompt.to_messages())
+    explanation = parser.invoke(response).strip()
+    logging.info(f"Code Explanation: {explanation}")
+
+    return explanation

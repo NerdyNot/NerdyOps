@@ -21,6 +21,7 @@ import {
   
   const CodeGeneratorPage = () => {
     const [codeResult, setCodeResult] = useState<string>('');
+    const [codeExplanation, setCodeExplanation] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const ws = useRef<WebSocket | null>(null);
     const codeResultRef = useRef<HTMLPreElement | null>(null);
@@ -40,7 +41,6 @@ import {
         codeResultRef.current.style.height = 'auto';
         codeResultRef.current.style.height = `${codeResultRef.current.scrollHeight}px`;
         codeResultRef.current.scrollTop = codeResultRef.current.scrollHeight;
-        hljs.highlightElement(codeResultRef.current);
       }
     }, [codeResult]);
   
@@ -49,6 +49,7 @@ import {
       language: string;
     }) => {
       setCodeResult('');
+      setCodeExplanation('');
       setLoading(true);
   
       const wsUrl = `/api/ws/generate-code`;
@@ -67,7 +68,7 @@ import {
       ws.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.code_chunk) {
-          setCodeResult((prev) => prev + data.code_chunk);
+          setCodeResult((prev) => prev + data.code_chunk + '\n');
         } else if (data.error) {
           console.error('Code generation error:', data.error);
         }
@@ -76,7 +77,21 @@ import {
       ws.current.onclose = () => {
         console.log('WebSocket connection closed');
         setLoading(false);
+        handleCodeExplanation(values.language);
       };
+    };
+  
+    const handleCodeExplanation = async (language: string) => {
+      try {
+        const response = await axios.post('/api/explain-code', {
+          code: codeResult,
+          language,
+        });
+  
+        setCodeExplanation(response.data.explanation);
+      } catch (error) {
+        console.error('Error explaining code:', error);
+      }
     };
   
     const handleReplitExport = async () => {
@@ -194,6 +209,19 @@ import {
                       <div className="w-full p-2 border rounded bg-gray-100" style={{ maxHeight: '300px', overflow: 'auto' }}>
                         <SyntaxHighlighter language="javascript" style={atomDark} ref={codeResultRef}>
                           {codeResult}
+                        </SyntaxHighlighter>
+                      </div>
+                    </FormField>
+  
+                    <FormField
+                      label="Code Explanation"
+                      help="The explanation for the generated code will appear here."
+                      labelFor="codeExplanation"
+                      icons={[mdiTextBox]}
+                    >
+                      <div className="w-full p-2 border rounded bg-gray-100" style={{ maxHeight: '300px', overflow: 'auto' }}>
+                        <SyntaxHighlighter language="plaintext" style={atomDark}>
+                          {codeExplanation}
                         </SyntaxHighlighter>
                       </div>
                     </FormField>

@@ -16,7 +16,7 @@ from utils.parser_file_text import (
     create_translated_word,
     Document
 )
-from utils.langchain_coder import generate_code_stream_chunked
+from utils.langchain_coder import generate_code_stream_chunked, explain_code
 
 UPLOAD_FOLDER = 'uploads'
 TRANSLATED_FOLDER = 'translated'
@@ -75,6 +75,22 @@ def generate_code_socket(ws):
         ws.send(json.dumps({"error": str(e)}))
     finally:
         logging.info("WebSocket connection closed.")
+
+@tools_bp.route('/explain-code', methods=['POST'])
+def explain_code_endpoint():
+    data = request.json
+    code = data.get('code')
+    language = data.get('language')
+
+    if not code or not language:
+        return jsonify({"error": "Code and language are required"}), 400
+
+    try:
+        explanation = explain_code(code, language)
+        return jsonify({"explanation": explanation}), 200
+    except Exception as e:
+        logging.error(f"Error during code explanation: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @tools_bp.route('/translate-upload', methods=['POST'])
 def translate_upload():
