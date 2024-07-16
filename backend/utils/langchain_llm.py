@@ -11,7 +11,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_community.cache import RedisCache, RedisSemanticCache
 from langchain.globals import set_llm_cache
 from utils.db import get_api_key
-from utils.redis_connection import get_redis_connection
+from utils.redis_connection import get_redis_connection, get_redis_url
 
 class LLMManager:
     _instance = None
@@ -110,7 +110,8 @@ class LLMManager:
             return
 
     def _initialize_cache(self):
-        redis_conn, redis_url = get_redis_connection()
+        redis_conn = get_redis_connection()
+        redis_url = get_redis_url()
         if self.embedding:
             set_llm_cache(RedisSemanticCache(redis_url=redis_url, embedding=self.embedding))
             logging.info("Semantic Redis Cache configured successfully")

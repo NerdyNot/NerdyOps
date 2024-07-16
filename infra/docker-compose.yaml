@@ -38,8 +38,6 @@ services:
     image: redis/redis-stack-server:latest
     container_name: NerdyOps-Redis
     restart: always
-    ports:
-      - "6379:6379"
 
   webssh2:
     build:
