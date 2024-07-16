@@ -47,7 +47,13 @@ interpret_template = ChatPromptTemplate.from_messages([
 # Define the output parser
 parser = StrOutputParser()
 
+_llm_instance = None
+
 def get_llm():
+    global _llm_instance
+    if _llm_instance is not None:
+        return _llm_instance
+    
     llm_config = get_api_key('llm')
     if not llm_config:
         logging.warning("LLM configuration not found. Please set the configuration using the admin settings page.")
@@ -96,6 +102,7 @@ def get_llm():
 
     set_llm_cache(RedisCache(redis_conn))
     logging.info("Redis Cache configured successfully")
+    _llm_instance = llm
     return llm
 
 def extract_script_from_response(response_text: str, os_type: str) -> str:

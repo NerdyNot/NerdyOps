@@ -4,9 +4,6 @@ import random
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from utils.langchain_integration import get_llm
-from utils.redis_connection import get_redis_connection
-
-redis_conn = get_redis_connection()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -115,7 +112,7 @@ def translate_text_stream_chunked(text: str, target_language: str, purpose: str)
                 logging.error(f"Error during translation chunk: {e}")
                 retries -= 1
                 if retries > 0:
-                    sleep_time = random.uniform(1, 3)  # 1~3초 사이 랜덤 지연
+                    sleep_time = random.uniform(1, 3)
                     logging.info(f"Retrying in {sleep_time:.2f} seconds...")
                     time.sleep(sleep_time)
                 else:
