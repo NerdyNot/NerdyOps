@@ -12,6 +12,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import VertexAIModelGarden
 from langchain_anthropic import ChatAnthropic
+from langchain.cache import RedisCache
+from langchain.globals import set_llm_cache
 from utils.db import get_api_key, get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
 
@@ -57,9 +59,10 @@ def get_llm():
     model = config.get('model', 'gpt-4o')
     temperature = config.get('temperature', 0)
     
+    llm = None
     if provider == 'openai':
         os.environ["OPENAI_API_KEY"] = api_key
-        return ChatOpenAI(model=model, temperature=temperature)
+        llm = ChatOpenAI(model=model, temperature=temperature)
     elif provider == 'azure':
         azure_config = config.get('azure', {})
         endpoint = azure_config.get('endpoint', '')
@@ -71,7 +74,7 @@ def get_llm():
             return None
         logging.warning("Azure OpenAI configuration - API Version: %s, Endpoint: %s, API Key: %s",
                         api_version, endpoint, os.environ["AZURE_OPENAI_API_KEY"])
-        return AzureChatOpenAI(
+        llm = AzureChatOpenAI(
             azure_deployment=deployment_name,
             openai_api_version=api_version,
             temperature=temperature,
@@ -79,16 +82,22 @@ def get_llm():
         )
     elif provider == 'gemini':
         os.environ["GOOGLE_API_KEY"] = api_key
-        return ChatGoogleGenerativeAI(model=model, temperature=temperature)
+        llm = ChatGoogleGenerativeAI(model=model, temperature=temperature)
     elif provider == 'vertexai':
         os.environ["GOOGLE_API_KEY"] = api_key
-        return VertexAIModelGarden(model=model, temperature=temperature)
+        llm = VertexAIModelGarden(model=model, temperature=temperature)
     elif provider == 'anthropic':
         os.environ["ANTHROPIC_API_KEY"] = api_key
-        return ChatAnthropic(model=model, temperature=temperature)
+        llm = ChatAnthropic(model=model, temperature=temperature)
     else:
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
+
+    # Configure Redis Cache
+    redis_client = get_redis_connection()
+    set_llm_cache(RedisCache(redis_client))
+
+    return llm
 
 def extract_script_from_response(response_text: str, os_type: str) -> str:
     if os_type.lower() == 'windows':
