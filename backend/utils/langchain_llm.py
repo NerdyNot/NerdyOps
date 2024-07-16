@@ -82,17 +82,6 @@ class LLMManager:
         api_key = config.get('api_key')
         model = config.get('model', 'text-embedding-ada-002')
 
-    def _initialize_embedding(self):
-        embedding_config = get_api_key('embedding')
-        if not embedding_config:
-            logging.warning("Embedding configuration not found. Please set the configuration using the admin settings page.")
-            return
-    
-        config = json.loads(embedding_config)
-        provider = config.get('provider')
-        api_key = config.get('api_key')
-        model = config.get('model', 'text-embedding-ada-002')
-    
         if provider == 'openai':
             os.environ["OPENAI_API_KEY"] = api_key
             self.embedding = OpenAIEmbeddings(model=model)
