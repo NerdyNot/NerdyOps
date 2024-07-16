@@ -12,7 +12,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import VertexAIModelGarden
 from langchain_anthropic import ChatAnthropic
-from langchain.cache import RedisCache
+from langchain_community.cache import RedisCache
 from langchain.globals import set_llm_cache
 from utils.db import get_api_key, get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
