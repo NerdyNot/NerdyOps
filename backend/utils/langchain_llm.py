@@ -82,6 +82,17 @@ class LLMManager:
         api_key = config.get('api_key')
         model = config.get('model', 'text-embedding-ada-002')
 
+    def _initialize_embedding(self):
+        embedding_config = get_api_key('embedding')
+        if not embedding_config:
+            logging.warning("Embedding configuration not found. Please set the configuration using the admin settings page.")
+            return
+    
+        config = json.loads(embedding_config)
+        provider = config.get('provider')
+        api_key = config.get('api_key')
+        model = config.get('model', 'text-embedding-ada-002')
+    
         if provider == 'openai':
             os.environ["OPENAI_API_KEY"] = api_key
             self.embedding = OpenAIEmbeddings(model=model)
@@ -94,6 +105,8 @@ class LLMManager:
             if not endpoint or not deployment_name:
                 logging.error("Azure endpoint or deployment name is not set")
                 return
+            logging.warning("Azure OpenAI configuration - API Version: %s, Endpoint: %s, API Key: %s",
+                            api_version, endpoint, os.environ["AZURE_OPENAI_API_KEY"])
             self.embedding = AzureOpenAIEmbeddings(
                 azure_deployment=deployment_name,
                 openai_api_version=api_version,
