@@ -1,7 +1,6 @@
 import logging
 import time
 import random
-from langchain.chains import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from utils.langchain_integration import get_llm
@@ -69,17 +68,14 @@ def translate_text_chunked(text: str, target_language: str, purpose: str):
     translated_chunks = []
 
     for chunk in chunks:
-        prompt_value = translate_template.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
-        # Create chain
-        chain = RunnablePassthrough(prompt_value, llm)
+        messages = translate_template.format_messages(text=chunk, target_language=target_language, purpose=purpose)
+        # Create chain using | operator
+        chain = translate_template | llm | parser
         # Execute chain
-        response = chain.invoke()
+        response = chain.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
         logging.info(f"LLM Translation Response: {response}")
 
-        translated_text = parser.invoke(response).strip()
-        logging.info(f"Translated Text: {translated_text}")
-
-        translated_chunks.append(translated_text)
+        translated_chunks.append(response)
 
     # Join translated chunks
     full_translated_text = ' '.join(translated_chunks)
@@ -87,8 +83,7 @@ def translate_text_chunked(text: str, target_language: str, purpose: str):
 
     return full_translated_text
 
-
-def translate_text_stream_chunked(text: str, target_language: str, purpose: str):
+async def translate_text_stream_chunked(text: str, target_language: str, purpose: str):
     llm = get_llm()
     if not llm:
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
@@ -96,18 +91,16 @@ def translate_text_stream_chunked(text: str, target_language: str, purpose: str)
     chunks = split_text_into_chunks_with_newlines(text)
 
     for chunk in chunks:
-        prompt_value = translate_template.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
-        # Create chain
-        chain = RunnablePassthrough(prompt_value, llm)
+        messages = translate_template.format_messages(text=chunk, target_language=target_language, purpose=purpose)
+        # Create chain using | operator
+        chain = translate_template | llm | parser
 
         success = False
         retries = 3
         while not success and retries > 0:
             try:
                 # Use the chain to stream the response
-                stream = chain.stream()
-
-                for stream_chunk in stream:
+                async for stream_chunk in chain.astream({"text": chunk, "target_language": target_language, "purpose": purpose}):
                     if hasattr(stream_chunk, 'content'):
                         yield stream_chunk.content
                     else:
@@ -119,6 +112,6 @@ def translate_text_stream_chunked(text: str, target_language: str, purpose: str)
                 if retries > 0:
                     sleep_time = random.uniform(1, 3)  # 1~3초 사이 랜덤 지연
                     logging.info(f"Retrying in {sleep_time:.2f} seconds...")
-                    time.sleep(sleep_time)
+                    await asyncio.sleep(sleep_time)
                 else:
                     logging.error("Max retries reached. Skipping this chunk.")
