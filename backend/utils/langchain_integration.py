@@ -17,7 +17,6 @@ from langchain.globals import set_llm_cache
 from utils.db import get_api_key, get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 
 redis_conn = get_redis_connection()
@@ -94,7 +93,7 @@ def get_llm():
         return None
 
     # Configure Redis Cache
-    redis_client = get_redis_connection()
+    redis_client = redis_conn()
     set_llm_cache(RedisCache(redis_client))
 
     return llm
