@@ -94,18 +94,7 @@ def get_llm():
         return None
 
 
-    class PrefixedRedisCache(RedisCache):
-        def __init__(self, redis_, prefix='', ttl=None):
-            super().__init__(redis_, ttl)
-            self.prefix = prefix
-
-        def _key(self, prompt: str, llm_string: str) -> str:
-            base_key = super()._key(prompt, llm_string)
-            return f"{self.prefix}:{base_key}"
-
-    cache = PrefixedRedisCache(redis_conn, prefix='llm_cache')
-
-    set_llm_cache(cache)
+    set_llm_cache(RedisCache(redis_conn))
     logging.info("Redis Cache configured successfully")
     return llm
 
