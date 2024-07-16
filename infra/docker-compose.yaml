@@ -35,9 +35,11 @@ services:
       - mysql-data:/var/lib/mysql
 
   redis:
-    image: redis:latest
+    image: redis/redis-stack-server:latest
     container_name: NerdyOps-Redis
     restart: always
+    ports:
+      - "6379:6379"
 
   webssh2:
     build:
