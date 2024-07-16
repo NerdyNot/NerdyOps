@@ -35,7 +35,7 @@ def init_db():
                     last_update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-            
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     user_id TEXT PRIMARY KEY,
@@ -45,7 +45,7 @@ def init_db():
                     role TEXT
                 )
             ''')
-            
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS user_pats (
                     pat_id TEXT PRIMARY KEY,
@@ -56,7 +56,7 @@ def init_db():
                     FOREIGN KEY (user_id) REFERENCES users (username)
                 )
             ''')
-            
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS api_keys (
                     key_name TEXT PRIMARY KEY,
@@ -102,6 +102,21 @@ def init_db():
                     FOREIGN KEY (agent_id) REFERENCES agents(agent_id)
                 )
             ''')
+
+            # Add the datastore table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS datastore (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    host TEXT NOT NULL,
+                    port INTEGER NOT NULL,
+                    username TEXT,
+                    password TEXT,
+                    database TEXT
+                )
+            ''')
+        
         elif DB_TYPE == 'mysql':
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS agents (
@@ -114,7 +129,7 @@ def init_db():
                     last_update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-            
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     user_id VARCHAR(255) PRIMARY KEY,
@@ -124,7 +139,7 @@ def init_db():
                     role VARCHAR(255)
                 )
             ''')
-            
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS user_pats (
                     pat_id VARCHAR(255) PRIMARY KEY,
@@ -135,7 +150,7 @@ def init_db():
                     FOREIGN KEY (user_id) REFERENCES users (username)
                 )
             ''')
-            
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS api_keys (
                     key_name VARCHAR(255) PRIMARY KEY,
@@ -182,6 +197,19 @@ def init_db():
                 )
             ''')
 
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS datastore (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    type VARCHAR(255) NOT NULL,
+                    name VARCHAR(255) NOT NULL,
+                    host VARCHAR(255) NOT NULL,
+                    port INT NOT NULL,
+                    username VARCHAR(255),
+                    password VARCHAR(255),
+                    database VARCHAR(255)
+                )
+            ''')
+
         # Check if the admin user already exists
         query = 'SELECT * FROM users WHERE username = %s' if DB_TYPE == 'mysql' else 'SELECT * FROM users WHERE username = ?'
         cursor.execute(query, ('admin',))
@@ -209,7 +237,7 @@ def init_db():
             llm_config = {
                 'provider': 'openai',  # Default provider
                 'api_key': 'your_openai_api_key',
-                'model': 'gpt-4o',  # Default model
+                'model': 'gpt-4',  # Default model
                 'temperature': 0.7,  # Default temperature
                 'azure': {
                     'api_version': '2023-12-01-preview',
@@ -283,3 +311,48 @@ def get_api_key(key_name):
         return row['key_value']
     else:
         return ""  # Return an empty string if the API key is not found
+
+# Functions to manage datastore information
+def add_datastore(datastore):
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = '''
+            INSERT INTO datastore (type, name, host, port, username, password, database)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ''' if DB_TYPE == 'mysql' else '''
+            INSERT INTO datastore (type, name, host, port, username, password, database)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        '''
+        cursor.execute(query, (datastore['type'], datastore['name'], datastore['host'], datastore['port'],
+                               datastore['username'], datastore['password'], datastore['database']))
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_datastore(name):
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = 'SELECT * FROM datastore WHERE name = %s' if DB_TYPE == 'mysql' else 'SELECT * FROM datastore WHERE name = ?'
+        cursor.execute(query, (name,))
+        row = cursor.fetchone()
+    finally:
+        conn.close()
+
+    if row:
+        return dict(row)
+    else:
+        return None
+
+def get_all_datastores():
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = 'SELECT * FROM datastore'
+        cursor.execute(query)
+        rows = cursor.fetchall()
+    finally:
+        conn.close()
+
+    return [dict(row) for row in rows]
