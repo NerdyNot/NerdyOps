@@ -94,8 +94,9 @@ def get_llm():
 
     # Configure Redis Cache
     redis_client = get_redis_connection()
+    logging.info("Setting up Redis Cache")
     set_llm_cache(RedisCache(redis_client))
-
+    logging.info("Redis Cache configured successfully")
     return llm
 
 def extract_script_from_response(response_text: str, os_type: str) -> str:
