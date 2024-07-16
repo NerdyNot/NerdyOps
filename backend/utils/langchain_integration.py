@@ -68,17 +68,18 @@ def convert_natural_language_to_script(command_text: str, os_type: str) -> str:
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
 
     if os_type.lower() == 'windows':
-        prompt = powershell_template.format({"command": command_text, "os_type": os_type})
+        prompt = powershell_template
     elif os_type.lower() in ['linux', 'darwin']:
-        prompt = bash_template.format({"command": command_text, "os_type": os_type})
+        prompt = bash_template
     else:
         raise ValueError("Invalid OS type. Please specify 'windows' or 'linux' or 'darwin'.")
 
+    input_data = {"command": command_text, "os_type": os_type}
     chain = prompt | llm
-    response = chain.invoke()
+    response = chain.invoke(input_data)
     logging.info(f"LLM Response: {response}")
 
-    script_code = parser.parse(response)
+    script_code = parser.parse(response.content)
     logging.info(f"Extracted Script Code: {script_code}")
 
     clean_script = extract_script_from_response(script_code, os_type)
@@ -90,13 +91,12 @@ def interpret_result(command_text: str, output: str, error: str) -> str:
     if not llm:
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
     
-    prompt = interpret_template.format({"command_text": command_text, "output": output, "error": error})
-
-    chain = prompt | llm
-    response = chain.invoke()
+    input_data = {"command_text": command_text, "output": output, "error": error}
+    chain = interpret_template | llm
+    response = chain.invoke(input_data)
     logging.info(f"LLM Interpretation Response: {response}")
     
-    summary = parser.parse(response).strip()
+    summary = parser.parse(response.content).strip()
     logging.info(f"LLM Summary: {summary}")
     
     return summary
