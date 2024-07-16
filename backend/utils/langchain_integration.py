@@ -12,7 +12,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import VertexAIModelGarden
 from langchain_anthropic import ChatAnthropic
-from langchain.cache import RedisCache
+from langchain import RedisCache
 from langchain.globals import set_llm_cache
 from utils.db import get_api_key, get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
@@ -92,7 +92,7 @@ def get_llm():
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
 
-    set_llm_cache(RedisCache(redis_=redis_conn))
+    set_llm_cache(RedisCache(redis_conn))
     logging.info("Redis Cache configured successfully")
     return llm
 
