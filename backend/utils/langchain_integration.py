@@ -93,9 +93,19 @@ def get_llm():
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
 
-    redis_client = Redis(host='NerdyOps-Redis', port=6379, db=0)
 
-    set_llm_cache(RedisCache(redis_=redis_client))
+    class PrefixedRedisCache(RedisCache):
+        def __init__(self, redis_, prefix='', ttl=None):
+            super().__init__(redis_, ttl)
+            self.prefix = prefix
+
+        def _key(self, prompt: str, llm_string: str) -> str:
+            base_key = super()._key(prompt, llm_string)
+            return f"{self.prefix}:{base_key}"
+
+    cache = PrefixedRedisCache(redis_conn, prefix='llm_cache')
+
+    set_llm_cache(cache)
     logging.info("Redis Cache configured successfully")
     return llm
 
