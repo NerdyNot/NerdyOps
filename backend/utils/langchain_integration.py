@@ -93,7 +93,7 @@ def get_llm():
         return None
 
     # Configure Redis Cache
-    redis_client = redis_conn()
+    redis_client = get_redis_connection()
     set_llm_cache(RedisCache(redis_client))
 
     return llm
