@@ -45,7 +45,7 @@ class LLMManager:
             azure_config = config.get('azure', {})
             endpoint = azure_config.get('endpoint', '')
             api_version = azure_config.get('api_version', '2024-05-01-preview')
-            deployment_name = azure_config.get('deployment', 'gpt-4o')
+            deployment_name = config.get('model', 'gpt-4o')
             os.environ["AZURE_OPENAI_API_KEY"] = api_key
             if not endpoint or not deployment_name:
                 logging.error("Azure endpoint or deployment name is not set")
@@ -89,7 +89,7 @@ class LLMManager:
             azure_config = config.get('azure', {})
             endpoint = azure_config.get('endpoint', '')
             api_version = azure_config.get('api_version', '2024-05-01-preview')
-            deployment_name = azure_config.get('deployment', 'embedding-ada-002')
+            deployment_name = config.get('model', 'text-embedding-ada-002')
             os.environ["AZURE_OPENAI_API_KEY"] = api_key
             if not endpoint or not deployment_name:
                 logging.error("Azure endpoint or deployment name is not set")
