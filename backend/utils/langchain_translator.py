@@ -4,14 +4,7 @@ import random
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from utils.langchain_llm import get_llm
-from langchain.cache import RedisCache
-from langchain.globals import set_llm_cache
-from utils.redis_connection import get_redis_connection
 
-redis_conn = get_redis_connection()
-set_llm_cache(RedisCache(redis_conn))
-
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 
 # Define the prompt template for translation

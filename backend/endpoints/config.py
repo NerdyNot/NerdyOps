@@ -240,3 +240,66 @@ def get_llm_config():
         return jsonify({"llmConfig": json.loads(row['key_value'])}), 200
     else:
         return jsonify({"message": "LLM configuration not found"}), 404
+
+# Embedding configuration endpoints
+@config_bp.route('/set-embedding-config', methods=['POST'])
+def set_embedding_config():
+    data = request.json
+    provider = data.get('provider')
+    api_key = data.get('apiKey')
+    model = data.get('model')
+    azure_api_version = data.get('azureApiVersion')
+    azure_endpoint = data.get('azureEndpoint')
+    azure_api_key = data.get('azureApiKey')
+
+    if not provider or not api_key:
+        return jsonify({"message": "Provider and API key are required"}), 400
+
+    embedding_config = {
+        'provider': provider,
+        'api_key': api_key,
+        'model': model,
+        'azure': {
+            'api_version': azure_api_version,
+            'endpoint': azure_endpoint,
+            'api_key': azure_api_key
+        } if provider == 'azure' else None
+    }
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = '''
+        INSERT INTO api_keys (key_name, key_value)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)
+    ''' if DB_TYPE == 'mysql' else '''
+        INSERT INTO api_keys (key_name, key_value)
+        VALUES (?, ?)
+        ON CONFLICT(key_name)
+        DO UPDATE SET key_value = excluded.key_value
+    '''
+    cursor.execute(query, ('embedding', json.dumps(embedding_config)))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Embedding configuration saved successfully!"}), 200
+
+@config_bp.route('/get-embedding-config', methods=['GET'])
+def get_embedding_config():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = 'SELECT key_value FROM api_keys WHERE key_name = %s' if DB_TYPE == 'mysql' else 'SELECT key_value FROM api_keys WHERE key_name = ?'
+    cursor.execute(query, ('embedding',))
+    row = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if row:
+        return jsonify({"embeddingConfig": json.loads(row['key_value'])}), 200
+    else:
+        return jsonify({"message": "Embedding configuration not found"}), 404

@@ -8,15 +8,9 @@ import time
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from utils.langchain_llm import get_llm
-from langchain.cache import RedisCache
-from langchain.globals import set_llm_cache
 from utils.db import get_db_connection, DB_TYPE
-from utils.redis_connection import get_redis_connection
 
 logging.basicConfig(level=logging.INFO)
-
-redis_conn = get_redis_connection()
-set_llm_cache(RedisCache(redis_conn))
 
 # Define the prompt templates for different types of scripts
 bash_template = ChatPromptTemplate.from_messages([

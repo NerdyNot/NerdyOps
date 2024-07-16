@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, ReactElement } from 'react';
 import axios from 'axios';
 import withAuth from '../utils/withAuth';
 import LayoutAuthenticated from '../layouts/Authenticated';
@@ -25,13 +25,23 @@ const RedisLlmPage: React.FC = () => {
     azureEndpoint: '',
     azureApiKey: ''
   });
+  const [embeddingConfig, setEmbeddingConfig] = useState({
+    provider: '',
+    apiKey: '',
+    model: '',
+    azureApiVersion: '',
+    azureEndpoint: '',
+    azureApiKey: ''
+  });
   const [message, setMessage] = useState('');
+  const [embeddingMessage, setEmbeddingMessage] = useState('');
   const token = Cookies.get('token');
   const router = useRouter();
 
   useEffect(() => {
     fetchRedisConfig();
     fetchLlmConfig();
+    fetchEmbeddingConfig();
   }, []);
 
   const fetchRedisConfig = async () => {
@@ -79,6 +89,27 @@ const RedisLlmPage: React.FC = () => {
     }
   };
 
+  const fetchEmbeddingConfig = async () => {
+    try {
+      const response = await axios.get('/api/get-embedding-config', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = response.data.embeddingConfig;
+      setEmbeddingConfig({
+        provider: data.provider || '',
+        apiKey: data.api_key || '',
+        model: data.model || '',
+        azureApiVersion: data.azure?.api_version || '',
+        azureEndpoint: data.azure?.endpoint || '',
+        azureApiKey: data.azure?.api_key || '',
+      });
+    } catch (error) {
+      console.error('Error fetching embedding configuration:', error);
+    }
+  };
+
   const handleSaveRedisConfig = async () => {
     try {
       await axios.post('/api/set-redis-config', newRedisConfig, {
@@ -109,9 +140,28 @@ const RedisLlmPage: React.FC = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleSaveEmbeddingConfig = async () => {
+    try {
+      await axios.post('/api/set-embedding-config', embeddingConfig, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setEmbeddingMessage('Embedding configuration saved successfully!');
+    } catch (error) {
+      console.error('Error saving embedding configuration:', error);
+      setEmbeddingMessage('Failed to save embedding configuration.');
+    }
+  };
+
+  const handleLlmChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setLlmConfig(prevConfig => ({ ...prevConfig, [name]: value }));
+  };
+
+  const handleEmbeddingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEmbeddingConfig(prevConfig => ({ ...prevConfig, [name]: value }));
   };
 
   const handleSliderChange = (event: any, newValue: number | number[]) => {
@@ -163,7 +213,7 @@ const RedisLlmPage: React.FC = () => {
           <h2 className="text-2xl font-semibold mb-4">LLM Configuration</h2>
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold mb-2">Provider</label>
-            <select name="provider" value={llmConfig.provider} onChange={handleChange} className="border p-2 w-full rounded-md">
+            <select name="provider" value={llmConfig.provider} onChange={handleLlmChange} className="border p-2 w-full rounded-md">
               <option value="">Select Provider</option>
               <option value="openai">OpenAI</option>
               <option value="azure">Azure OpenAI</option>
@@ -179,7 +229,7 @@ const RedisLlmPage: React.FC = () => {
               name="apiKey"
               placeholder="Enter API Key"
               value={llmConfig.apiKey}
-              onChange={handleChange}
+              onChange={handleLlmChange}
               className="border p-2 w-full rounded-md"
             />
           </div>
@@ -192,7 +242,7 @@ const RedisLlmPage: React.FC = () => {
                   name="azureApiVersion"
                   placeholder="Enter Azure API Version"
                   value={llmConfig.azureApiVersion}
-                  onChange={handleChange}
+                  onChange={handleLlmChange}
                   className="border p-2 w-full rounded-md"
                 />
               </div>
@@ -203,7 +253,7 @@ const RedisLlmPage: React.FC = () => {
                   name="azureEndpoint"
                   placeholder="Enter Azure Endpoint"
                   value={llmConfig.azureEndpoint}
-                  onChange={handleChange}
+                  onChange={handleLlmChange}
                   className="border p-2 w-full rounded-md"
                 />
               </div>
@@ -214,7 +264,7 @@ const RedisLlmPage: React.FC = () => {
                   name="azureApiKey"
                   placeholder="Enter Azure API Key"
                   value={llmConfig.azureApiKey}
-                  onChange={handleChange}
+                  onChange={handleLlmChange}
                   className="border p-2 w-full rounded-md"
                 />
               </div>
@@ -227,7 +277,7 @@ const RedisLlmPage: React.FC = () => {
               name="model"
               placeholder="Enter Model Name"
               value={llmConfig.model}
-              onChange={handleChange}
+              onChange={handleLlmChange}
               className="border p-2 w-full rounded-md"
             />
           </div>
@@ -249,6 +299,82 @@ const RedisLlmPage: React.FC = () => {
           </div>
           <Button label="Save LLM Configuration" onClick={handleSaveLlmConfig} color="primary" />
           {message && <p>{message}</p>}
+        </div>
+
+        <SectionTitleLineWithButton icon={mdiCogOutline} title="Embedding Configuration" main />
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Embedding Configuration</h2>
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">Provider</label>
+            <select name="provider" value={embeddingConfig.provider} onChange={handleEmbeddingChange} className="border p-2 w-full rounded-md">
+              <option value="">Select Provider</option>
+              <option value="openai">OpenAI</option>
+              <option value="azure">Azure OpenAI</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="vertexai">Vertex AI</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">API Key</label>
+            <input
+              type="password"
+              name="apiKey"
+              placeholder="Enter API Key"
+              value={embeddingConfig.apiKey}
+              onChange={handleEmbeddingChange}
+              className="border p-2 w-full rounded-md"
+            />
+          </div>
+          {embeddingConfig.provider === 'azure' && (
+            <>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-semibold mb-2">Azure API Version</label>
+                <input
+                  type="text"
+                  name="azureApiVersion"
+                  placeholder="Enter Azure API Version"
+                  value={embeddingConfig.azureApiVersion}
+                  onChange={handleEmbeddingChange}
+                  className="border p-2 w-full rounded-md"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-semibold mb-2">Azure Endpoint</label>
+                <input
+                  type="text"
+                  name="azureEndpoint"
+                  placeholder="Enter Azure Endpoint"
+                  value={embeddingConfig.azureEndpoint}
+                  onChange={handleEmbeddingChange}
+                  className="border p-2 w-full rounded-md"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-semibold mb-2">Azure API Key</label>
+                <input
+                  type="password"
+                  name="azureApiKey"
+                  placeholder="Enter Azure API Key"
+                  value={embeddingConfig.azureApiKey}
+                  onChange={handleEmbeddingChange}
+                  className="border p-2 w-full rounded-md"
+                />
+              </div>
+            </>
+          )}
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2">Model</label>
+            <input
+              type="text"
+              name="model"
+              placeholder="Enter Model Name"
+              value={embeddingConfig.model}
+              onChange={handleEmbeddingChange}
+              className="border p-2 w-full rounded-md"
+            />
+          </div>
+          <Button label="Save Embedding Configuration" onClick={handleSaveEmbeddingConfig} color="primary" />
+          {embeddingMessage && <p>{embeddingMessage}</p>}
         </div>
       </SectionMain>
     </>

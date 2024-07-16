@@ -223,6 +223,27 @@ def init_db():
             ''', ('llm', json.dumps(llm_config)))
             conn.commit()
 
+        # Insert or update the embedding configuration if it's empty
+        cursor.execute(query, ('embedding',))
+        embedding_row = cursor.fetchone()
+
+        if not embedding_row or not embedding_row['key_value']:
+            embedding_config = {
+                'provider': 'openai',  # Default provider
+                'api_key': 'your_openai_api_key',
+                'model': 'text-embedding-ada-002',  # Default model
+                'azure': {
+                    'api_version': '2024-05-01-preview',
+                    'endpoint': 'https://your-resource-name.openai.azure.com',
+                    'api_key': 'your_azure_openai_api_key'
+                }
+            }
+            cursor.execute('''
+                INSERT INTO api_keys (key_name, key_value) VALUES (%s, %s)
+                ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)
+            ''', ('embedding', json.dumps(embedding_config)))
+            conn.commit()
+
     finally:
         conn.close()  # Close the connection
 
