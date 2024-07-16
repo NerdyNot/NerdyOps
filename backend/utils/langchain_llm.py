@@ -112,7 +112,7 @@ class LLMManager:
     def _initialize_cache(self):
         redis_conn = get_redis_connection()
         if self.embedding:
-            set_llm_cache(RedisSemanticCache(redis_=redis_conn, embedding=self.embedding))
+            set_llm_cache(RedisSemanticCache(redis_url=redis_conn, embedding=self.embedding))
             logging.info("Semantic Redis Cache configured successfully")
         else:
             set_llm_cache(RedisCache(redis_=redis_conn))
