@@ -16,6 +16,7 @@ from langchain_community.cache import RedisCache, InMemoryCache
 from langchain.globals import set_llm_cache
 from utils.db import get_api_key, get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
+from redis import Redis
 
 logging.basicConfig(level=logging.INFO)
 
@@ -92,8 +93,9 @@ def get_llm():
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
 
-    #set_llm_cache(RedisCache(redis_=redis_conn))
-    set_llm_cache(InMemoryCache())
+    redis_client = Redis(host='NerdyOps-Redis', port=6379, db=0)
+
+    set_llm_cache(RedisCache(redis_=redis_client))
     logging.info("Redis Cache configured successfully")
     return llm
 
