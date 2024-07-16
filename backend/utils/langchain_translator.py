@@ -3,7 +3,7 @@ import time
 import random
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from utils.langchain_integration import get_llm
+from utils.langchain_llm import get_llm
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

@@ -5,14 +5,9 @@ import os
 import uuid
 from datetime import datetime
 import time
-from langchain_openai import ChatOpenAI
-from langchain_community.chat_models import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_google_vertexai import VertexAIModelGarden
-from langchain_anthropic import ChatAnthropic
-from langchain_community.cache import RedisCache, InMemoryCache
+from utils.langchain_llm import get_llm
 from langchain.globals import set_llm_cache
 from utils.db import get_api_key, get_db_connection, DB_TYPE
 from utils.redis_connection import get_redis_connection
@@ -46,64 +41,6 @@ interpret_template = ChatPromptTemplate.from_messages([
 
 # Define the output parser
 parser = StrOutputParser()
-
-_llm_instance = None
-
-def get_llm():
-    global _llm_instance
-    if _llm_instance is not None:
-        return _llm_instance
-    
-    llm_config = get_api_key('llm')
-    if not llm_config:
-        logging.warning("LLM configuration not found. Please set the configuration using the admin settings page.")
-        return None
-    
-    config = json.loads(llm_config)
-    provider = config.get('provider')
-    api_key = config.get('api_key')
-    model = config.get('model', 'gpt-4o')
-    temperature = config.get('temperature', 0)
-    
-    llm = None
-    if provider == 'openai':
-        os.environ["OPENAI_API_KEY"] = api_key
-        llm = ChatOpenAI(model=model, temperature=temperature)
-    elif provider == 'azure':
-        azure_config = config.get('azure', {})
-        endpoint = azure_config.get('endpoint', '')
-        api_version = azure_config.get('api_version', '2024-05-01-preview')
-        deployment_name = azure_config.get('deployment', 'gpt-4o')
-        os.environ["AZURE_OPENAI_API_KEY"] = api_key
-        if not endpoint or not deployment_name:
-            logging.error("Azure endpoint or deployment name is not set")
-            return None
-        logging.warning("Azure OpenAI configuration - API Version: %s, Endpoint: %s, API Key: %s",
-                        api_version, endpoint, os.environ["AZURE_OPENAI_API_KEY"])
-        llm = AzureChatOpenAI(
-            azure_deployment=deployment_name,
-            openai_api_version=api_version,
-            temperature=temperature,
-            azure_endpoint=endpoint
-        )
-    elif provider == 'gemini':
-        os.environ["GOOGLE_API_KEY"] = api_key
-        llm = ChatGoogleGenerativeAI(model=model, temperature=temperature)
-    elif provider == 'vertexai':
-        os.environ["GOOGLE_API_KEY"] = api_key
-        llm = VertexAIModelGarden(model=model, temperature=temperature)
-    elif provider == 'anthropic':
-        os.environ["ANTHROPIC_API_KEY"] = api_key
-        llm = ChatAnthropic(model=model, temperature=temperature)
-    else:
-        logging.warning(f"Unsupported LLM provider: {provider}")
-        return None
-
-
-    set_llm_cache(RedisCache(redis_conn))
-    logging.info("Redis Cache configured successfully")
-    _llm_instance = llm
-    return llm
 
 def extract_script_from_response(response_text: str, os_type: str) -> str:
     if os_type.lower() == 'windows':
