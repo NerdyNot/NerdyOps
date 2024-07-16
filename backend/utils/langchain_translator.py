@@ -4,6 +4,10 @@ import random
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from utils.langchain_integration import get_llm
+from langchain.cache import InMemoryCache
+from langchain.globals import set_llm_cache
+
+set_llm_cache(InMemoryCache())
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
