@@ -2,42 +2,39 @@ import json
 import logging
 import time
 import random
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from utils.langchain_llm import get_llm
-
 
 logging.basicConfig(level=logging.INFO)
 
 # Define the prompt template for code generation
-code_template = ChatPromptTemplate.from_messages([
-    ("system", """
-    You are a highly skilled software developer. Your task is to generate code based on the provided description and language.
-    The generated code should be complete, efficient, and follow best practices for the specified programming language.
-    Avoid including any unnecessary comments or explanations.
-    
-    * You Must Respond Only With The Generated Code & Comments*
-     
-    ## Response Example
-    ...Generated Code.. 
-    """),
-    ("user", "Description: {description}\nLanguage: {language}")
-])
+code_template = PromptTemplate.from_template("""
+You are a highly skilled software developer. Your task is to generate code based on the provided description and language.
+The generated code should be complete, efficient, and follow best practices for the specified programming language.
+Avoid including any unnecessary comments or explanations.
+
+* You Must Respond Only With The Generated Code & Comments*
+
+## Response Example
+...Generated Code..
+Description: {description}
+Language: {language}
+""")
 
 # Define the prompt template for code explanation
-explanation_template = ChatPromptTemplate.from_messages([
-    ("system", """
-    You are a highly skilled software developer. Your task is to explain the following code in detail.
-    The explanation should include the purpose of the code, how it works, and any important details or best practices followed.
-    Please respond in the same language as the description provided below.
+explanation_template = PromptTemplate.from_template("""
+You are a highly skilled software developer. Your task is to explain the following code in detail.
+The explanation should include the purpose of the code, how it works, and any important details or best practices followed.
+Please respond in the same language as the description provided below.
 
-    * You Must Respond Only With The Explanation *
-     
-    ## Response Example
-    ...Explanation.. 
-    """),
-    ("user", "Description: {description}\nGenerated Code: {code}")
-])
+* You Must Respond Only With The Explanation *
+
+## Response Example
+...Explanation..
+Description: {description}
+Generated Code: {code}
+""")
 
 # Define the output parser
 parser = StrOutputParser()
@@ -82,13 +79,14 @@ def generate_code_stream_chunked(description: str, language: str):
     chunks = split_text_into_chunks_with_newlines(description)
     
     for chunk in chunks:
-        prompt = code_template.invoke({"description": chunk, "language": language})
+        input_data = {"description": chunk, "language": language}
+        chain = code_template | llm
 
         success = False
         retries = 3
         while not success and retries > 0:
             try:
-                stream = llm.stream(prompt.to_messages())
+                stream = chain.invoke(input_data)
 
                 for stream_chunk in stream:
                     if hasattr(stream_chunk, 'content'):
@@ -112,13 +110,14 @@ def generate_code_explanation_stream_chunked(description: str, code: str):
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
 
     # Create prompt for code explanation
-    prompt = explanation_template.invoke({"description": description, "code": code})
+    input_data = {"description": description, "code": code}
+    chain = explanation_template | llm
 
     success = False
     retries = 3
     while not success and retries > 0:
         try:
-            stream = llm.stream(prompt.to_messages())
+            stream = chain.invoke(input_data)
 
             for stream_chunk in stream:
                 if hasattr(stream_chunk, 'content'):
