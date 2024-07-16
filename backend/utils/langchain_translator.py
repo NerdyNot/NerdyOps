@@ -3,6 +3,7 @@ import time
 import random
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain.chains import LLMChain
 from utils.langchain_integration import get_llm
 
 # Set up logging
@@ -69,18 +70,16 @@ def translate_text_chunked(text: str, target_language: str, purpose: str):
 
     for chunk in chunks:
         prompt = translate_template.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
-        response = llm.invoke(prompt.to_messages())
+        # Create chain
+        chain = LLMChain(prompt=prompt, llm=llm)
+        # Execute chain
+        response = chain.invoke()
         logging.info(f"LLM Translation Response: {response}")
 
         translated_text = parser.invoke(response).strip()
         logging.info(f"Translated Text: {translated_text}")
 
-        # Extract the translated text
-        translated_text_start = translated_text.find("Translated Text:") + len("Translated Text:")
-        translated_text_end = translated_text.find("...", translated_text_start)
-        actual_translated_text = translated_text[translated_text_start:translated_text_end].strip()
-
-        translated_chunks.append(actual_translated_text)
+        translated_chunks.append(translated_text)
 
     # Join translated chunks
     full_translated_text = ' '.join(translated_chunks)
@@ -98,12 +97,15 @@ def translate_text_stream_chunked(text: str, target_language: str, purpose: str)
 
     for chunk in chunks:
         prompt = translate_template.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
+        # Create chain
+        chain = LLMChain(prompt=prompt, llm=llm)
 
         success = False
         retries = 3
         while not success and retries > 0:
             try:
-                stream = llm.stream(prompt.to_messages())
+                # Use the chain to stream the response
+                stream = chain.stream()
 
                 for stream_chunk in stream:
                     if hasattr(stream_chunk, 'content'):
