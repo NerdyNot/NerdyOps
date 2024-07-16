@@ -4,9 +4,14 @@ import time
 import random
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from utils.langchain_integration import get_llm
+from utils.langchain_llm import get_llm
+from langchain.cache import RedisCache
+from langchain.globals import set_llm_cache
+from utils.redis_connection import get_redis_connection
 
-# Set up logging
+redis_conn = get_redis_connection()
+set_llm_cache(RedisCache(redis_conn))
+
 logging.basicConfig(level=logging.INFO)
 
 # Define the prompt template for code generation

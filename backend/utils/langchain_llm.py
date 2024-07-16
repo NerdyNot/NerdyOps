@@ -6,10 +6,7 @@ from langchain_community.chat_models import AzureChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import VertexAIModelGarden
 from langchain_anthropic import ChatAnthropic
-from langchain_community.cache import RedisCache
-from langchain.globals import set_llm_cache
 from utils.db import get_api_key
-from utils.redis_connection import get_redis_connection
 
 class LLMManager:
     _instance = None
@@ -65,11 +62,6 @@ class LLMManager:
         else:
             logging.warning(f"지원되지 않는 LLM 제공자: {provider}")
             return
-
-        # 전역 캐시 설정
-        redis_conn = get_redis_connection()
-        set_llm_cache(RedisCache(redis_conn))
-        logging.info("Redis 캐시가 성공적으로 설정되었습니다.")
 
     def get_llm(self):
         return self.llm
