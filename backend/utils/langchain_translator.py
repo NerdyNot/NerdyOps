@@ -4,8 +4,11 @@ import random
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from utils.langchain_integration import get_llm
-from langchain.cache import InMemoryCache
+from langchain.cache import InMemoryCache, RedisCache
 from langchain.globals import set_llm_cache
+from utils.redis_connection import get_redis_connection
+
+redis_conn = get_redis_connection()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -56,7 +59,7 @@ def split_text_into_chunks_with_newlines(text, chunk_size=500):
 
 def translate_text_chunked(text: str, target_language: str, purpose: str):
     llm = get_llm()
-    set_llm_cache(InMemoryCache())
+    set_llm_cache(RedisCache(redis_conn))
     if not llm:
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
 
@@ -87,7 +90,7 @@ def translate_text_chunked(text: str, target_language: str, purpose: str):
 
 def translate_text_stream_chunked(text: str, target_language: str, purpose: str):
     llm = get_llm()
-    set_llm_cache(InMemoryCache())
+    set_llm_cache(RedisCache(redis_conn))
     if not llm:
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
 
