@@ -92,7 +92,7 @@ def get_llm():
         logging.warning(f"Unsupported LLM provider: {provider}")
         return None
 
-    set_llm_cache(RedisCache(redis_conn))
+    set_llm_cache(RedisCache(redis_=redis_conn))
     logging.info("Redis Cache configured successfully")
     return llm
 
