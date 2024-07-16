@@ -3,7 +3,6 @@ import time
 import random
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain.chains import LLMChain
 from utils.langchain_integration import get_llm
 
 # Set up logging
@@ -71,7 +70,7 @@ def translate_text_chunked(text: str, target_language: str, purpose: str):
     for chunk in chunks:
         prompt = translate_template.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
         # Create chain
-        chain = LLMChain(prompt=prompt, llm=llm)
+        chain = prompt | llm
         # Execute chain
         response = chain.invoke()
         logging.info(f"LLM Translation Response: {response}")
@@ -98,7 +97,7 @@ def translate_text_stream_chunked(text: str, target_language: str, purpose: str)
     for chunk in chunks:
         prompt = translate_template.invoke({"text": chunk, "target_language": target_language, "purpose": purpose})
         # Create chain
-        chain = LLMChain(prompt=prompt, llm=llm)
+        chain = prompt | llm
 
         success = False
         retries = 3
