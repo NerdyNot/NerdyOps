@@ -138,6 +138,12 @@ const CodeGenerationPage = () => {
                       <option value="powershell">Powershell</option>
                       <option value="sql">SQL</option>
                       <option value="python">Python</option>
+                      <option value="powershell">Terraform</option>
+                      <option value="powershell">Helm Template</option>
+                      <option value="powershell">Ansible Playbook</option>
+                      <option value="powershell">Dockerfile</option>
+                      <option value="powershell">docker-compose YAML</option>
+                      <option value="powershell">Kubernetes YAML</option>
                       <option value="html">HTML</option>
                       <option value="javascript">JavaScript</option>
                       <option value="typescript">TypeScript</option>
