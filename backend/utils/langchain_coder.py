@@ -86,7 +86,8 @@ def generate_code_stream_chunked(description: str, language: str):
         retries = 3
         while not success and retries > 0:
             try:
-                stream = chain.invoke(input_data)
+                # Use the chain to stream the response
+                stream = chain.stream(input_data)
 
                 for stream_chunk in stream:
                     if hasattr(stream_chunk, 'content'):
@@ -117,7 +118,8 @@ def generate_code_explanation_stream_chunked(description: str, code: str):
     retries = 3
     while not success and retries > 0:
         try:
-            stream = chain.invoke(input_data)
+            # Use the chain to stream the response
+            stream = chain.stream(input_data)
 
             for stream_chunk in stream:
                 if hasattr(stream_chunk, 'content'):
