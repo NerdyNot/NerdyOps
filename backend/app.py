@@ -12,6 +12,10 @@ app = Flask(__name__)
 sock = Sock(app)
 CORS(app)
 
+def create_app():
+    sock.init_app(app)
+    return app
+
 db_initialized = False
 
 if not os.path.exists('downloads'):
@@ -34,16 +38,14 @@ def ping():
 
 # Blueprint registrations and other setup
 def register_blueprints(app):
-    from utils.redis_connection import get_redis_connection
-    redis = get_redis_connection()
-
     from endpoints.auth import auth_bp
     from endpoints.tasks import tasks_bp
     from endpoints.monitoring import monitoring_bp
     from endpoints.pat import pat_bp
     from endpoints.agent import agent_bp
     from endpoints.config import config_bp
-    from endpoints.tools import tools_bp, sock
+    from endpoints.tools import tools_bp
+    from endpoints.tools_ragchat import tools_ragchat_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(tasks_bp)
@@ -52,7 +54,9 @@ def register_blueprints(app):
     app.register_blueprint(agent_bp)
     app.register_blueprint(config_bp)
     app.register_blueprint(tools_bp)
+    app.register_blueprint(tools_ragchat_bp)
     sock.init_app(app)
+
 
 register_blueprints(app)
 

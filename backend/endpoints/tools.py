@@ -3,7 +3,7 @@ import uuid
 import json
 import logging
 from flask import Blueprint, request, jsonify, send_file
-from flask_sock import Sock
+from app import sock
 from werkzeug.utils import secure_filename
 from utils.langchain_translator import translate_text_stream_chunked
 from utils.parser_file_text import (
@@ -28,7 +28,6 @@ if not os.path.exists(TRANSLATED_FOLDER):
     os.makedirs(TRANSLATED_FOLDER)
 
 tools_bp = Blueprint('tools', __name__)
-sock = Sock()
 logging.basicConfig(level=logging.INFO)
 
 @sock.route('/ws/translate')

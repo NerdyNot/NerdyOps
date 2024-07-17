@@ -4,6 +4,53 @@ from utils.slack_integration import save_slack_service_hook
 
 config_bp = Blueprint('config_bp', __name__)
 
+@config_bp.route('/get-all-api-keys', methods=['GET'])
+def get_all_api_keys():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = 'SELECT key_name, key_value FROM api_keys'
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    api_keys = [{'key_name': row['key_name'], 'key_value': row['key_value']} for row in rows]
+
+    return jsonify({"apiKeys": api_keys}), 200
+
+@config_bp.route('/set-all-api-keys', methods=['POST'])
+def set_all_api_keys():
+    data = request.json
+    api_keys = data.get('apiKeys')
+
+    if not api_keys:
+        return jsonify({"message": "API keys are required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = '''
+        INSERT INTO api_keys (key_name, key_value)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)
+    ''' if DB_TYPE == 'mysql' else '''
+        INSERT INTO api_keys (key_name, key_value)
+        VALUES (?, ?)
+        ON CONFLICT(key_name)
+        DO UPDATE SET key_value = excluded.key_value
+    '''
+    for api_key in api_keys:
+        cursor.execute(query, (api_key['key_name'], api_key['key_value']))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "API keys saved successfully!"}), 200
+
+
 @config_bp.route('/set-api-key', methods=['POST'])
 def set_api_key():
     data = request.json

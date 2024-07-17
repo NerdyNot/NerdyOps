@@ -5,6 +5,7 @@ langchain-google-vertexai==1.0.6
 langchain-anthropic==0.1.19
 langchain-experimental==0.0.61
 langchain-community==0.2.5
+langchain-google-community
 flask==3.0.3
 flask-sock==0.7.0
 redis==5.0.6
@@ -19,3 +20,4 @@ PyPDF2==3.0.1
 python-docx==1.1.2
 pypandoc==1.13
 reportlab==4.2.2
+langchain-google-community

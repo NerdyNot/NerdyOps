@@ -15,7 +15,8 @@ import {
   mdiTranslate,
   mdiConsole,
   mdiCodeGreaterThan,
-  mdiChat
+  mdiChat,
+  mdiKey
 } from '@mdi/js';
 import { MenuAsideItem } from './interfaces';
 
@@ -127,6 +128,12 @@ const menuAside: MenuAsideItem[] = [
         href: '/admin-noti',
         label: 'Notification Management',
         icon: mdiBellOutline,
+        roles: ['admin'],
+      },
+      {
+        href: '/admin-apikey',
+        label: 'API Key Management',
+        icon: mdiKey,
         roles: ['admin'],
       },
     ],
