@@ -99,7 +99,7 @@ const menuAside: MenuAsideItem[] = [
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
       },
       {
-        href: '/tools-ragcjat',
+        href: '/tools-ragchat',
         label: 'RAG Chat',
         icon: mdiChat,
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
