@@ -15,6 +15,7 @@ import {
   mdiTranslate,
   mdiConsole,
   mdiCodeGreaterThan,
+  mdiChat
 } from '@mdi/js';
 import { MenuAsideItem } from './interfaces';
 
@@ -95,6 +96,12 @@ const menuAside: MenuAsideItem[] = [
         href: '/tools-coder',
         label: 'Coder',
         icon: mdiCodeGreaterThan,
+        roles: ['user', 'admin'], // 모든 사용자 접근 가능
+      },
+      {
+        href: '/tools-ragcjat',
+        label: 'RAG Chat',
+        icon: mdiChat,
         roles: ['user', 'admin'], // 모든 사용자 접근 가능
       },
     ],

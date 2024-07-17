@@ -113,7 +113,7 @@ class LLMManager:
 
     def _initialize_cache(self):
         redis_conn = get_redis_connection()
-        set_llm_cache(RedisCache(redis_=redis_conn))
+        set_llm_cache(RedisCache(redis_=redis_conn, ttl=120))
         logging.info("Standard Redis Cache configured successfully")
 
     def get_llm(self):
