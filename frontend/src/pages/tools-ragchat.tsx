@@ -41,6 +41,10 @@ const ChatbotPage = () => {
   }, [chatMessages, currentMessage]);
 
   const handleSendMessage = async (values: { message: string }, { resetForm }: any) => {
+    if (ws.current) {
+      ws.current.close();
+    }
+
     setLoading(true);
     setChatMessages((prev) => [...prev, { user: true, text: values.message }]);
     setCurrentMessage(''); // 현재 메시지 초기화
