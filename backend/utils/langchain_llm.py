@@ -1,9 +1,7 @@
 import json
 import logging
 import os
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.chat_models import AzureChatOpenAI
-from langchain_community.embeddings import AzureOpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings, AzureChatOpenAI, AzureOpenAIEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_google_vertexai import VertexAIModelGarden
 from langchain_google_vertexai.embeddings import VertexAIEmbeddings
