@@ -46,7 +46,6 @@ Thought: {agent_scratchpad}
 
 prompt = PromptTemplate.from_template(template)
 
-embedding = get_embedding()
 
 # Function to load webpage content
 def load_webpage(url: str) -> List[str]:
@@ -58,6 +57,8 @@ def load_webpage(url: str) -> List[str]:
     return cleaned_docs
 
 def load_and_retrieve(url: str, query: str):
+    embedding = get_embedding()
+
     docs = load_webpage(url)
     documents = RecursiveCharacterTextSplitter(
         chunk_size=1000, chunk_overlap=200
@@ -77,8 +78,8 @@ def create_google_search_wrapper():
     os.environ["GOOGLE_API_KEY"] = get_api_key('GOOGLE_SEARCH_KEY') or 'default_search_key'
     return GoogleSearchAPIWrapper()
 
-# Function to create agent executor
-def create_agent_executor():
+# Combined function for agent creation and WebSocket handling
+def handle_chat_websocket(ws, query):
     googlesearch = create_google_search_wrapper()
     search_tool = GoogleSearchResults(api_wrapper=googlesearch, num_results=4)
 
@@ -95,7 +96,6 @@ def create_agent_executor():
         func=load_and_retrieve,
     )
 
-
     tools = [search_tool_def, web_loader_tool]
 
     # Create LLM model using get_llm function
@@ -103,7 +103,7 @@ def create_agent_executor():
 
     # Create the agent
     search_agent = create_react_agent(llm, tools, prompt)
-    return AgentExecutor(
+    agent_executor = AgentExecutor(
         agent=search_agent,
         tools=tools,
         verbose=True,
@@ -112,10 +112,6 @@ def create_agent_executor():
         max_iterations=5  # Limit the number of iterations to 5
     )
 
-# Function to handle chat WebSocket
-def handle_chat_websocket(ws, query):
-    agent_executor = create_agent_executor()  # Create agent executor when a request is made
-    
     # Perform agent execution without streaming
     response = agent_executor({"input": query})
     logging.info(response)    
