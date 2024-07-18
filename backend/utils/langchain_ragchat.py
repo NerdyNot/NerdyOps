@@ -55,13 +55,13 @@ def load_webpage(url: str) -> List[str]:
     return cleaned_docs
 
 # Function to load and retrieve content
-def load_and_retrieve(url: str):
+def load_and_retrieve(url: str, query: str):
     docs = load_webpage(url)
     documents = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200).split_documents(docs)
     vector = FAISS.from_documents(documents, get_embedding())
     retriever = vector.as_retriever()
     retriever_tool = create_retriever_tool(retriever, "dynamic_search", "Search within dynamically loaded web content.")
-    return retriever_tool
+    return retriever_tool.func(query)
 
 # Function to create Google Search API Wrapper
 def create_google_search_wrapper():
