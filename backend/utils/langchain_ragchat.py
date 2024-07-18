@@ -24,14 +24,14 @@ template = '''**Instructions:**
 
 Use the following format:
 
-  Question: The input question to be answered
-  Thought: Always think about what needs to be done
-  Action: The action to be taken, must be one of [{tool_names}]
-  Action Input: The input for the action
-  Observation: The result of the action
-  ... (This thought/action/action input/observation can be repeated 2 times)
-  Thought: Now I know the final answer
-  Final Answer: Write Only the final answer to the original input question in the same language, including the source links used from the tools.
+Question: {input}
+Thought: {agent_scratchpad}
+Action: The action to be taken, must be one of [{tool_names}]
+Action Input: The input for the action
+Observation: The result of the action
+... (This thought/action/action input/observation can be repeated 2 times)
+Thought: Now I know the final answer
+Final Answer: Write Only the final answer to the original input question in the same language, including the source links used from the tools.
 
 Tool Usage Guidelines:
 - Use the Google search tool to find information if the answer is expected to be simple or if you need to gather general information quickly. When using the search tool, refine the search terms to display more specific information.
