@@ -21,7 +21,13 @@ def handle_chat_websocket(ws, query):
         loader = WebBaseLoader([url])
         loader.requests_kwargs = {'verify': False}
         docs = loader.load()
-        cleaned_docs = [doc.page_content.replace('\n', ' ').replace('\t', ' ') for doc in docs]
+        
+        # Check if docs is a list of strings or list of document objects
+        if all(isinstance(doc, str) for doc in docs):
+            cleaned_docs = [doc.replace('\n', ' ').replace('\t', ' ') for doc in docs]
+        else:
+            cleaned_docs = [doc.page_content.replace('\n', ' ').replace('\t', ' ') for doc in docs]
+        
         return cleaned_docs
 
     # Function to load and retrieve content
