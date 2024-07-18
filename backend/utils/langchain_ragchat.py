@@ -1,4 +1,10 @@
-from langchain_core.prompts import PromptTemplate
+import logging
+import json
+import os
+import random
+import time
+from typing import List
+from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_google_community import GoogleSearchResults, GoogleSearchAPIWrapper
 from langchain.agents import AgentExecutor, create_react_agent, Tool
 from langchain_community.document_loaders import WebBaseLoader
@@ -9,15 +15,80 @@ from langchain.schema import Document
 from utils.langchain_llm import get_llm, get_embedding
 from utils.db import get_api_key
 
-import logging
-import json
-import os
-from typing import List
-
 logging.basicConfig(level=logging.INFO)
 
+# Function to handle non-RAG chat and stream the response via WebSocket
+def handle_non_rag_chat(ws, query: str):
+
+    # Define the prompt template for handling non-RAG chat
+    template = ChatPromptTemplate.from_template("""
+    You are a highly knowledgeable assistant. Your task is to provide a detailed answer to the user's question.
+    Please respond thoroughly and accurately.
+
+    Question: {input}
+    """)
+
+    # Function to split text into chunks
+    def split_text_into_chunks_with_newlines(text, chunk_size=100):
+        chunks = []
+        current_chunk = []
+        current_length = 0
+
+        lines = text.split('\n')
+        for line in lines:
+            words = line.split(' ')
+            for word in words:
+                if current_length + len(word) + 1 <= chunk_size:
+                    current_chunk.append(word)
+                    current_length += len(word) + 1
+                else:
+                    chunks.append(' '.join(current_chunk))
+                    current_chunk = [word]
+                    current_length = len(word) + 1
+            current_chunk.append('\n')
+            current_length += 1
+
+        if current_chunk:
+            chunks.append(' '.join(current_chunk).strip())
+
+        return chunks
+
+    llm = get_llm()
+    if not llm:
+        raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
+
+    # Split query into manageable chunks
+    chunks = split_text_into_chunks_with_newlines(query)
+
+    for chunk in chunks:
+        input_data = {"input": chunk}
+        chain = template | llm
+
+        success = False
+        retries = 3
+        while not success and retries > 0:
+            try:
+                # Use the chain to stream the response
+                stream = chain.stream(input_data)
+
+                for stream_chunk in stream:
+                    if hasattr(stream_chunk, 'content'):
+                        ws.send(json.dumps({"output": stream_chunk.content}))
+                    else:
+                        logging.error("Chunk does not have content attribute: {}".format(stream_chunk))
+                success = True
+            except Exception as e:
+                logging.error(f"Error during chat response chunk: {e}")
+                retries -= 1
+                if retries > 0:
+                    sleep_time = random.uniform(1, 3)
+                    logging.info(f"Retrying in {sleep_time:.2f} seconds...")
+                    time.sleep(sleep_time)
+                else:
+                    logging.error("Max retries reached. Skipping this chunk.")
+
 # Combined function for agent creation and WebSocket handling
-def handle_chat_websocket(ws, query):
+def handle_rag_chat(ws, query):
     # Function to load webpage content
     def load_webpage(url: str) -> List[str]:
         loader = WebBaseLoader([url])
@@ -82,7 +153,7 @@ Tool Usage Guidelines:
 - If the answer requires the latest data (e.g., today's weather, news), perform a search.
 - If a link is directly provided or if the content cannot be summarized solely from search results, use the WebLoader.
 - For all other basic responses, provide answers using the LLM itself.
-- When referencing the web, include the link in the final answer as [reference link](url).
+- When referencing the web, include the link in the final answer as **[Ref](url)**.
 
 Get started!
 

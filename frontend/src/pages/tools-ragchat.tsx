@@ -1,6 +1,8 @@
 import {
   mdiChat,
   mdiSend,
+  mdiToggleSwitch,
+  mdiToggleSwitchOff,
 } from '@mdi/js';
 import { Formik, Form, Field } from 'formik';
 import Head from 'next/head';
@@ -19,6 +21,7 @@ import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 const ChatbotPage = () => {
   const [chatMessages, setChatMessages] = useState<{ user: boolean; text: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isRagEnabled, setIsRagEnabled] = useState<boolean>(false); // RAG 상태 추가
   const ws = useRef<WebSocket | null>(null);
   const chatBoxRef = useRef<HTMLDivElement | null>(null);
 
@@ -36,7 +39,7 @@ const ChatbotPage = () => {
     }
   }, [chatMessages]);
 
-  const handleSendMessage = async (values: { message: string }) => {
+  const handleSendMessage = async (values: { message: string }, { resetForm }: any) => {
     setLoading(true);
     setChatMessages((prev) => [...prev, { user: true, text: values.message }]);
 
@@ -45,7 +48,7 @@ const ChatbotPage = () => {
 
     ws.current.onopen = () => {
       console.log('WebSocket connection opened');
-      ws.current?.send(JSON.stringify(values));
+      ws.current?.send(JSON.stringify({ ...values, isRagEnabled })); // RAG 상태와 함께 메시지 전송
     };
 
     ws.current.onerror = (error) => {
@@ -57,12 +60,20 @@ const ChatbotPage = () => {
       const data = JSON.parse(event.data);
       setChatMessages((prev) => [...prev, { user: false, text: data.output }]);
       setLoading(false);
+      resetForm();
     };
 
     ws.current.onclose = () => {
       console.log('WebSocket connection closed');
       setLoading(false);
     };
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>, handleSubmit: () => void) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSubmit();
+    }
   };
 
   return (
@@ -73,6 +84,14 @@ const ChatbotPage = () => {
 
       <SectionMain>
         <SectionTitleLineWithButton icon={mdiChat} title="RAG Chat" main />
+        <div className="flex justify-end mb-4">
+          <Button
+            icon={isRagEnabled ? mdiToggleSwitch : mdiToggleSwitchOff}
+            label={`RAG ${isRagEnabled ? 'Enabled' : 'Disabled'}`}
+            color={isRagEnabled ? 'success' : 'secondary'}
+            onClick={() => setIsRagEnabled(!isRagEnabled)}
+          />
+        </div>
         <div className="flex flex-col h-full">
           <CardBox className="flex-grow flex flex-col h-full">
             <div className="flex-grow overflow-auto p-4" ref={chatBoxRef}>
@@ -87,6 +106,7 @@ const ChatbotPage = () => {
                   <ReactMarkdown
                     children={message.text}
                     components={{
+                      a: ({ ...props }) => <a style={{ fontWeight: 'bold' }} {...props} />,
                       code({ node, inline, className, children, ...props }) {
                         const match = /language-(\w+)/.exec(className || '');
                         return !inline && match ? (
@@ -112,23 +132,26 @@ const ChatbotPage = () => {
               initialValues={{ message: '' }}
               onSubmit={handleSendMessage}
             >
-              <Form className="flex p-4 border-t">
-                <Field
-                  name="message"
-                  id="message"
-                  placeholder="Enter message..."
-                  className="flex-grow p-2 border rounded mr-2"
-                  as="textarea"
-                  rows={1}
-                />
-                <Button
-                  color="info"
-                  type="submit"
-                  label={loading ? 'Sending...' : 'Send'}
-                  icon={mdiSend}
-                  disabled={loading}
-                />
-              </Form>
+              {({ handleSubmit }) => (
+                <Form className="flex p-4 border-t">
+                  <Field
+                    name="message"
+                    id="message"
+                    placeholder="Enter message..."
+                    className="flex-grow p-2 border rounded mr-2"
+                    as="textarea"
+                    rows={1}
+                    onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => handleKeyDown(e, handleSubmit)}
+                  />
+                  <Button
+                    color="info"
+                    type="submit"
+                    label={loading ? 'Sending...' : 'Send'}
+                    icon={mdiSend}
+                    disabled={loading}
+                  />
+                </Form>
+              )}
             </Formik>
           </CardBox>
         </div>
