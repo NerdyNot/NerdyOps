@@ -15,17 +15,24 @@ from langchain.schema import Document
 from utils.langchain_llm import get_llm, get_embedding
 from utils.db import get_api_key
 
+# Import Redis Chat Message History
+from langchain_community.chat_message_histories import RedisChatMessageHistory
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from utils.redis_connection import get_redis_url
+
 logging.basicConfig(level=logging.INFO)
 
+# Get Redis URL from utils.redis_connection
+REDIS_URL = get_redis_url()
+
 # Function to handle non-RAG chat and stream the response via WebSocket
-def handle_non_rag_chat(ws, query: str):
+def handle_non_rag_chat(ws, query: str, session_id: str):
 
     # Define the prompt template for handling non-RAG chat
     template = ChatPromptTemplate.from_template("""
     You are a highly knowledgeable assistant. Your task is to provide a detailed answer to the user's question.
     Please respond thoroughly and accurately.
-                                                
-    **The response should be in the same language that the user used to ask the question.**
 
     Question: {input}
     """)
@@ -59,19 +66,40 @@ def handle_non_rag_chat(ws, query: str):
     if not llm:
         raise ValueError("LLM configuration not set. Please set the configuration using the admin settings page.")
 
+    # Set up the prompt with chat history
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You're an assistant."),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "{question}"),
+        ]
+    )
+
+    chain = prompt | llm
+
+    chain_with_history = RunnableWithMessageHistory(
+        chain,
+        lambda session_id: RedisChatMessageHistory(
+            session_id, url=REDIS_URL
+        ),
+        input_messages_key="question",
+        history_messages_key="history",
+    )
+
+    config = {"configurable": {"session_id": session_id}}
+
     # Split query into manageable chunks
     chunks = split_text_into_chunks_with_newlines(query)
 
     for chunk in chunks:
-        input_data = {"input": chunk}
-        chain = template | llm
-
+        input_data = {"question": chunk}
+        
         success = False
         retries = 3
         while not success and retries > 0:
             try:
                 # Use the chain to stream the response
-                stream = chain.stream(input_data)
+                stream = chain_with_history.stream(input_data, config=config)
 
                 for stream_chunk in stream:
                     if hasattr(stream_chunk, 'content'):
@@ -90,7 +118,7 @@ def handle_non_rag_chat(ws, query: str):
                     logging.error("Max retries reached. Skipping this chunk.")
 
 # Combined function for agent creation and WebSocket handling
-def handle_rag_chat(ws, query):
+def handle_rag_chat(ws, query, session_id):
     # Function to load webpage content
     def load_webpage(url: str) -> List[str]:
         loader = WebBaseLoader([url])
@@ -155,7 +183,7 @@ Tool Usage Guidelines:
 - If the answer requires the latest data (e.g., today's weather, news), perform a search.
 - If a link is directly provided or if the content cannot be summarized solely from search results, use the WebLoader.
 - For all other basic responses, provide answers using the LLM itself.
-- When referencing the web, include the link in the final answer as **[reference link name](url)**\n**[reference link name](url)**...
+- When referencing the web, include the link in the final answer as **[Ref](url)**.
 
 Get started!
 
@@ -176,9 +204,20 @@ Thought: {agent_scratchpad}
         handle_parsing_errors=True,
         max_iterations=5
     )
-    
+
+    chain_with_history = RunnableWithMessageHistory(
+        agent_executor,
+        lambda session_id: RedisChatMessageHistory(
+            session_id, url=REDIS_URL
+        ),
+        input_messages_key="input",
+        history_messages_key="history",
+    )
+
+    config = {"configurable": {"session_id": session_id}}
+
     # Perform agent execution without streaming
-    response = agent_executor({"input": query})
+    response = chain_with_history.invoke({"input": query}, config=config)
     logging.info(response["output"])
     if ws:
         ws.send(json.dumps({"output": response["output"]}))

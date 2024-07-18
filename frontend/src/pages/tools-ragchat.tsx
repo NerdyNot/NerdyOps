@@ -17,6 +17,7 @@ import { getPageTitle } from '../config';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { v4 as uuidv4 } from 'uuid';  // Import UUID library
 
 const ChatbotPage = () => {
   const [chatMessages, setChatMessages] = useState<{ user: boolean; text: string, temp: boolean }[]>([]);
@@ -24,7 +25,9 @@ const ChatbotPage = () => {
   const [isRagEnabled, setIsRagEnabled] = useState<boolean>(false);
   const ws = useRef<WebSocket | null>(null);
   const chatBoxRef = useRef<HTMLDivElement | null>(null);
+  const [sessionId] = useState<string>(uuidv4());  // Generate a unique session ID
 
+  // Cleanup WebSocket connection on component unmount
   useEffect(() => {
     return () => {
       if (ws.current) {
@@ -33,6 +36,7 @@ const ChatbotPage = () => {
     };
   }, []);
 
+  // Scroll chat box to the bottom when chatMessages change
   useEffect(() => {
     if (chatBoxRef.current) {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
@@ -48,7 +52,7 @@ const ChatbotPage = () => {
 
     ws.current.onopen = () => {
       console.log('WebSocket connection opened');
-      ws.current?.send(JSON.stringify({ ...values, isRagEnabled }));
+      ws.current?.send(JSON.stringify({ ...values, isRagEnabled, session_id: sessionId }));
     };
 
     ws.current.onerror = (error) => {

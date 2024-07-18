@@ -14,17 +14,22 @@ def chat_socket(ws):
 
     data = json.loads(data)
     query = data.get('message')
-    is_rag_enabled = data.get('isRagEnabled', False)  # RAG 상태 확인
+    session_id = data.get('session_id')  # Check for session ID
+    is_rag_enabled = data.get('isRagEnabled', False)  # Check RAG status
 
     if not query:
         ws.send(json.dumps({"error": "Query is required"}))
         return
 
+    if not session_id:
+        ws.send(json.dumps({"error": "Session ID is required"}))
+        return
+
     try:
         if is_rag_enabled:
-            handle_rag_chat(ws, query)
+            handle_rag_chat(ws, query, session_id)
         else:
-            handle_non_rag_chat(ws, query)
+            handle_non_rag_chat(ws, query, session_id)
     except Exception as e:
         logging.error(f"Error during chat processing: {e}")
         ws.send(json.dumps({"error": str(e)}))
