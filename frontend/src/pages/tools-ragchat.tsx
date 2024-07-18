@@ -68,11 +68,11 @@ const ChatbotPage = () => {
   return (
     <>
       <Head>
-        <title>{getPageTitle('Chatbot')}</title>
+        <title>{getPageTitle('RAG Chat')}</title>
       </Head>
 
       <SectionMain>
-        <SectionTitleLineWithButton icon={mdiChat} title="Chatbot" main />
+        <SectionTitleLineWithButton icon={mdiChat} title="RAG Chat" main />
         <div className="flex flex-col h-full">
           <CardBox className="flex-grow flex flex-col h-full">
             <div className="flex-grow overflow-auto p-4" ref={chatBoxRef}>
