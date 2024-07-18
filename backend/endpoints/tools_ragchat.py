@@ -2,17 +2,10 @@ import logging
 import json
 from flask import Blueprint
 from app import sock
-from utils.langchain_ragchat import handle_chat_websocket
+from utils.langchain_ragchat import handle_rag_chat, handle_non_rag_chat
 
 tools_ragchat_bp = Blueprint('tools_ragchat', __name__)
 logging.basicConfig(level=logging.INFO)
-
-def handle_non_rag_chat(ws, query):
-    # 여기에 RAG 비활성화 시 사용할 별도 로직을 작성하세요.
-    response = {
-        "output": f"Non-RAG response to query: {query}"
-    }
-    ws.send(json.dumps(response))
 
 @sock.route('/ws/chat')
 def chat_socket(ws):
@@ -29,7 +22,7 @@ def chat_socket(ws):
 
     try:
         if is_rag_enabled:
-            handle_chat_websocket(ws, query)
+            handle_rag_chat(ws, query)
         else:
             handle_non_rag_chat(ws, query)
     except Exception as e:
