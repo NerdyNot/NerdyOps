@@ -24,6 +24,8 @@ def handle_non_rag_chat(ws, query: str):
     template = ChatPromptTemplate.from_template("""
     You are a highly knowledgeable assistant. Your task is to provide a detailed answer to the user's question.
     Please respond thoroughly and accurately.
+                                                
+    **The response should be in the same language that the user used to ask the question.**
 
     Question: {input}
     """)
@@ -153,7 +155,7 @@ Tool Usage Guidelines:
 - If the answer requires the latest data (e.g., today's weather, news), perform a search.
 - If a link is directly provided or if the content cannot be summarized solely from search results, use the WebLoader.
 - For all other basic responses, provide answers using the LLM itself.
-- When referencing the web, include the link in the final answer as **[Ref](url)**.
+- When referencing the web, include the link in the final answer as **[reference link name](url)**\n**[reference link name](url)**...
 
 Get started!
 

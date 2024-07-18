@@ -20,6 +20,5 @@ PyPDF2==3.0.1
 python-docx==1.1.2
 pypandoc==1.13
 reportlab==4.2.2
-langchain-google-community
 faiss-cpu
 bs4
