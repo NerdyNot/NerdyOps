@@ -8,40 +8,42 @@ from langchain_community.tools import GoogleSearchResults
 from langchain_community.utilities import GoogleSearchAPIWrapper
 from langchain.agents import AgentExecutor, create_react_agent, Tool
 from langchain_community.document_loaders import WebBaseLoader
-from utils.langchain_llm import get_llm
+from utils.langchain_llm import get_llm, get_embedding
 from utils.db import get_api_key
 
 logging.basicConfig(level=logging.INFO)
 
 # Define the prompt template for the agent
-template = '''**Instructions:** 
-Do your best to answer the following question. You can use the following tools: {tools} 
-To optimize token usage, the agent logic is executed in English.
-Do not use the tool if a search is unnecessary.
+template = '''**Instructions:**
+- Do your best to answer the following question. You can use the following tools: {tools}
+- To optimize token usage, the agent logic is executed in English.
+- Tasks that do not require searches and can be handled by the LLM itself should not use tools.
 
-Use the following format: 
+Use the following format:
 
-  Question: The input question to be answered 
-  Thought: Always think about what needs to be done 
-  (Optional) Action: The action to be taken, must be one of [{tool_names}] 
-  (Optional) Action Input: The input for the action 
-  (Optional) Observation: The result of the action 
-  ... (This thought/action/action input/observation can be repeated 2 times) 
-  Thought: Now I know the final answer 
-  Final Answer: Write Only the final answer to the original input question in the same language, including the source links used from the tools. 
+  Question: The input question to be answered
+  Thought: Always think about what needs to be done
+  Action: The action to be taken, must be one of [{tool_names}]
+  Action Input: The input for the action
+  Observation: The result of the action
+  ... (This thought/action/action input/observation can be repeated 2 times)
+  Thought: Now I know the final answer
+  Final Answer: Write Only the final answer to the original input question in the same language, including the source links used from the tools.
 
 Tool Usage Guidelines:
 - Use the Google search tool to find information if the answer is expected to be simple or if you need to gather general information quickly. When using the search tool, refine the search terms to display more specific information.
-- Use the WebLoader tool to load content from a provided URL if more detailed or specific information is needed. Respond based on the content. When selecting a URL to apply to the WebLoader tool, choose a URL that includes useful information for the questioner. 
-- If the initial search does not provide useful information, refine the search term and use the search tool again. 
+- Use the WebLoader tool to load content from a provided URL if more detailed or specific information is needed. Respond based on the content. When selecting a URL to apply to the WebLoader tool, choose a URL that includes useful information for the questioner.
+- After using the WebLoader tool, extract the key information from the loaded content to provide a summary. If needed, refine the information using dynamic search.
 
-Get started! 
+Get started!
 
-Question: {input} 
+Question: {input}
 Thought: {agent_scratchpad}
 '''
 
 prompt = PromptTemplate.from_template(template)
+
+embedding = get_embedding()
 
 
 # Function to load webpage content
@@ -97,7 +99,9 @@ def create_agent_executor():
 def handle_chat_websocket(ws, query):
     agent_executor = create_agent_executor()  # Create agent executor when a request is made
     
-    for chunk in agent_executor.stream({"input": query}):
-        ws.send(json.dumps({"output": str(chunk)}))
+    # Perform agent execution without streaming
+    response = agent_executor({"input": query})
+    logging.info(response)    
+    # Send the final response
+    ws.send(json.dumps({"output": response["output"]}))
 
-    logging.info("---")
