@@ -3,8 +3,7 @@ import json
 import os
 from typing import List
 from langchain_core.prompts import PromptTemplate
-from langchain_google_community import GoogleSearchResults
-from langchain_community.utilities import GoogleSearchAPIWrapper
+from langchain_google_community import GoogleSearchResults, GoogleSearchAPIWrapper
 from langchain.agents import AgentExecutor, create_react_agent, Tool
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -44,7 +43,7 @@ def handle_chat_websocket(ws, query):
     search_tool = GoogleSearchResults(api_wrapper=googlesearch, num_results=4)
 
     # Tool definitions
-    web_loader_tool = Tool(name="WebLoader", description="Load webpage content from a URL and use retriever to search within it.", func=load_and_retrieve)
+    web_loader_tool = Tool(name="WebLoader", description="Load webpage content from a URL and use retriever to search within it.", func=lambda url: load_and_retrieve(url, query))
 
     tools = [search_tool, web_loader_tool]
 
