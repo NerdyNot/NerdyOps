@@ -1,5 +1,4 @@
 import logging
-import asyncio
 import json
 import os
 from typing import List
@@ -8,11 +7,11 @@ from langchain_community.tools import GoogleSearchResults
 from langchain_community.utilities import GoogleSearchAPIWrapper
 from langchain.agents import AgentExecutor, create_react_agent, Tool
 from langchain_community.document_loaders import WebBaseLoader
-from utils.langchain_llm import get_llm, get_embedding
-from utils.db import get_api_key
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.tools.retriever import create_retriever_tool
+from utils.langchain_llm import get_llm, get_embedding
+from utils.db import get_api_key
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,11 +19,12 @@ logging.basicConfig(level=logging.INFO)
 template = '''**Instructions:**
 - Do your best to answer the following question. You can use the following tools: {tools}
 - To optimize token usage, the agent logic is executed in English.
+- The final answer must be translated to match the questioner's language. Make sure to translate only the final answer.
 - Tasks that do not require searches and can be handled by the LLM itself should not use tools.
 
 Use the following format:
 
-Question: {input}
+Question: The input question to be answered
 Thought: {agent_scratchpad}
 Action: The action to be taken, must be one of [{tool_names}]
 Action Input: The input for the action
@@ -46,33 +46,24 @@ Thought: {agent_scratchpad}
 
 prompt = PromptTemplate.from_template(template)
 
-
 # Function to load webpage content
 def load_webpage(url: str) -> List[str]:
     loader = WebBaseLoader([url])
     loader.requests_kwargs = {'verify': False}
     docs = loader.load()
-    # Remove \n and \t from the loaded documents
     cleaned_docs = [doc.page_content.replace('\n', ' ').replace('\t', ' ') for doc in docs]
     return cleaned_docs
 
+# Function to load and retrieve content
 def load_and_retrieve(url: str, query: str):
-    embedding = get_embedding()
-
     docs = load_webpage(url)
-    documents = RecursiveCharacterTextSplitter(
-        chunk_size=1000, chunk_overlap=200
-    ).split_documents(docs)
-    vector = FAISS.from_documents(documents, embedding)
+    documents = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200).split_documents(docs)
+    vector = FAISS.from_documents(documents, get_embedding())
     retriever = vector.as_retriever()
-    retriever_tool = create_retriever_tool(
-        retriever,
-        "dynamic_search",
-        "Search within dynamically loaded web content."
-    )
+    retriever_tool = create_retriever_tool(retriever, "dynamic_search", "Search within dynamically loaded web content.")
     return retriever_tool.func(query)
 
-# Google Search API Wrapper
+# Function to create Google Search API Wrapper
 def create_google_search_wrapper():
     os.environ["GOOGLE_CSE_ID"] = get_api_key('GOOGLE_CSE_ID') or 'default_cse_id'
     os.environ["GOOGLE_API_KEY"] = get_api_key('GOOGLE_SEARCH_KEY') or 'default_search_key'
@@ -84,37 +75,27 @@ def handle_chat_websocket(ws, query):
     search_tool = GoogleSearchResults(api_wrapper=googlesearch, num_results=4)
 
     # Tool definitions
-    search_tool_def = Tool(
-        name="Google Search",
-        description="Search Google for recent results.",
-        func=search_tool,
-    )
-
-    web_loader_tool = Tool(
-        name="WebLoader",
-        description="Load webpage content from a URL and use retriever to search within it.",
-        func=load_and_retrieve,
-    )
+    search_tool_def = Tool(name="Google Search", description="Search Google for recent results.", func=search_tool)
+    web_loader_tool = Tool(name="WebLoader", description="Load webpage content from a URL and use retriever to search within it.", func=load_and_retrieve)
 
     tools = [search_tool_def, web_loader_tool]
 
-    # Create LLM model using get_llm function
+    # Create LLM model
     llm = get_llm()
-
-    # Create the agent
     search_agent = create_react_agent(llm, tools, prompt)
     agent_executor = AgentExecutor(
         agent=search_agent,
         tools=tools,
         verbose=True,
         return_intermediate_steps=True,
-        handle_parsing_errors=True,  # Handle parsing errors to retry
-        max_iterations=5  # Limit the number of iterations to 5
+        handle_parsing_errors=True,
+        max_iterations=5
     )
 
     # Perform agent execution without streaming
     response = agent_executor({"input": query})
-    logging.info(response)    
-    # Send the final response
-    ws.send(json.dumps({"output": response["output"]}))
-
+    logging.info(response)
+    if ws:
+        ws.send(json.dumps({"output": response["output"]}))
+    else:
+        return response

@@ -1,6 +1,5 @@
 import logging
 import json
-import asyncio
 from flask import Blueprint
 from app import sock
 from utils.langchain_ragchat import handle_chat_websocket
