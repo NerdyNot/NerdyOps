@@ -8,7 +8,7 @@ from langchain_community.utilities import GoogleSearchAPIWrapper
 from langchain.agents import AgentExecutor, create_react_agent, Tool
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.tools.retriever import create_retriever_tool
 from utils.langchain_llm import get_llm, get_embedding
 from utils.db import get_api_key
@@ -24,14 +24,14 @@ template = '''**Instructions:**
 
 Use the following format:
 
-Question: The input question to be answered
-Thought: {agent_scratchpad}
-Action: The action to be taken, must be one of [{tool_names}]
-Action Input: The input for the action
-Observation: The result of the action
-... (This thought/action/action input/observation can be repeated 2 times)
-Thought: Now I know the final answer
-Final Answer: Write Only the final answer to the original input question in the same language, including the source links used from the tools.
+  Question: The input question to be answered
+  Thought: Always think about what needs to be done
+  Action: The action to be taken, must be one of [{tool_names}]
+  Action Input: The input for the action
+  Observation: The result of the action
+  ... (This thought/action/action input/observation can be repeated 2 times)
+  Thought: Now I know the final answer
+  Final Answer: Write Only the final answer to the original input question in the same language, including the source links used from the tools.
 
 Tool Usage Guidelines:
 - Use the Google search tool to find information if the answer is expected to be simple or if you need to gather general information quickly. When using the search tool, refine the search terms to display more specific information.
@@ -94,7 +94,7 @@ def handle_chat_websocket(ws, query):
 
     # Perform agent execution without streaming
     response = agent_executor({"input": query})
-    logging.info(response)
+    logging.info(response["output"])
     if ws:
         ws.send(json.dumps({"output": response["output"]}))
     else:

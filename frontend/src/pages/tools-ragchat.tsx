@@ -79,9 +79,10 @@ const ChatbotPage = () => {
               {chatMessages.map((message, index) => (
                 <div
                   key={index}
-                  className={`mb-4 p-2 rounded-md max-w-xs ${
+                  className={`mb-4 p-2 rounded-md ${
                     message.user ? 'bg-blue-500 text-white self-end' : 'bg-gray-300 self-start'
                   }`}
+                  style={{ maxWidth: '100%' }}
                 >
                   <ReactMarkdown
                     children={message.text}
