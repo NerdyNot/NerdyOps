@@ -10,6 +10,9 @@ from langchain.agents import AgentExecutor, create_react_agent, Tool
 from langchain_community.document_loaders import WebBaseLoader
 from utils.langchain_llm import get_llm, get_embedding
 from utils.db import get_api_key
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import FAISS
+from langchain.tools.retriever import create_retriever_tool
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,7 +48,6 @@ prompt = PromptTemplate.from_template(template)
 
 embedding = get_embedding()
 
-
 # Function to load webpage content
 def load_webpage(url: str) -> List[str]:
     loader = WebBaseLoader([url])
@@ -54,6 +56,20 @@ def load_webpage(url: str) -> List[str]:
     # Remove \n and \t from the loaded documents
     cleaned_docs = [doc.page_content.replace('\n', ' ').replace('\t', ' ') for doc in docs]
     return cleaned_docs
+
+def load_and_retrieve(url: str, query: str):
+    docs = load_webpage(url)
+    documents = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=200
+    ).split_documents(docs)
+    vector = FAISS.from_documents(documents, embedding)
+    retriever = vector.as_retriever()
+    retriever_tool = create_retriever_tool(
+        retriever,
+        "dynamic_search",
+        "Search within dynamically loaded web content."
+    )
+    return retriever_tool.func(query)
 
 # Google Search API Wrapper
 def create_google_search_wrapper():
@@ -75,9 +91,10 @@ def create_agent_executor():
 
     web_loader_tool = Tool(
         name="WebLoader",
-        description="Load webpage content from a URL.",
-        func=load_webpage,
+        description="Load webpage content from a URL and use retriever to search within it.",
+        func=load_and_retrieve,
     )
+
 
     tools = [search_tool_def, web_loader_tool]
 
