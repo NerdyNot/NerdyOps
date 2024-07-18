@@ -3,7 +3,7 @@ import json
 import os
 from typing import List
 from langchain_core.prompts import PromptTemplate
-from langchain_community.tools import GoogleSearchResults
+from langchain_google_community import GoogleSearchResults
 from langchain_community.utilities import GoogleSearchAPIWrapper
 from langchain.agents import AgentExecutor, create_react_agent, Tool
 from langchain_community.document_loaders import WebBaseLoader
