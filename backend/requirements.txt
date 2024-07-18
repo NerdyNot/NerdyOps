@@ -22,3 +22,4 @@ pypandoc==1.13
 reportlab==4.2.2
 langchain-google-community
 faiss-cpu
+bs4
