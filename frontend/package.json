@@ -35,7 +35,8 @@
         "react-redux": "^8.1.1",
         "react-slider": "^2.0.6",
         "react-syntax-highlighter": "^15.5.0",
-        "swr": "^2.2.0"
+        "swr": "^2.2.0",
+        "uuid": "^10.0.0"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.3",
