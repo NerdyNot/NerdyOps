@@ -2,6 +2,7 @@ import {
   mdiCodeTags,
   mdiTextBox,
   mdiSend,
+  mdiContentCopy,
 } from '@mdi/js';
 import { Formik, Form, Field } from 'formik';
 import Head from 'next/head';
@@ -84,6 +85,14 @@ const CodeGenerationPage = () => {
     e.target.style.height = e.target.scrollHeight + 'px';
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Copied to clipboard!');
+    }).catch((err) => {
+      console.error('Failed to copy text: ', err);
+    });
+  };
+
   return (
     <>
       <Head>
@@ -138,12 +147,12 @@ const CodeGenerationPage = () => {
                       <option value="powershell">Powershell</option>
                       <option value="sql">SQL</option>
                       <option value="python">Python</option>
-                      <option value="powershell">Terraform</option>
-                      <option value="powershell">Helm Template</option>
-                      <option value="powershell">Ansible Playbook</option>
-                      <option value="powershell">Dockerfile</option>
-                      <option value="powershell">docker-compose YAML</option>
-                      <option value="powershell">Kubernetes YAML</option>
+                      <option value="terraform">Terraform</option>
+                      <option value="helm">Helm Template</option>
+                      <option value="ansible">Ansible Playbook</option>
+                      <option value="dockerfile">Dockerfile</option>
+                      <option value="docker-compose">docker-compose YAML</option>
+                      <option value="kubernetes">Kubernetes YAML</option>
                       <option value="html">HTML</option>
                       <option value="javascript">JavaScript</option>
                       <option value="typescript">TypeScript</option>
@@ -157,13 +166,13 @@ const CodeGenerationPage = () => {
                       <option value="swift">Swift</option>
                     </Field>
                   </FormField>
-                  
+
                   <div className="p-4 border-t">
-                    <Button 
-                      color="info" 
+                    <Button
+                      color="info"
                       type="submit"
-                      label={loading ? "Generating..." : "Generate Code"} 
-                      icon={loading ? "spinner-border spinner-border-sm" : mdiSend} 
+                      label={loading ? "Generating..." : "Generate Code"}
+                      icon={loading ? "spinner-border spinner-border-sm" : mdiSend}
                       disabled={loading}
                     />
                   </div>
@@ -174,7 +183,7 @@ const CodeGenerationPage = () => {
                     labelFor="codeResult"
                     icons={[mdiCodeTags]}
                   >
-                    <div className="w-full p-2 border rounded bg-gray-100" style={{ minHeight: '150px', maxHeight: '300px', overflow: 'auto' }} ref={codeResultRef}>
+                    <div className="w-full p-2 border rounded bg-gray-100 relative" style={{ minHeight: '150px', maxHeight: '300px', overflow: 'auto' }} ref={codeResultRef}>
                       <ReactMarkdown
                         children={codeResult}
                         components={{
@@ -196,6 +205,13 @@ const CodeGenerationPage = () => {
                           }
                         }}
                       />
+                      <Button
+                        color="info"
+                        type="button"
+                        className="absolute top-2 right-2"
+                        onClick={() => copyToClipboard(codeResult)}
+                        icon={mdiContentCopy}
+                      />
                     </div>
                   </FormField>
 
@@ -205,8 +221,15 @@ const CodeGenerationPage = () => {
                     labelFor="codeExplanation"
                     icons={[mdiTextBox]}
                   >
-                    <div className="w-full p-2 border rounded bg-gray-100" style={{ minHeight: '150px', maxHeight: '500px', overflow: 'auto' }}>
+                    <div className="w-full p-2 border rounded bg-gray-100 relative" style={{ minHeight: '150px', maxHeight: '500px', overflow: 'auto' }}>
                       <ReactMarkdown children={codeExplanation} />
+                      <Button
+                        color="info"
+                        type="button"
+                        className="absolute top-2 right-2"
+                        onClick={() => copyToClipboard(codeExplanation)}
+                        icon={mdiContentCopy}
+                      />
                     </div>
                   </FormField>
                 </div>

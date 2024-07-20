@@ -183,7 +183,7 @@ Tool Usage Guidelines:
 - If the answer requires the latest data (e.g., today's weather, news), perform a search.
 - If a link is directly provided or if the content cannot be summarized solely from search results, use the WebLoader.
 - For all other basic responses, provide answers using the LLM itself.
-- When referencing the web, include the link in the final answer as **[Ref](url)**.
+- When referencing the web, include the link in the final answer as **[Reference Link Name](url)**(\n**[Reference Link Name](url)**...\n**[Reference Link Name](url)**).
 
 Get started!
 

@@ -3,6 +3,7 @@ import {
   mdiSend,
   mdiToggleSwitch,
   mdiToggleSwitchOff,
+  mdiStop,
 } from '@mdi/js';
 import { Formik, Form, Field } from 'formik';
 import Head from 'next/head';
@@ -17,15 +18,16 @@ import { getPageTitle } from '../config';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { v4 as uuidv4 } from 'uuid';  // Import UUID library
+import { v4 as uuidv4 } from 'uuid'; // Import UUID library
+import { CircularProgress } from '@mui/material'; // Import CircularProgress from Material UI
 
 const ChatbotPage = () => {
-  const [chatMessages, setChatMessages] = useState<{ user: boolean; text: string, temp: boolean }[]>([]);
+  const [messages, setMessages] = useState<{ user: boolean; text: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [isRagEnabled, setIsRagEnabled] = useState<boolean>(false);
   const ws = useRef<WebSocket | null>(null);
   const chatBoxRef = useRef<HTMLDivElement | null>(null);
-  const [sessionId] = useState<string>(uuidv4());  // Generate a unique session ID
+  const [sessionId] = useState<string>(uuidv4()); // Generate a unique session ID
 
   // Cleanup WebSocket connection on component unmount
   useEffect(() => {
@@ -36,16 +38,20 @@ const ChatbotPage = () => {
     };
   }, []);
 
-  // Scroll chat box to the bottom when chatMessages change
+  // Scroll to the bottom when messages change
   useEffect(() => {
     if (chatBoxRef.current) {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
-  }, [chatMessages]);
+  }, [messages]);
 
   const handleSendMessage = async (values: { message: string }, { resetForm }: any) => {
     setLoading(true);
-    setChatMessages((prev) => [...prev, { user: true, text: values.message, temp: false }]);
+    setMessages((prev) => [...prev, { user: true, text: values.message }]);
+
+    if (ws.current) {
+      ws.current.close();
+    }
 
     const wsUrl = `/api/ws/chat`;
     ws.current = new WebSocket(wsUrl);
@@ -53,6 +59,7 @@ const ChatbotPage = () => {
     ws.current.onopen = () => {
       console.log('WebSocket connection opened');
       ws.current?.send(JSON.stringify({ ...values, isRagEnabled, session_id: sessionId }));
+      resetForm();
     };
 
     ws.current.onerror = (error) => {
@@ -62,28 +69,20 @@ const ChatbotPage = () => {
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      setChatMessages((prev) => {
-        const lastMessageIndex = prev.length - 1;
+
+      setMessages((prev) => {
         const newMessages = [...prev];
-
-        if (newMessages[lastMessageIndex]?.temp) {
-          newMessages[lastMessageIndex].text += data.output;
+        if (newMessages.length > 0 && newMessages[newMessages.length - 1].user === false) {
+          newMessages[newMessages.length - 1].text += data.output;
         } else {
-          newMessages.push({ user: false, text: data.output, temp: true });
+          newMessages.push({ user: false, text: data.output });
         }
-
         return newMessages;
       });
 
-      if (data.output.endsWith('\n\n')) {
-        setChatMessages((prev) => {
-          const lastMessageIndex = prev.length - 1;
-          const newMessages = [...prev];
-          newMessages[lastMessageIndex].temp = false;
-          return newMessages;
-        });
+      // 응답이 끝났는지 확인
+      if (data.is_final) {
         setLoading(false);
-        resetForm();
       }
     };
 
@@ -91,6 +90,13 @@ const ChatbotPage = () => {
       console.log('WebSocket connection closed');
       setLoading(false);
     };
+  };
+
+  const handleStop = () => {
+    if (ws.current) {
+      ws.current.close();
+    }
+    setLoading(false);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>, handleSubmit: () => void) => {
@@ -117,16 +123,17 @@ const ChatbotPage = () => {
           />
         </div>
         <div className="flex flex-col h-full">
-          <CardBox className="flex-grow flex flex-col h-full">
-            <div className="flex-grow overflow-auto p-4" ref={chatBoxRef} style={{ maxHeight: '400px' }}>
-              {chatMessages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`mb-4 p-2 rounded-md ${
-                    message.user ? 'bg-blue-500 text-white self-end' : 'bg-gray-300 self-start'
-                  }`}
-                  style={{ maxWidth: '100%' }}
-                >
+          <CardBox className="flex-grow flex flex-col" style={{ maxHeight: '400px' }}>
+            <div
+              className="w-full p-2 border rounded bg-white"
+              style={{ minHeight: '400px', maxHeight: '400px', overflow: 'auto' }}
+              ref={chatBoxRef}
+            >
+              {messages.map((message, index) => (
+                <div key={index} style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontWeight: 'bold', textAlign: message.user ? 'right' : 'left', fontSize: '0.9rem' }}>
+                    {message.user ? 'YOU' : 'AI'}
+                  </div>
                   <ReactMarkdown
                     children={message.text}
                     components={{
@@ -149,8 +156,14 @@ const ChatbotPage = () => {
                       },
                     }}
                   />
+                  <hr />
                 </div>
               ))}
+              {loading && isRagEnabled && (
+                <div className="flex justify-center my-4">
+                  <CircularProgress />
+                </div>
+              )}
             </div>
             <Formik
               initialValues={{ message: '' }}
@@ -166,14 +179,24 @@ const ChatbotPage = () => {
                     as="textarea"
                     rows={1}
                     onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => handleKeyDown(e, handleSubmit)}
+                    disabled={loading} // Disable input when loading
                   />
-                  <Button
-                    color="info"
-                    type="submit"
-                    label={loading ? 'Sending...' : 'Send'}
-                    icon={mdiSend}
-                    disabled={loading}
-                  />
+                  {loading ? (
+                    <Button
+                      color="danger"
+                      label="Stop"
+                      icon={mdiStop}
+                      onClick={handleStop}
+                    />
+                  ) : (
+                    <Button
+                      color="info"
+                      type="submit"
+                      label="Send"
+                      icon={mdiSend}
+                      disabled={loading}
+                    />
+                  )}
                 </Form>
               )}
             </Formik>

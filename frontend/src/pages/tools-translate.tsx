@@ -4,6 +4,7 @@ import {
   mdiSend,
   mdiFileUpload,
   mdiDownload,
+  mdiContentCopy,
 } from '@mdi/js';
 import { Formik, Form, Field } from 'formik';
 import Head from 'next/head';
@@ -114,7 +115,15 @@ const TranslatePage = () => {
     e.target.style.height = 'auto';
     e.target.style.height = e.target.scrollHeight + 'px';
   };
-  
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Copied to clipboard!');
+    }).catch((err) => {
+      console.error('Failed to copy text: ', err);
+    });
+  };
+
   return (
     <>
       <Head>
@@ -221,15 +230,24 @@ const TranslatePage = () => {
                     labelFor="translationResult"
                     icons={[mdiTranslate]}
                   >
-                    <textarea
-                      id="translationResult"
-                      value={translationResult}
-                      readOnly
-                      rows={6}
-                      className="w-full p-2 border rounded bg-gray-100"
-                      ref={translationResultRef}
-                      style={{ maxHeight: '300px', overflow: 'auto' }}
-                    />
+                    <div className="w-full p-2 border rounded bg-white relative" style={{ minHeight: '150px', maxHeight: '300px', overflow: 'auto' }}>
+                      <textarea
+                        id="translationResult"
+                        value={translationResult}
+                        readOnly
+                        rows={6}
+                        className="w-full p-2 border rounded bg-white"
+                        ref={translationResultRef}
+                        style={{ maxHeight: '300px', overflow: 'auto' }}
+                      />
+                      <Button
+                        color="info"
+                        type="button"
+                        className="absolute top-2 right-2"
+                        onClick={() => copyToClipboard(translationResult)}
+                        icon={mdiContentCopy}
+                      />
+                    </div>
                   </FormField>
                 </div>
               </Form>
